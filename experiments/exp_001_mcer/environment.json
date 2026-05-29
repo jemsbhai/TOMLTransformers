@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-05-29T17:59:44.107631+00:00",
+  "git_commit": "0c3947f7009bf6e114a17d9275ffedab18694a0e",
+  "git_dirty": true,
+  "python_version": "3.12.2",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+  "gpu": "NVIDIA GeForce RTX 4090 Laptop GPU, 595.79, 16376 MiB",
+  "cuda_via_nvcc": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2024 NVIDIA Corporation\nBuilt on Tue_Feb_27_16:28:36_Pacific_Standard_Time_2024\nCuda compilation tools, release 12.4, V12.4.99\nBuild cuda_12.4.r12.4/compiler.33961263_0",
+  "packages": {
+    "numpy": "2.4.4",
+    "scipy": "1.17.1",
+    "torch": "2.6.0+cu124",
+    "transformers": "5.1.0",
+    "pynvml": "13.0.1",
+    "pytest": "9.0.2"
+  }
+}

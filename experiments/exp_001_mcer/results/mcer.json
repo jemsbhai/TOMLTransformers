@@ -1,0 +1,171 @@
+{
+  "experiment": "EXP-001",
+  "status": "exploratory",
+  "device": "rtx4090",
+  "precision": "fp16",
+  "metric": "MCER = (to_sram + to_hbm) / (to_mac + to_nonlinear), dimensionless",
+  "caveat": "prior-weighted TO ratios, NOT calibrated energy",
+  "phase_transition": [
+    {
+      "model": "GPT-2",
+      "seq_len": 512,
+      "prefill_mcer": 0.20675698841519252,
+      "decode_mcer": 69.4286767826035,
+      "decode_over_prefill": 335.79845264133223,
+      "prefill_record": {
+        "to_mac": 75810535257600.0,
+        "to_nonlinear": 963523584000.0,
+        "to_sram": 401303882500.0,
+        "to_hbm": 15472269312000.0,
+        "n_launches": 111.0,
+        "n_fused_steps": 0.0
+      },
+      "decode_record": {
+        "to_mac": 219399206400.0,
+        "to_nonlinear": 2810880000.0,
+        "to_sram": 1006922500.0,
+        "to_hbm": 15426745344000.0,
+        "n_launches": 111.0,
+        "n_fused_steps": 0.0
+      }
+    },
+    {
+      "model": "LLaMA-7B",
+      "seq_len": 512,
+      "prefill_mcer": 0.14219883508492392,
+      "decode_mcer": 70.15237244432764,
+      "decode_over_prefill": 493.3399939769638,
+      "prefill_record": {
+        "to_mac": 5528247494246400.0,
+        "to_nonlinear": 8870417203200.0,
+        "to_sram": 5107331200000.0,
+        "to_hbm": 782264385536000.0,
+        "n_launches": 323.0,
+        "n_fused_steps": 0.0
+      },
+      "decode_record": {
+        "to_mac": 11123718144000.0,
+        "to_nonlinear": 23906713600.0,
+        "to_sram": 10739840000.0,
+        "to_hbm": 782021591040000.0,
+        "n_launches": 323.0,
+        "n_fused_steps": 0.0
+      }
+    },
+    {
+      "model": "Mistral-7B",
+      "seq_len": 512,
+      "prefill_mcer": 0.1399322087633919,
+      "decode_mcer": 69.17280870608984,
+      "decode_over_prefill": 494.33085718708634,
+      "prefill_record": {
+        "to_mac": 5953539224371200.0,
+        "to_nonlinear": 10129966694400.0,
+        "to_sram": 5537247360000.0,
+        "to_hbm": 828972154880000.0,
+        "n_launches": 323.0,
+        "n_fused_steps": 0.0
+      },
+      "decode_record": {
+        "to_mac": 11954366054400.0,
+        "to_nonlinear": 26366771200.0,
+        "to_sram": 11579520000.0,
+        "to_hbm": 828729360384000.0,
+        "n_launches": 323.0,
+        "n_fused_steps": 0.0
+      }
+    },
+    {
+      "model": "GPT-2",
+      "seq_len": 2048,
+      "prefill_mcer": 0.058446574482917936,
+      "decode_mcer": 68.18068781864312,
+      "decode_over_prefill": 1166.5472001027222,
+      "prefill_record": {
+        "to_mac": 350886282278400.0,
+        "to_nonlinear": 9516377088000.0,
+        "to_sram": 2171052362500.0,
+        "to_hbm": 18893248512000.0,
+        "n_launches": 111.0,
+        "n_fused_steps": 0.0
+      },
+      "decode_record": {
+        "to_mac": 266113267200.0,
+        "to_nonlinear": 8340480000.0,
+        "to_sram": 1559882500.0,
+        "to_hbm": 18710885376000.0,
+        "n_launches": 111.0,
+        "n_fused_steps": 0.0
+      }
+    },
+    {
+      "model": "LLaMA-7B",
+      "seq_len": 2048,
+      "prefill_mcer": 0.037350977017452276,
+      "decode_mcer": 69.92839092198676,
+      "decode_over_prefill": 1872.1971018137667,
+      "prefill_record": {
+        "to_mac": 2.2792663990272e+16,
+        "to_nonlinear": 75746864332800.0,
+        "to_sram": 24455524480000.0,
+        "to_hbm": 829701963776000.0,
+        "n_launches": 323.0,
+        "n_fused_steps": 0.0
+      },
+      "decode_record": {
+        "to_mac": 11788095897600.0,
+        "to_nonlinear": 63228313600.0,
+        "to_sram": 14672000000.0,
+        "to_hbm": 828729360384000.0,
+        "n_launches": 323.0,
+        "n_fused_steps": 0.0
+      }
+    },
+    {
+      "model": "Mistral-7B",
+      "seq_len": 2048,
+      "prefill_mcer": 0.03530285462783012,
+      "decode_mcer": 66.25616366005947,
+      "decode_over_prefill": 1876.7933743190297,
+      "prefill_record": {
+        "to_mac": 2.44938309107712e+16,
+        "to_nonlinear": 80785062297600.0,
+        "to_sram": 26175189120000.0,
+        "to_hbm": 841378906112000.0,
+        "n_launches": 323.0,
+        "n_fused_steps": 0.0
+      },
+      "decode_record": {
+        "to_mac": 12618743808000.0,
+        "to_nonlinear": 65688371200.0,
+        "to_sram": 15511680000.0,
+        "to_hbm": 840406302720000.0,
+        "n_launches": 323.0,
+        "n_fused_steps": 0.0
+      }
+    }
+  ],
+  "attention_compare": [
+    {
+      "model": "LLaMA-7B",
+      "seq_len": 2048,
+      "flash_mcer": 0.037350977017452276,
+      "standard_mcer": 0.059147833788006136,
+      "standard_over_flash": 1.5835685840391607
+    },
+    {
+      "model": "LLaMA-7B",
+      "seq_len": 8192,
+      "flash_mcer": 0.011472533630595529,
+      "standard_mcer": 0.08887298270980454,
+      "standard_over_flash": 7.746587246673534
+    },
+    {
+      "model": "LLaMA-7B",
+      "seq_len": 16384,
+      "flash_mcer": 0.007470944726922139,
+      "standard_mcer": 0.1421608096617492,
+      "standard_over_flash": 19.028491691212963
+    }
+  ]
+}
