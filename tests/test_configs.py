@@ -7,7 +7,9 @@ from tomltransformers.architectures import configs as cf
 
 def test_registry_complete():
     for name in ("LLaMA-7B", "Mistral-7B", "GPT-2", "BERT-base", "ViT-B/16",
-                 "T5-base", "BART-base", "LLaMA-3-8B", "BERT-large"):
+                 "T5-base", "BART-base", "LLaMA-3-8B", "BERT-large",
+                 "DistilGPT2", "GPT-2-medium", "GPT-2-large", "GPT-2-XL",
+                 "DistilBERT", "ViT-L/16", "T5-small", "BART-large"):
         assert name in cf.MODELS
     assert cf.get("GPT-2").name == "GPT-2"
     with pytest.raises(KeyError):
@@ -34,6 +36,15 @@ def test_param_counts_match_known_totals():
     assert close(cf.GPT2.param_count, 124e6)
     assert close(cf.BERT_BASE.param_count, 110e6)
     assert close(cf.VIT_B16.param_count, 86e6)
+    # EXP-002 zoo expansion (published totals).
+    assert close(cf.DISTILGPT2.param_count, 82e6)
+    assert close(cf.GPT2_MEDIUM.param_count, 355e6)
+    assert close(cf.GPT2_LARGE.param_count, 774e6)
+    assert close(cf.GPT2_XL.param_count, 1558e6)
+    assert close(cf.DISTILBERT.param_count, 66e6)
+    assert close(cf.VIT_L16.param_count, 304e6)
+    assert close(cf.T5_SMALL.param_count, 60.5e6)
+    assert close(cf.BART_LARGE.param_count, 406e6)
 
 
 def test_validation_rejects_bad_configs():

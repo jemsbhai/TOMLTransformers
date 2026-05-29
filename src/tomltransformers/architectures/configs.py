@@ -152,6 +152,30 @@ GPT2 = TransformerConfig(
     activation="gelu", norm_type="layernorm", ffn_type="standard",
     tie_embeddings=True, max_position=1024,
 )
+DISTILGPT2 = TransformerConfig(
+    name="DistilGPT2", arch="decoder_only", n_layers=6, d_model=768, d_ff=3072,
+    n_heads=12, n_kv_heads=12, head_dim=64, vocab_size=50257,
+    activation="gelu", norm_type="layernorm", ffn_type="standard",
+    tie_embeddings=True, max_position=1024,
+)
+GPT2_MEDIUM = TransformerConfig(
+    name="GPT-2-medium", arch="decoder_only", n_layers=24, d_model=1024, d_ff=4096,
+    n_heads=16, n_kv_heads=16, head_dim=64, vocab_size=50257,
+    activation="gelu", norm_type="layernorm", ffn_type="standard",
+    tie_embeddings=True, max_position=1024,
+)
+GPT2_LARGE = TransformerConfig(
+    name="GPT-2-large", arch="decoder_only", n_layers=36, d_model=1280, d_ff=5120,
+    n_heads=20, n_kv_heads=20, head_dim=64, vocab_size=50257,
+    activation="gelu", norm_type="layernorm", ffn_type="standard",
+    tie_embeddings=True, max_position=1024,
+)
+GPT2_XL = TransformerConfig(
+    name="GPT-2-XL", arch="decoder_only", n_layers=48, d_model=1600, d_ff=6400,
+    n_heads=25, n_kv_heads=25, head_dim=64, vocab_size=50257,
+    activation="gelu", norm_type="layernorm", ffn_type="standard",
+    tie_embeddings=True, max_position=1024,
+)
 
 # ------------------------------------------------------------------------------
 # Encoder-only
@@ -166,9 +190,20 @@ BERT_LARGE = TransformerConfig(
     n_heads=16, head_dim=64, vocab_size=30522,
     activation="gelu", norm_type="layernorm", ffn_type="standard", max_position=512,
 )
+DISTILBERT = TransformerConfig(
+    name="DistilBERT", arch="encoder_only", n_layers=6, d_model=768, d_ff=3072,
+    n_heads=12, head_dim=64, vocab_size=30522,
+    activation="gelu", norm_type="layernorm", ffn_type="standard", max_position=512,
+)
 VIT_B16 = TransformerConfig(
     name="ViT-B/16", arch="encoder_only", n_layers=12, d_model=768, d_ff=3072,
     n_heads=12, head_dim=64, vocab_size=0,
+    activation="gelu", norm_type="layernorm", ffn_type="standard",
+    is_vision=True, num_patches=196, num_classes=1000,
+)
+VIT_L16 = TransformerConfig(
+    name="ViT-L/16", arch="encoder_only", n_layers=24, d_model=1024, d_ff=4096,
+    n_heads=16, head_dim=64, vocab_size=0,
     activation="gelu", norm_type="layernorm", ffn_type="standard",
     is_vision=True, num_patches=196, num_classes=1000,
 )
@@ -182,9 +217,21 @@ T5_BASE = TransformerConfig(
     activation="relu", norm_type="rmsnorm", ffn_type="standard",
     tie_embeddings=True, relative_position_bias=True,
 )
+T5_SMALL = TransformerConfig(
+    name="T5-small", arch="encoder_decoder", n_encoder_layers=6, n_decoder_layers=6,
+    d_model=512, d_ff=2048, n_heads=8, head_dim=64, vocab_size=32128,
+    activation="relu", norm_type="rmsnorm", ffn_type="standard",
+    tie_embeddings=True, relative_position_bias=True,
+)
 BART_BASE = TransformerConfig(
     name="BART-base", arch="encoder_decoder", n_encoder_layers=6, n_decoder_layers=6,
     d_model=768, d_ff=3072, n_heads=12, head_dim=64, vocab_size=50265,
+    activation="gelu", norm_type="layernorm", ffn_type="standard",
+    tie_embeddings=True, max_position=1024,
+)
+BART_LARGE = TransformerConfig(
+    name="BART-large", arch="encoder_decoder", n_encoder_layers=12, n_decoder_layers=12,
+    d_model=1024, d_ff=4096, n_heads=16, head_dim=64, vocab_size=50265,
     activation="gelu", norm_type="layernorm", ffn_type="standard",
     tie_embeddings=True, max_position=1024,
 )
@@ -192,9 +239,10 @@ BART_BASE = TransformerConfig(
 
 MODELS: Dict[str, TransformerConfig] = {
     m.name: m for m in (
-        LLAMA_7B, LLAMA3_8B, MISTRAL_7B, GPT2,
-        BERT_BASE, BERT_LARGE, VIT_B16,
-        T5_BASE, BART_BASE,
+        LLAMA_7B, LLAMA3_8B, MISTRAL_7B,
+        GPT2, DISTILGPT2, GPT2_MEDIUM, GPT2_LARGE, GPT2_XL,
+        BERT_BASE, BERT_LARGE, DISTILBERT, VIT_B16, VIT_L16,
+        T5_BASE, T5_SMALL, BART_BASE, BART_LARGE,
     )
 }
 
