@@ -1,0 +1,16 @@
+{
+  "experiment": "EXP-002",
+  "master_seed": 42,
+  "python_random": 42,
+  "numpy": 42,
+  "torch": 42,
+  "torch_cuda": 42,
+  "full_grid_init_seed": 42,
+  "representativeness_init_seeds": [42, 1234, 2025],
+  "notes": [
+    "Energy is a PHYSICAL measurement, not a model output, so bitwise determinism is NOT required to make an energy reading valid. The 5 physical measurement repeats per point capture timing/thermal noise; the init seed only fixes which random weights and inputs are drawn.",
+    "The full size+precision grid uses a single init seed (42). Multiple init seeds are used only in the representativeness check, where weight/input variation is the actual object of study (bounding energy drift vs DDEV).",
+    "Deterministic mode (torch.use_deterministic_algorithms(True), CUBLAS_WORKSPACE_CONFIG=:4096:8) is enabled ONLY for the output-correctness portion of the real-weight spot checks, not for the energy sweep, since some fast cuBLAS/cuDNN kernels are non-deterministic and forcing determinism would change the kernels (and thus the energy) being measured.",
+    "Random-init weight tensors and synthetic input token ids are drawn under master_seed 42 unless a representativeness seed is specified."
+  ]
+}

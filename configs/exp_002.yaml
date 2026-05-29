@@ -1,0 +1,209 @@
+# =============================================================================
+# EXP-002: Calibrated energy of transformer inference (size + precision sweep)
+# =============================================================================
+# Plan-first frozen configuration (lab-runner discipline). This is the contract
+# the measurement harness will read. The harness does NOT yet exist; it is the
+# next step AFTER this config, the LOGBOOK plan entry, and seed.json are
+# committed and environment.json is snapshotted on the measurement machine.
+#
+# This is the FIRST experiment in the TOML-transformers line to produce measured
+# energy in joules. It converts the prior-weighted TO ratios (EXP-001) into a
+# fitted physical model: it calibrates the M0..M9 family (energy_model.py) by
+# NNLS against measured RTX 4090 energy, selects by AIC/BIC, reports held-out
+# R2/MAPE, and recomputes MCER from fitted coefficients. Until this runs, no
+# energy claim in this repo is confirmatory.
+#
+# Pre-registration date: 2026-05-29 (America/New_York)
+# Git commit at freeze: RECORDED AT RUN TIME (repo must be clean; see LOGBOOK).
+# =============================================================================
+
+experiment: EXP-002
+title: "Calibrated transformer-inference energy: size and precision sweep on RTX 4090"
+status: planned
+device: rtx4090            # TSMC 4N, GDDR6X, Ada Lovelace; 16 GB VRAM (hard cap)
+phase: pilot               # pilot/development per lab-runner; NOT yet confirmatory-final
+
+# -----------------------------------------------------------------------------
+# Model zoo under test (14 models, all fit 16 GB at FP32; 7B/8B deferred to EXP-004)
+# -----------------------------------------------------------------------------
+models:
+  decoder_only:   [DistilGPT2, GPT-2, GPT-2-medium, GPT-2-large, GPT-2-XL]
+  encoder_only:   [DistilBERT, BERT-base, BERT-large, ViT-B/16, ViT-L/16]
+  encoder_decoder: [T5-small, T5-base, BART-base, BART-large]
+# Names must resolve via tomltransformers.architectures.configs.get().
+
+# -----------------------------------------------------------------------------
+# Independent variables
+# -----------------------------------------------------------------------------
+precisions: [fp16, fp32]   # Fork 2: paired, to fit the precision MAC multiplier
+                           # and weight-byte scaling instead of asserting them.
+batch_size: 1              # single-stream inference; the decode regime of interest.
+
+workloads:
+  # Prefill: one forward pass over a prompt of length s (no generation).
+  # Compute-bound regime; expected MCER < 1, falling ~1/s.
+  prefill:
+    seq_lens: [128, 256, 512, 1024, 2048]
+
+  # Decode: prefill a KV cache to context length c, then generate K tokens and
+  # report energy-per-step = dE / K. A single step is sub-millisecond and
+  # unmeasurable; the K-token window makes it stable. Context drifts c -> c+K
+  # during the window; for K << c this is a few percent and is logged.
+  # Memory-bound regime; expected MCER >> 1, ~model-independent (EXP-001: ~70).
+  decode:
+    context_lens: [128, 512, 1024, 2048, 4096]
+    tokens_per_window: 64        # K
+
+# -----------------------------------------------------------------------------
+# Attention-kind sub-sweep (confirm O(s^2) eager-attention energy penalty)
+# EXP-001 predicted standard/flash MCER ratio grows with s (1.6x -> 19x).
+# Restricted to small decoders so long s does not OOM eager attention.
+# -----------------------------------------------------------------------------
+attention_compare:
+  kinds: [eager, flash]          # eager = materialized scores; flash = SDPA flash backend
+  models: [DistilGPT2, GPT-2]
+  seq_lens: [512, 1024, 2048, 4096]
+  precision: fp16
+
+# -----------------------------------------------------------------------------
+# Measurement protocol (most-defensible; dual instrument)
+# -----------------------------------------------------------------------------
+measurement:
+  # The two instruments are METHODOLOGICALLY DISTINCT (not the same API twice):
+  #   A is sampled-power integration; B is the hardware energy accumulator.
+  # On Ada (Volta+), B reads nvmlDeviceGetTotalEnergyConsumption directly.
+  # Their agreement validates that 20 Hz sampling (the method the prior TOML
+  # signals/cloud papers relied on) does not miss transients.
+  instrument_A:
+    name: pynvml_power_integration
+    api: nvmlDeviceGetPowerUsage
+    sampling_hz: 20              # matches prior TOML papers' NVML sampling rate
+    energy: integrate_power_minus_idle   # dE_A = integral(P_active - P_idle) dt
+  instrument_B:
+    name: zeus_zeusmonitor
+    api: nvmlDeviceGetTotalEnergyConsumption   # Ada/Volta+ hardware counter via Zeus
+    pip_package: zeus           # legacy name: zeus-ml; verify import path at install
+    energy: total_energy_minus_idle      # dE_B = E_window - E_idle(equal duration)
+  agreement:
+    metric: relative_abs_diff   # |dE_A - dE_B| / dE_B, per measured point
+    target_median: 0.05         # pre-registered: median agreement within 5%
+  # PREREQUISITE before EXP-002 runs (Open Question, Section 8 of plan):
+  #   Verify ZeusMonitor returns nonzero energy on THIS Windows box. NVML
+  #   (nvml.dll) ships with the driver, so the GPU path should work, but Zeus
+  #   Windows support is undocumented (RAPL/AMD/daemon paths are Linux-only).
+  #   If verification fails: fall back to instrument A only and DROP the
+  #   dual-instrument agreement claim (logged, not silently abandoned).
+  zeus_windows_verified: false
+
+  repeats: 5                    # PHYSICAL measurement replicates per point
+  cv_threshold: 0.05            # flag/repeat points whose CV exceeds 5%
+                                # (prior TOML hit CV < 1.5%; 5% is a loose gate)
+  warmup_iters: 50              # trigger JIT/cuDNN autotune/cache fills (signals paper)
+  sync: torch.cuda.synchronize  # around the timed region (best practice)
+  thermal_settle:
+    enabled: true
+    tolerance_c: 1.0            # wait until temp stable within +/-1 C ...
+    window_s: 5                 # ... over a 5 s window before each point
+  idle_baseline_s: 3            # per-point idle measurement; subtract to isolate workload
+  lock_clocks:
+    attempt: true               # nvidia-smi --lock-gpu-clocks=<base>
+    note: "Laptop GPU may refuse clock locking; log ACTUAL clocks per point regardless."
+
+# -----------------------------------------------------------------------------
+# Representativeness check (tests Fork-1 assumption; does NOT assume it)
+# Random-init weights are used for the sweep on the premise that energy depends
+# on op shapes and data movement, not weight values. Prior TOML measured
+# data-dependent energy variation (DDEV) of 16-33% for CNNs, so this is a real
+# threat. Pre-register a falsifiable acceptance threshold.
+# -----------------------------------------------------------------------------
+representativeness:
+  models:
+    GPT-2: gpt2                       # transformers.from_pretrained id
+    BERT-base: bert-base-uncased
+  points:
+    - {workload: prefill, seq_len: 512}     # compute-bound representative
+    - {workload: decode, context_len: 512}  # memory-bound representative
+  compare: random_init_vs_pretrained
+  init_seeds: [42, 1234, 2025]            # multi-seed lives HERE, not on the full grid
+  acceptance_band: 0.33   # |E_rand - E_pretrained| / E_pretrained must be <= 0.33
+                          # (upper bound of prior CNN DDEV). Exceeding => FAIL:
+                          # representativeness not established; sweep flagged;
+                          # logged as a finding either way.
+  note: >
+    Real-weight runs require the transformers library to download gpt2 and
+    bert-base-uncased (~0.5 GB each) at run time. That download is initiated by
+    the user's own code, and per project rules requires explicit confirmation.
+
+# -----------------------------------------------------------------------------
+# Modeling: fit + select the energy-model family on measured energy
+# -----------------------------------------------------------------------------
+modeling:
+  family: [M0, M1, M2, M3, M4, M5, M6, M7, M8, M9]   # energy_model.model_family()
+  fit: nnls                       # non-negativity = physical (energy cannot decrease)
+  selection: aic                  # sort by AIC; report BIC alongside
+  report: [r2, mape, aic, bic]    # held-out R2 and MAPE are the headline
+  recompute_mcer_from_fit: true   # convert fitted coefficients back into MCER
+  per_device: true                # coefficients are device-specific (calibration,
+                                  # NOT rederivation); A100 is EXP-004.
+
+# -----------------------------------------------------------------------------
+# Extrapolation split (PRE-REGISTERED to prevent HARKing). Fit on small models
+# and short sequences; predict a held-out large model at a longer sequence
+# within a stated band. This is the central systems claim baselines must beat.
+# -----------------------------------------------------------------------------
+extrapolation:
+  train_seq_max: 1024            # fit on prefill s <= 1024
+  predict_seq: 2048              # predict held-out model at s = 2048
+  held_out:
+    decoder_only: GPT-2-XL
+    encoder_only: ViT-L/16
+    encoder_decoder: BART-large
+  train_models:
+    decoder_only: [DistilGPT2, GPT-2, GPT-2-medium, GPT-2-large]
+    encoder_only: [DistilBERT, BERT-base, BERT-large, ViT-B/16]
+    encoder_decoder: [T5-small, T5-base, BART-base]
+  target_mape: 0.25              # pre-registered held-out MAPE band
+
+# -----------------------------------------------------------------------------
+# Baseline bake-off (PRE-REGISTERED; identical held-out split + metric for all)
+# -----------------------------------------------------------------------------
+baselines:
+  must_beat:
+    - flops_mac          # = M0, single total-TO term (calibrated FLOPs equivalent)
+    - roofline           # analytical: max(compute_time, mem_time); needs 4090 peak
+                         # FP/s and peak BW (cite vendor); the standard energy proxy
+    - layerwise_regressor  # NeuralPower-style: per-layer features -> energy, summed
+                           # (assumes independent sequential layers)
+  differentiate_from:    # cited competitors; not necessarily beaten head-to-head
+    - LLMCO2             # GNN, phase-aware (stretch goal to reproduce as a baseline)
+    - Accelergy_Timeloop
+    - LLMCarbon
+    - Zeus_MLENERGY
+    - Li_et_al_2022      # the transistor-operations origin; novelty is the transformer layer
+  comparison:
+    metric: mape         # primary (held-out); R2 secondary
+    paired: true         # same held-out points across methods
+    multiple_comparison_correction: holm_bonferroni
+
+# -----------------------------------------------------------------------------
+# VRAM policy (16 GB hard constraint shaped this plan)
+# -----------------------------------------------------------------------------
+vram:
+  cap_gb: 16
+  oom_policy: skip_and_log       # any (model, precision, workload) point that OOMs
+                                 # is skipped with reason "OOM" recorded in results.
+  note: >
+    GPT-2-XL FP32 weights ~6.2 GB; prefill activations at s=2048 batch=1 are
+    modest, expected to fit. Eager (standard) attention at long s is the OOM
+    risk; the attention_compare sub-sweep is capped to small decoders for this
+    reason.
+
+# -----------------------------------------------------------------------------
+# Outputs (frozen copy + results land in the experiment directory)
+# -----------------------------------------------------------------------------
+outputs:
+  dir: experiments/exp_002_size_sweep
+  results: experiments/exp_002_size_sweep/results/energy.json
+  frozen_config_copy: experiments/exp_002_size_sweep/config.yaml
+  environment: experiments/exp_002_size_sweep/environment.json
+  seeds: experiments/exp_002_size_sweep/seed.json

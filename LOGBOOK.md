@@ -89,3 +89,73 @@ The qualitative phase transition (prefill compute-bound, decode memory-bound) is
 - Results: `experiments/exp_001_mcer/results/mcer.json`
 - Environment: `experiments/exp_001_mcer/environment.json`
 - Reproduce: `python scripts/exp001_mcer.py`
+
+
+---
+
+## EXP-002: Calibrated transformer-inference energy (size + precision sweep), RTX 4090
+
+**Date:** 2026-05-29 (America/New_York)
+**Researcher:** Muntaser Syed
+**Type:** computational (real PyTorch inference + GPU power/energy measurement)
+**Status:** planned
+**Pre-registration note:** This is the plan, written before any measurement. It is the first experiment in this line to produce measured energy in joules and to fit the M0-M9 family against it. Hypotheses, variables, controls, the extrapolation split, the representativeness acceptance band, and the baseline set are all fixed here, in advance, to prevent post-hoc rationalization (HARKing). Config: `configs/exp_002.yaml`. Seeds: `experiments/exp_002_size_sweep/seed.json`.
+
+### Hypothesis
+Following EXP-001 (which showed the prefill/decode MCER phase transition in prior-weighted TO ratios), we now test whether that picture survives contact with measured energy, and whether the transistor-operation features explain energy better than FLOPs once calibrated.
+- **H1 (prefill).** Measured prefill energy is compute-dominated: fitted MCER < 1 and falling roughly as 1/s.
+- **H2 (decode).** Measured decode energy is memory-dominated: fitted MCER >> 1 and approximately model-size-independent (EXP-001 predicted ~70 from the per-parameter memory/compute cost gap).
+- **H3 (split models).** The split-feature models (M5+) achieve lower AIC/BIC and higher held-out R2 than M0 (calibrated FLOPs), and their fitted SRAM/HBM and softmax/MAC coefficients quantify whether the 45 nm reference ratios need a correction at TSMC 4N.
+- **H4 (extrapolation + baselines).** A model fit on small architectures and short sequences predicts the held-out large model at s = 2048 within MAPE <= 0.25, and beats the FLOPs/MAC, Roofline, and layer-wise baselines on the identical held-out split.
+- **H5 (attention).** Measured eager-attention energy carries an O(s^2) penalty over FlashAttention that grows with sequence length (EXP-001 predicted the standard/flash MCER ratio rising from ~1.6 at s=2048 to ~19 at s=16384).
+
+### Independent variables
+- model: 14 configs across the three classes (decoder-only DistilGPT2/GPT-2/GPT-2-medium/GPT-2-large/GPT-2-XL; encoder-only DistilBERT/BERT-base/BERT-large/ViT-B16/ViT-L16; encoder-decoder T5-small/T5-base/BART-base/BART-large). 7B/8B deferred to EXP-004.
+- precision: {fp16, fp32}, paired (Fork 2).
+- phase: {prefill, decode}, measured separately.
+- prefill seq_len: {128, 256, 512, 1024, 2048}; decode context_len: {128, 512, 1024, 2048, 4096}.
+- attention kind (sub-sweep): {eager, flash} on {DistilGPT2, GPT-2}, seq {512,1024,2048,4096}, fp16.
+
+### Dependent variables / metrics
+- Measured energy per call (joules), via two methodologically distinct instruments: A = 20 Hz pynvml power-sample integration minus idle (the method the prior TOML papers used); B = Zeus ZeusMonitor reading the Ada hardware energy counter (nvmlDeviceGetTotalEnergyConsumption) minus idle.
+- Instrument agreement: |dE_A - dE_B| / dE_B per point (pre-registered median target <= 5%).
+- Fitted coefficients of M0-M9 (NNLS); held-out R2 and MAPE; AIC/BIC.
+- MCER recomputed from fitted coefficients (dimensionless).
+- Held-out MAPE of each baseline vs this model (paired; Holm-Bonferroni corrected).
+
+### Control conditions
+- Held constant: device = rtx4090 (GDDR6X, 4N), batch = 1, warmup = 50 iters, torch.cuda.synchronize around the timed region, thermal settle to +/-1 C over 5 s, per-point idle baseline (3 s) subtracted, GPU clocks locked where the laptop permits (actual clocks logged per point regardless), 5 physical repeats per point with CV gate 5%.
+- Single init seed (42) across the full grid; multiple init seeds confined to the representativeness check (where weight/input variation is the object of study), so the grid is not confounded by seed variance while the Fork-1 assumption is still tested.
+- Baselines (FLOPs/MAC = M0, analytical Roofline, layer-wise learned regressor) evaluated on the identical held-out split with the identical metric. Differentiate-from set (LLMCO2, Accelergy/Timeloop, LLMCarbon, Zeus/ML.ENERGY, Li et al. 2022) cited, not necessarily beaten head-to-head.
+- Baseline being improved upon: EXP-001's prior-weighted TO ratios (uncalibrated) and the M0 single-term framing.
+
+### Protocol
+1. **Prerequisite: verify Zeus on Windows.** Confirm `pip install zeus` imports and that ZeusMonitor returns nonzero energy on this box (NVML/nvml.dll ships with the driver, so the GPU path should work; Windows is undocumented, RAPL/AMD/daemon paths are Linux-only). If it fails: fall back to instrument A only and drop the dual-instrument agreement claim (log the decision; do not abandon it silently). Set `measurement.zeus_windows_verified` accordingly.
+2. **Snapshot environment.** `python scripts/snapshot_env.py experiments/exp_002_size_sweep/environment.json` on the measurement machine (records driver, CUDA, package versions; never hand-authored).
+3. **Freeze config.** Copy `configs/exp_002.yaml` to `experiments/exp_002_size_sweep/config.yaml`; the frozen copy is what runs.
+4. **Commit clean.** Repo has no uncommitted changes before any measurement; record the commit SHA in this entry as an addendum.
+5. **Build the measurement harness** (next step after this commit): reads the frozen config, drives prefill/decode/attention sweeps under both instruments, writes `results/energy.json` with per-point mean/std/CV, actual clocks, temperatures, and any OOM skips.
+6. **Representativeness check.** At the two spot-check points, compare random-init vs HF-pretrained (gpt2, bert-base-uncased) energy across 3 init seeds; accept only if within DDEV band 0.33, else flag the sweep and log the failure as a finding. (Real-weight runs trigger a transformers model download; per project rules the user confirms that download explicitly.)
+7. **Fit and select.** Fit M0-M9 by NNLS on measured energy, select by AIC (report BIC), report held-out R2/MAPE, recompute MCER from fitted coefficients.
+8. **Baseline bake-off** on the pre-registered held-out split; paired comparison with Holm-Bonferroni correction.
+9. **Reviewer-adversary pass** (lab-runner 9c) before any result enters findings.md.
+
+### Environment
+- **Hardware:** RTX 4090 Laptop GPU (Ada, 16 GB GDDR6X, hard VRAM cap), i9-14900HX, 64 GB RAM.
+- **Software:** see `experiments/exp_002_size_sweep/environment.json` (snapshotted at run time). Measurement extras: torch 2.6.0+cu124, transformers, pynvml, zeus, pyyaml.
+- **Git commit:** RECORDED AT FREEZE (addendum, before measurement).
+- **Seeds:** `experiments/exp_002_size_sweep/seed.json` (master 42; representativeness seeds 42/1234/2025).
+
+### Results
+_To be completed after the run. No values may be entered here until measured._
+
+### Observations
+_To be completed after the run._
+
+### Interpretation
+_To be completed after the run._
+
+### Artifacts
+- Config (source): `configs/exp_002.yaml`
+- Frozen config / environment / seeds / results: under `experiments/exp_002_size_sweep/`
+- Harness: to be added (next step), entry point will be recorded here.
