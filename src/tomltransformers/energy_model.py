@@ -1,41 +1,61 @@
 """Energy-model formulation family and selection machinery.
 
 This module is hardware- and architecture-agnostic. It consumes TO *features*
-(aggregate transistor-operation counts produced by the architecture front-ends)
-together with measured energy, fits a family of nested models, and reports
-which formulation generalizes best.
+(aggregate transistor-operation counts, already weighted by the to_costs priors,
+produced by the architecture front-ends) together with measured energy, fits a
+family of nested models by non-negative least squares, and reports which
+formulation generalizes best.
 
-The family, smallest to largest (the "exhaust, then select" program):
+--------------------------------------------------------------------------------
+Feature vocabulary (a record is a dict; missing keys default to 0.0)
+--------------------------------------------------------------------------------
+Compute (split):
+    to_mac          MAC TOs (linear projections, attention matmuls), prior-weighted
+    to_nonlinear    softmax / activation / norm TOs, prior-weighted
+Memory (split):
+    to_sram         on-chip SRAM-access TOs, prior-weighted
+    to_hbm          off-chip DRAM-class TOs (HBM/GDDR, device-resolved), prior-weighted
+Dispatch:
+    n_launches      CUDA kernel launches (the signals-paper "Python-loop dispatch")
+    n_fused_steps   fused-sequential timesteps
 
-    M0_flops      energy ~ a * (to_compute + to_memory)
-                  one coefficient. The calibrated-FLOPs null baseline.
-    M1_comp_mem   energy ~ a_c*to_compute + a_m*to_memory
-                  separates compute from memory (two coefficients).
-    M2_overhead   M1 + a constant overhead/intercept term.
-    M3_dispatch   M2 + a_o*n_launches   (kernel-dispatch cost; the signals-paper
-                  "Python-loop dispatch" term, which maps onto naive decode).
-    M4_fused      M3 + a_f*n_fused_steps (fused-sequential per-step cost).
+Aggregates used by the coarser models are sums of the above:
+    compute = to_mac + to_nonlinear
+    memory  = to_sram + to_hbm
+    total   = compute + memory
 
-All coefficients are constrained non-negative via NNLS: energy cannot decrease
-with additional computation, memory traffic, or sequential overhead. This is the
-same constraint and rationale used in the signals paper.
+--------------------------------------------------------------------------------
+Why split models matter (the node question, made empirical)
+--------------------------------------------------------------------------------
+Because features are pre-weighted by the to_costs priors, a model that gives
+memory a single coefficient assumes the prior SRAM/HBM cost ratio is correct.
+The split model (separate to_sram, to_hbm coefficients) fits a correction to that
+ratio from measured energy. If the split model wins on held-out error and
+information criteria, the 45 nm-era ratio needed correcting at the modern node;
+if it does not, the prior ratio is adequate. The same applies to to_mac vs
+to_nonlinear (softmax/activation weighting).
 
-Model selection:
-    - AIC and BIC are computed on the fitting (train) set; they penalize
-      in-sample fit by parameter count, so an unnecessary term is not rewarded.
-    - R^2 and MAPE are reported on a held-out (test) set to assess
-      generalization.
-    - No single criterion is hard-wired; fit_and_select returns the full ranked
-      table and best_by(...) lets the caller choose (default: AIC).
+--------------------------------------------------------------------------------
+The family (nested lattice, increasing complexity)
+--------------------------------------------------------------------------------
+    M0_flops          total                                   (1)  calibrated-FLOPs null
+    M1_comp_mem       compute, memory                         (2)
+    M2_overhead       compute, memory, b                      (3)
+    M3_dispatch       compute, memory, launches, b            (4)
+    M4_fused          compute, memory, launches, fused, b     (5)
+    M5_mem_split      compute, sram, hbm, b                   (4)  fits SRAM/HBM ratio
+    M6_compute_split  mac, nonlinear, memory, b               (4)  fits softmax/MAC ratio
+    M7_full_split     mac, nonlinear, sram, hbm, b            (5)
+    M8_split_dispatch mac, nonlinear, sram, hbm, launches, b  (6)
+    M9_full           mac, nonlinear, sram, hbm, launches, fused, b  (7)
 
-The base feature record is a plain dict with these keys (missing keys default
-to 0.0):
+All coefficients are constrained non-negative (NNLS): energy cannot decrease with
+additional computation, memory traffic, or sequential overhead.
 
-    to_compute     total compute TOs
-    to_memory      total memory TOs (already in TO units; tier costs applied
-                   upstream by the architecture front-end)
-    n_launches     CUDA kernel launches (dispatch count), for M3
-    n_fused_steps  fused-sequential timesteps, for M4
+Selection: AIC/BIC computed on the fitting (train) set penalize complexity;
+R^2/MAPE reported on held-out (test) data assess generalization. No single
+criterion is hard-wired; fit_and_select returns the ranked table and best_by(...)
+chooses (default: AIC).
 """
 
 from __future__ import annotations
@@ -47,7 +67,14 @@ import numpy as np
 from scipy.optimize import nnls
 
 # Canonical base features. Front-ends emit dicts keyed by these names.
-FEATURES: tuple[str, ...] = ("to_compute", "to_memory", "n_launches", "n_fused_steps")
+FEATURES: tuple[str, ...] = (
+    "to_mac", "to_nonlinear", "to_sram", "to_hbm", "n_launches", "n_fused_steps",
+)
+
+# Aggregate column specs (each is a set of base features summed into one column).
+COMPUTE: tuple[str, ...] = ("to_mac", "to_nonlinear")
+MEMORY: tuple[str, ...] = ("to_sram", "to_hbm")
+TOTAL: tuple[str, ...] = COMPUTE + MEMORY
 
 Record = Mapping[str, float]
 
@@ -57,53 +84,40 @@ Record = Mapping[str, float]
 # ------------------------------------------------------------------------------
 @dataclass
 class EnergyModel:
-    """A single nested energy model: a fixed feature transform plus NNLS fit.
+    """A nested energy model: fixed column specs plus an NNLS fit.
 
-    Parameters
-    ----------
-    name : human-readable identifier (e.g. "M2_overhead").
-    feature_spec : which base features form the (non-intercept) columns.
-    use_intercept : append a constant column (non-negative baseline overhead).
-    combine_total : if True, sum the feature_spec columns into a single column
-        (used by M0 to model energy as a function of total TOs only).
+    Each entry of ``columns`` is a tuple of base-feature names that are summed
+    into a single regressor column. ``use_intercept`` appends a constant
+    (non-negative baseline overhead) column.
     """
 
     name: str
-    feature_spec: tuple[str, ...]
+    columns: tuple[tuple[str, ...], ...]
     use_intercept: bool = False
-    combine_total: bool = False
     coef_: np.ndarray | None = field(default=None, repr=False)
 
     @property
     def n_params(self) -> int:
-        base = 1 if self.combine_total else len(self.feature_spec)
-        return base + (1 if self.use_intercept else 0)
+        return len(self.columns) + (1 if self.use_intercept else 0)
 
     @property
     def column_names(self) -> list[str]:
-        if self.combine_total:
-            cols = ["+".join(self.feature_spec)]
-        else:
-            cols = list(self.feature_spec)
+        names = ["+".join(spec) for spec in self.columns]
         if self.use_intercept:
-            cols.append("intercept")
-        return cols
+            names.append("intercept")
+        return names
 
     def design_matrix(self, records: Sequence[Record]) -> np.ndarray:
-        """Build the (n_samples x n_params) design matrix from feature dicts."""
-        vals = np.array(
-            [[float(r.get(f, 0.0)) for f in self.feature_spec] for r in records],
+        feats = np.array(
+            [[sum(float(r.get(f, 0.0)) for f in spec) for spec in self.columns]
+             for r in records],
             dtype=float,
         )
-        if vals.ndim == 1:  # single feature, keep 2D
-            vals = vals.reshape(len(records), -1)
-        if self.combine_total:
-            cols = vals.sum(axis=1, keepdims=True)
-        else:
-            cols = vals
+        if feats.ndim == 1:
+            feats = feats.reshape(len(records), -1)
         if self.use_intercept:
-            cols = np.hstack([cols, np.ones((cols.shape[0], 1))])
-        return cols
+            feats = np.hstack([feats, np.ones((feats.shape[0], 1))])
+        return feats
 
     def fit(self, records: Sequence[Record], energy: Sequence[float]) -> "EnergyModel":
         A = self.design_matrix(records)
@@ -122,19 +136,27 @@ class EnergyModel:
 
 def model_family() -> dict[str, EnergyModel]:
     """The full nested family, in increasing complexity."""
+    mac, nl = ("to_mac",), ("to_nonlinear",)
+    sram, hbm = ("to_sram",), ("to_hbm",)
+    launch, fused = ("n_launches",), ("n_fused_steps",)
     return {
-        "M0_flops": EnergyModel("M0_flops", ("to_compute", "to_memory"),
-                                use_intercept=False, combine_total=True),
-        "M1_comp_mem": EnergyModel("M1_comp_mem", ("to_compute", "to_memory"),
-                                   use_intercept=False),
-        "M2_overhead": EnergyModel("M2_overhead", ("to_compute", "to_memory"),
+        "M0_flops": EnergyModel("M0_flops", (TOTAL,)),
+        "M1_comp_mem": EnergyModel("M1_comp_mem", (COMPUTE, MEMORY)),
+        "M2_overhead": EnergyModel("M2_overhead", (COMPUTE, MEMORY), use_intercept=True),
+        "M3_dispatch": EnergyModel("M3_dispatch", (COMPUTE, MEMORY, launch),
                                    use_intercept=True),
-        "M3_dispatch": EnergyModel("M3_dispatch",
-                                   ("to_compute", "to_memory", "n_launches"),
-                                   use_intercept=True),
-        "M4_fused": EnergyModel("M4_fused",
-                                ("to_compute", "to_memory", "n_launches", "n_fused_steps"),
+        "M4_fused": EnergyModel("M4_fused", (COMPUTE, MEMORY, launch, fused),
                                 use_intercept=True),
+        "M5_mem_split": EnergyModel("M5_mem_split", (COMPUTE, sram, hbm),
+                                    use_intercept=True),
+        "M6_compute_split": EnergyModel("M6_compute_split", (mac, nl, MEMORY),
+                                        use_intercept=True),
+        "M7_full_split": EnergyModel("M7_full_split", (mac, nl, sram, hbm),
+                                     use_intercept=True),
+        "M8_split_dispatch": EnergyModel("M8_split_dispatch", (mac, nl, sram, hbm, launch),
+                                         use_intercept=True),
+        "M9_full": EnergyModel("M9_full", (mac, nl, sram, hbm, launch, fused),
+                               use_intercept=True),
     }
 
 
@@ -163,23 +185,19 @@ def mape(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 
 def _rss(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     rss = float(np.sum((np.asarray(y_true, float) - np.asarray(y_pred, float)) ** 2))
-    # Numerical guard so a (near-)perfect fit does not send log to -inf; preserves ordering.
     floor = 1e-12 * max(1.0, float(np.sum(np.asarray(y_true, float) ** 2)))
     return max(rss, floor)
 
 
 def aic(y_true: np.ndarray, y_pred: np.ndarray, n_params: int) -> float:
-    """Gaussian AIC up to an additive constant common across models.
-
-    k = n_params + 1 (the +1 counts the estimated error variance).
-    """
+    """Gaussian AIC up to an additive constant common across models (k = n_params + 1)."""
     n = len(y_true)
     k = n_params + 1
     return n * np.log(_rss(y_true, y_pred) / n) + 2 * k
 
 
 def bic(y_true: np.ndarray, y_pred: np.ndarray, n_params: int) -> float:
-    """Gaussian BIC up to an additive constant common across models."""
+    """Gaussian BIC up to an additive constant common across models (k = n_params + 1)."""
     n = len(y_true)
     k = n_params + 1
     return n * np.log(_rss(y_true, y_pred) / n) + k * np.log(n)
@@ -208,30 +226,24 @@ def fit_and_select(
     energy_test: Sequence[float],
     models: Iterable[EnergyModel] | None = None,
 ) -> list[FitResult]:
-    """Fit every model on train, evaluate on test, return results sorted by AIC.
-
-    AIC/BIC use the train fit (in-sample, complexity-penalized). R^2/MAPE use
-    the held-out test set (generalization).
-    """
+    """Fit every model on train, evaluate on test, return results sorted by AIC."""
     if models is None:
         models = list(model_family().values())
 
     results: list[FitResult] = []
     for m in models:
         m.fit(records_train, energy_train)
-        yhat_train = m.predict(records_train)
-        yhat_test = m.predict(records_test)
         results.append(
             FitResult(
                 name=m.name,
                 n_params=m.n_params,
                 coef=m.coef_.copy(),
                 column_names=m.column_names,
-                r2_train=r2_score(energy_train, yhat_train),
-                r2_test=r2_score(energy_test, yhat_test),
-                mape_test=mape(energy_test, yhat_test),
-                aic=aic(energy_train, yhat_train, m.n_params),
-                bic=bic(energy_train, yhat_train, m.n_params),
+                r2_train=r2_score(energy_train, m.predict(records_train)),
+                r2_test=r2_score(energy_test, m.predict(records_test)),
+                mape_test=mape(energy_test, m.predict(records_test)),
+                aic=aic(energy_train, m.predict(records_train), m.n_params),
+                bic=bic(energy_train, m.predict(records_train), m.n_params),
             )
         )
     results.sort(key=lambda r: r.aic)
@@ -250,13 +262,13 @@ def best_by(results: Sequence[FitResult], criterion: str = "aic") -> FitResult:
 def summary_table(results: Sequence[FitResult]) -> str:
     """Human-readable ranking for the console / logbook."""
     lines = [
-        f"{'model':14s} {'k':>3s} {'R2_train':>9s} {'R2_test':>9s} "
+        f"{'model':18s} {'k':>3s} {'R2_train':>9s} {'R2_test':>9s} "
         f"{'MAPE%':>8s} {'AIC':>10s} {'BIC':>10s}",
-        "-" * 72,
+        "-" * 74,
     ]
     for r in results:
         lines.append(
-            f"{r.name:14s} {r.n_params:>3d} {r.r2_train:>9.4f} {r.r2_test:>9.4f} "
+            f"{r.name:18s} {r.n_params:>3d} {r.r2_train:>9.4f} {r.r2_test:>9.4f} "
             f"{r.mape_test:>8.2f} {r.aic:>10.1f} {r.bic:>10.1f}"
         )
     return "\n".join(lines)
