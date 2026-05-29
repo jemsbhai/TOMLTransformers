@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tomltransformers"
+version = "0.1.0"
+description = "Transistor-level energy modeling of transformer inference (TOML extension)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Muntaser Syed" },
+    { name = "Marius Silaghi" },
+    { name = "Sheikh Abujar" },
+    { name = "Sharun Akter Khushbu" },
+]
+keywords = ["energy efficiency", "transistor operations", "transformers", "LLM inference", "sustainable AI"]
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+]
+
+[project.optional-dependencies]
+measure = ["torch", "transformers", "pynvml", "pyyaml"]
+dev = ["pytest>=7", "pytest-cov"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,56 @@
+# --- Prework / superseded design notes (kept locally, not tracked) ---
+docs/design/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+*.egg
+dist/
+build/
+
+# --- Virtual environments ---
+venv/
+.venv/
+env/
+test_env/
+
+# --- Environment / secrets (never commit) ---
+.env
+.env.local
+*.key
+*secrets*
+*.pem
+
+# --- Tooling caches ---
+.pytest_cache/
+.benchmarks/
+.ipynb_checkpoints/
+
+# --- Experiment outputs: keep results/ + figures/ tracked, ignore large artifacts ---
+experiments/**/checkpoints/
+experiments/**/logs/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# --- HuggingFace / model + dataset caches ---
+.cache/
+hf_cache/
+*.bin
+
+# --- Raw power/measurement traces (large; summarized JSON is tracked) ---
+*_raw_power.csv
+*.nvml.csv
+
+# --- OS ---
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# --- IDE ---
+.vscode/
+.idea/
