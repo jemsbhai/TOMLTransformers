@@ -117,8 +117,8 @@ Following EXP-001 (which showed the prefill/decode MCER phase transition in prio
 - attention kind (sub-sweep): {eager, flash} on {DistilGPT2, GPT-2}, seq {512,1024,2048,4096}, fp16.
 
 ### Dependent variables / metrics
-- Measured energy per call (joules), via two methodologically distinct instruments: A = 20 Hz pynvml power-sample integration minus idle (the method the prior TOML papers used); B = Zeus ZeusMonitor reading the Ada hardware energy counter (nvmlDeviceGetTotalEnergyConsumption) minus idle.
-- Instrument agreement: |dE_A - dE_B| / dE_B per point (pre-registered median target <= 5%).
+- Measured energy per call (joules), via three independent instruments. Ours: A = 20 Hz pynvml power-sample integration minus idle (the method the prior TOML papers used); B = our direct read of the Ada hardware energy counter (nvmlDeviceGetTotalEnergyConsumption) minus idle. Cross-check: C = Zeus ZeusMonitor, an independent peer-reviewed implementation. A and B are always present; C is supplementary and never the sole source for any number.
+- Instrument agreement: pairwise |dE_i - dE_j| / dE_j across {A,B,C} per point (pre-registered median target <= 5%).
 - Fitted coefficients of M0-M9 (NNLS); held-out R2 and MAPE; AIC/BIC.
 - MCER recomputed from fitted coefficients (dimensionless).
 - Held-out MAPE of each baseline vs this model (paired; Holm-Bonferroni corrected).
@@ -130,7 +130,7 @@ Following EXP-001 (which showed the prefill/decode MCER phase transition in prio
 - Baseline being improved upon: EXP-001's prior-weighted TO ratios (uncalibrated) and the M0 single-term framing.
 
 ### Protocol
-1. **Prerequisite: verify Zeus on Windows.** Confirm `pip install zeus` imports and that ZeusMonitor returns nonzero energy on this box (NVML/nvml.dll ships with the driver, so the GPU path should work; Windows is undocumented, RAPL/AMD/daemon paths are Linux-only). If it fails: fall back to instrument A only and drop the dual-instrument agreement claim (log the decision; do not abandon it silently). Set `measurement.zeus_windows_verified` accordingly.
+1. **Set up and check Zeus (cross-check instrument C).** `pip install zeus`, confirm it imports and that ZeusMonitor returns nonzero energy on this box (NVML/nvml.dll ships with the driver, so the GPU path should work; Windows is undocumented, RAPL/AMD/daemon paths are Linux-only). If it cannot return energy here, record C as "unavailable" and proceed with our instruments A and B; C is never required and is never the sole source. Our own A+B measurement is built and run regardless.
 2. **Snapshot environment.** `python scripts/snapshot_env.py experiments/exp_002_size_sweep/environment.json` on the measurement machine (records driver, CUDA, package versions; never hand-authored).
 3. **Freeze config.** Copy `configs/exp_002.yaml` to `experiments/exp_002_size_sweep/config.yaml`; the frozen copy is what runs.
 4. **Commit clean.** Repo has no uncommitted changes before any measurement; record the commit SHA in this entry as an addendum.

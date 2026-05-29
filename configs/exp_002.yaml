@@ -66,34 +66,47 @@ attention_compare:
   precision: fp16
 
 # -----------------------------------------------------------------------------
-# Measurement protocol (most-defensible; dual instrument)
+# Measurement protocol (most-defensible; THREE independent instruments)
 # -----------------------------------------------------------------------------
 measurement:
-  # The two instruments are METHODOLOGICALLY DISTINCT (not the same API twice):
+  # We measure every point with our OWN technique AND with Zeus, independently.
+  # Our technique is itself two methodologically distinct readings (A and B);
+  # Zeus (C) is a third, peer-reviewed implementation used as a cross-check.
+  # Zeus is NEVER the sole source for any number: A is always present, so the
+  # experiment stands even if C is unavailable.
   #   A is sampled-power integration; B is the hardware energy accumulator.
   # On Ada (Volta+), B reads nvmlDeviceGetTotalEnergyConsumption directly.
-  # Their agreement validates that 20 Hz sampling (the method the prior TOML
-  # signals/cloud papers relied on) does not miss transients.
+  # A-vs-B agreement validates that 20 Hz sampling (the method the prior TOML
+  # signals/cloud papers relied on) does not miss transients; A/B-vs-C adds an
+  # independent-codebase check on top.
   instrument_A:
     name: pynvml_power_integration
     api: nvmlDeviceGetPowerUsage
     sampling_hz: 20              # matches prior TOML papers' NVML sampling rate
     energy: integrate_power_minus_idle   # dE_A = integral(P_active - P_idle) dt
+    role: primary                # ALWAYS measured; never dropped
   instrument_B:
-    name: zeus_zeusmonitor
-    api: nvmlDeviceGetTotalEnergyConsumption   # Ada/Volta+ hardware counter via Zeus
-    pip_package: zeus           # legacy name: zeus-ml; verify import path at install
+    name: pynvml_energy_counter
+    api: nvmlDeviceGetTotalEnergyConsumption   # Ada/Volta+ hardware accumulator (our call)
     energy: total_energy_minus_idle      # dE_B = E_window - E_idle(equal duration)
+    role: primary                # ALWAYS measured; never dropped
+  instrument_C:
+    name: zeus_zeusmonitor
+    api: zeus.monitor.ZeusMonitor        # independent peer-reviewed implementation
+    pip_package: zeus           # legacy name: zeus-ml; verify import path at install
+    energy: total_energy_minus_idle
+    role: independent_crosscheck # supplementary; NEVER the only source
   agreement:
-    metric: relative_abs_diff   # |dE_A - dE_B| / dE_B, per measured point
-    target_median: 0.05         # pre-registered: median agreement within 5%
-  # PREREQUISITE before EXP-002 runs (Open Question, Section 8 of plan):
-  #   Verify ZeusMonitor returns nonzero energy on THIS Windows box. NVML
-  #   (nvml.dll) ships with the driver, so the GPU path should work, but Zeus
-  #   Windows support is undocumented (RAPL/AMD/daemon paths are Linux-only).
-  #   If verification fails: fall back to instrument A only and DROP the
-  #   dual-instrument agreement claim (logged, not silently abandoned).
-  zeus_windows_verified: false
+    metric: relative_abs_diff   # pairwise |dE_i - dE_j| / dE_j, per measured point
+    pairs: [[A, B], [A, C], [B, C]]
+    target_median: 0.05         # pre-registered: median pairwise agreement within 5%
+  zeus_windows_check:
+    # Zeus GPU path depends only on NVML (nvml.dll ships with the Windows driver),
+    # so it should work; Windows is undocumented (RAPL/AMD/daemon paths are Linux-only).
+    # If ZeusMonitor cannot return energy on this box, instrument C is recorded as
+    # "unavailable" for those points and A+B carry the result. C is never required.
+    status: pending_verification
+    on_failure: record_C_unavailable_continue_with_A_and_B
 
   repeats: 5                    # PHYSICAL measurement replicates per point
   cv_threshold: 0.05            # flag/repeat points whose CV exceeds 5%
