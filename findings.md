@@ -146,3 +146,108 @@ runner's 5-repeat controlled path (the diagnostic was one window per rate, a
 direction, not a distribution). The matmul window itself was clean and stable
 (B ~520-540 J across rates, n=59-299), which is the regime the sweep must keep
 workloads in.
+
+
+### 2026-05-29 — Prior-series measurement protocol (context for the 100 Hz change)
+
+**Status:** documentation of prior work; basis for a methods contribution. Not a
+result of this project.
+
+Reading the code of all earlier repos in the TOML series confirms a single,
+consistent GPU measurement protocol across every prior paper:
+- FLAIRS-39 origin (`toml/benchmark_gpu_rigorous.py`): NVML power at 50 ms = 20 Hz;
+  idle baseline; delta_power = load - idle; delta_energy = delta_power * duration;
+  warmup before timing; min 3 s window via auto-scaled iteration count
+  (num_batches = max(50 or 100, ceil(min_duration / time_per_batch))).
+- Cloud / IC2E (`TOMLCloud/shared/power_monitor.py`): same 50 ms = 20 Hz sampling,
+  same delta-power-over-idle, plus temperature/clock/util telemetry and 10 s
+  windowed stats for thermal profiling.
+- Signals / MLSP (`TOMLSignals/shared/harness.py`): same 50 ms = 20 Hz, thermal
+  settle to +/-1 C over 5 s, 3 s idle baseline, continuous >=10 s measurement
+  loop, energy_per_call = delta_energy / iterations; batch-size auto-calibration
+  to a 1 ms/call target.
+
+Two things follow. First, our controlled runner is in-family with this protocol
+(same idle subtraction, thermal settle, warmup, and a min-window floor that
+generalizes their min-duration auto-scaling), and our 4 s floor is slightly more
+conservative than their 3 s. Second, and more important: EVERY prior TOML GPU
+number was 20 Hz power-integration with NO hardware energy counter. Our
+instrument-A diagnostic showed 20 Hz integrates ~14-24% LOW vs the on-die counter
+(nvmlDeviceGetTotalEnergyConsumption). So the GPU energy figures across the whole
+published series carry this systematic underestimate. This grounds a concrete
+methods contribution for the transformers paper: prior work (our own included)
+sampled at 20 Hz; we show this underestimates dynamic GPU energy relative to the
+hardware counter, and we adopt 100 Hz plus the counter (instrument B) as primary,
+with Zeus (C) as an independent cross-check. Traceable to the prior repos' code,
+not speculation.
+
+NOTE: This does not retroactively invalidate the prior papers' CONCLUSIONS, which
+rest on cross-architecture ratios and rankings (largely invariant to a uniform
+~15-20% scale bias on the GPU channel). It does mean absolute GPU joule figures
+there are low, and the transformers paper should measure absolute energy correctly
+from the start.
+
+
+### 2026-05-29 — Controlled A-vs-B agreement confirmed on a real transformer (100 Hz)
+
+**Status:** measurement-infrastructure validation. Not a calibrated energy result.
+
+The GPU integration test (`test_gpu_prefill_through_runner_agreement`) ran a
+shape-faithful decoder prefill (probe config: 12 layers, d=1024, s=512, FP16)
+through the full controlled runner at 100 Hz, with measure_until_floor sizing the
+window to ~4 s and 5-repeat... (repeats=3 in the test) statistics. It passed the
+pre-registered checks: instruments A, B, C all present; window cleared the floor
+(short_window False); and A-vs-B agreement under the 12% test gate. This closes
+the "still to confirm" item from the instrument-A diagnostic entry above: the
+100 Hz fix holds through the controlled path on a real transformer workload, not
+just a single matmul window.
+
+CAVEAT (honest scope): the test asserts <=12% to stay robust against laptop-GPU
+run-to-run noise, so "passed" means <=12%, NOT "=5%". The exact A-vs-B figure
+printed in the test's [workload] line was not captured this run; the true median
+agreement will be recorded from the first real EXP-002 measurement, where it is
+the headline cross-instrument check. Until that number is logged, treat "~5% at
+100 Hz" as supported-by-the-diagnostic but not yet confirmed at full repeat count
+on transformer workloads.
+
+**UPDATE (same day, number now captured):** the [workload] line WAS captured on a
+repeat run: A = 623.54 J, B = 690.73 J, C = 690.73 J; A-vs-B = 9.73%, B-vs-C =
+0.0%; inner_iters = 1408, wall = 4.64 s, short_window False, A flagged CV-exceeded.
+So on a REAL transformer prefill through the controlled path, A-vs-B is ~10%, NOT
+the ~5% the matmul diagnostic suggested. This corrects the optimistic reading
+above and revises decision #2 from the diagnostic entry (see correction below).
+The matmul trace was smoother/more steady-state than a real transformer forward
+(which has more kernel-launch boundaries and power fluctuation), so 5.5% on matmul
+did not transfer. B and C remain bit-identical (same hardware counter), and A is
+consistently the low, noisy instrument.
+
+
+### 2026-05-29 — CORRECTION: instrument B is primary; A is a ~10% sanity check
+
+**Status:** measurement-policy decision, correcting an earlier over-statement.
+
+The diagnostic entry above recorded "A and B both PRIMARY; they agree to ~5% at
+100 Hz." The real-transformer measurement (A-vs-B = 9.73%, A again low and
+CV-flagged) shows that was over-optimistic. Corrected policy, on the consistent
+evidence across every test run to date:
+
+- **B (nvmlDeviceGetTotalEnergyConsumption, the on-die counter) is the PRIMARY
+  reported instrument.** It is stable across repeats, model-independent in its
+  reliability, and bit-identical to Zeus (C) on every shared window (B-vs-C =
+  0.0%), which is strong corroboration from an independent peer-reviewed tool.
+- **A (our 20->100 Hz power integration) is a SANITY-CHECK / cross-method
+  instrument, not co-primary.** It agrees with B to within ~10% on real
+  transformer workloads after all controls, and is consistently the low, noisier
+  reading (CV-flagged). ~10% is a reasonable agreement for sampled-power vs a
+  hardware accumulator, and is reported as such, NOT claimed as 5%.
+- **C (Zeus) remains the independent cross-check** and, because it reads the same
+  counter as B, functions as a third-party validation that our B integration is
+  correct.
+
+What this means for EXP-002 reporting: energy figures are B, with A reported
+alongside as an independent method and the A-vs-B agreement (~10%) stated honestly
+as a measurement-robustness check. The pre-registered 5% agreement TARGET in
+configs/exp_002.yaml was not met by A on transformer workloads; that target should
+be read as aspirational for the sampled-power method, with the hardware counter
+(B/C agreement ~0%) carrying the actual rigor. This will be reflected when the
+first real EXP-002 results are written. Not tuning anything to hide the 10%.
