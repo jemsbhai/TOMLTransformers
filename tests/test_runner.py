@@ -162,6 +162,53 @@ def test_pairwise_agreement_on_means(no_hardware, monkeypatch):
     assert abs(ag["A-B"] - 0.10) < 1e-9       # |110-100|/100
 
 
+# --- window-length floor (soft guard) -----------------------------------------
+
+
+def test_short_window_flag_trips_below_floor(no_hardware, monkeypatch):
+    monkeypatch.setattr(rn, "_read_idle_power_w", lambda idx, sec, hz=100.0: 0.0)
+    # wall_time 0.5 s, floor 2.0 s -> flagged, but still measured and returned.
+    monkeypatch.setattr(rn, "measure_once",
+                        _fake_window_factory([{"A": 10.0, "B": 10.0}], wall_time=0.5))
+    res = rn.measure_point(lambda: None, "short", repeats=3, warmup_iters=0,
+                           thermal_settle=False, min_window_s=2.0)
+    assert res.ok                       # soft guard: still a valid measurement
+    assert res.short_window is True
+    assert any("SHORT WINDOW" in n for n in res.notes)
+
+
+def test_short_window_flag_clear_above_floor(no_hardware, monkeypatch):
+    monkeypatch.setattr(rn, "_read_idle_power_w", lambda idx, sec, hz=100.0: 0.0)
+    monkeypatch.setattr(rn, "measure_once",
+                        _fake_window_factory([{"A": 10.0, "B": 10.0}], wall_time=3.0))
+    res = rn.measure_point(lambda: None, "long", repeats=3, warmup_iters=0,
+                           thermal_settle=False, min_window_s=2.0)
+    assert res.short_window is False
+    assert not any("SHORT WINDOW" in n for n in res.notes)
+
+
+def test_short_window_uses_median_not_single_blip(no_hardware, monkeypatch):
+    monkeypatch.setattr(rn, "_read_idle_power_w", lambda idx, sec, hz=100.0: 0.0)
+    # One fast repeat (0.3 s) among three healthy ones (3 s); median = 3 s -> clear.
+    monkeypatch.setattr(rn, "measure_once", _fake_window_factory(
+        [{"A": 10.0}], wall_time=3.0))  # base factory yields fixed wall_time
+    # Override to vary wall_time per call:
+    state = {"i": 0}
+    walls = [3.0, 0.3, 3.0]
+
+    def varying(fn, **kwargs):
+        fn()
+        w = MeasurementWindow(wall_time_s=walls[state["i"] % len(walls)])
+        state["i"] += 1
+        w.energy_j = {"A": 10.0, "B": 10.0}
+        w.available = ["A", "B"]
+        return w
+    monkeypatch.setattr(rn, "measure_once", varying)
+    res = rn.measure_point(lambda: None, "blip", repeats=3, warmup_iters=0,
+                           thermal_settle=False, min_window_s=2.0)
+    assert res.short_window is False     # median 3.0 s, the single 0.3 s blip ignored
+
+
 # --- GPU integration (auto-skip without NVML/CUDA) ----------------------------
 
 

@@ -38,7 +38,7 @@ from .instruments import measure_once, MeasurementWindow
 # --- helpers: device telemetry (best-effort; degrade quietly) -----------------
 
 
-def _read_idle_power_w(device_index: int, seconds: float, sampling_hz: float = 20.0) -> Optional[float]:
+def _read_idle_power_w(device_index: int, seconds: float, sampling_hz: float = 100.0) -> Optional[float]:
     """Mean idle GPU power (W) over `seconds`, via NVML. None if unavailable."""
     try:
         import pynvml
@@ -146,6 +146,7 @@ class PointResult:
     clocks_mhz: List[Dict[str, Optional[float]]] = field(default_factory=list)
     thermal: Dict[str, object] = field(default_factory=dict)
     instruments_available: List[str] = field(default_factory=list)
+    short_window: bool = False     # True if median measured wall-time < min_window_s
     skip_reason: Optional[str] = None
     notes: List[str] = field(default_factory=list)
 
@@ -155,11 +156,13 @@ class PointResult:
 
 def _summarize(values: List[float]) -> Dict[str, float]:
     if not values:
-        return {"mean": float("nan"), "std": float("nan"), "cv": float("nan"), "n": 0}
+        return {"mean": float("nan"), "std": float("nan"), "cv": float("nan"),
+                "median": float("nan"), "n": 0}
     mean = statistics.fmean(values)
     std = statistics.stdev(values) if len(values) > 1 else 0.0
     cv = (std / mean) if mean else float("nan")
-    return {"mean": mean, "std": std, "cv": cv, "n": len(values)}
+    return {"mean": mean, "std": std, "cv": cv,
+            "median": statistics.median(values), "n": len(values)}
 
 
 # --- the runner ---------------------------------------------------------------
@@ -173,6 +176,7 @@ def measure_point(
     warmup_iters: int = 50,
     idle_baseline_s: float = 3.0,
     cv_threshold: float = 0.05,
+    min_window_s: float = 2.0,
     sampling_hz: float = 100.0,
     device_index: int = 0,
     thermal_settle: bool = True,
@@ -188,6 +192,14 @@ def measure_point(
     `fn` is a zero-argument callable that performs ONE execution of the workload
     (e.g. one prefill forward, or one decode window of K tokens). It is called
     `warmup_iters` times unmeasured, then `repeats` times measured.
+
+    `min_window_s` is the window-length floor from the instrument-A diagnostic:
+    on sub-second windows even the hardware energy counter is self-inconsistent,
+    so a measured execution should last at least this long. This is a SOFT guard:
+    if the median measured wall-time is under the floor, `res.short_window` is set
+    True and a note is added, but the point is still measured and returned. It is
+    the sweep's job to size each workload (loop the per-execution work) so small
+    models clear the floor; this guard catches the cases where it failed to.
 
     OOM (torch.cuda.OutOfMemoryError or a RuntimeError mentioning 'out of memory')
     during warmup or measurement is caught and recorded as a skip; the sweep
@@ -271,6 +283,19 @@ def measure_point(
 
     res.n_repeats = len(res.wall_time_s)
     res.instruments_available = sorted(res.energy_j_dyn.keys())
+
+    # ---- window-length floor (soft guard; diagnostic 2026-05-29) ----
+    # Sub-floor windows put even the hardware counter in its unreliable regime.
+    # Flag on the MEDIAN wall-time so a single transient repeat does not trip it.
+    if res.wall_time_s:
+        median_wall = statistics.median(res.wall_time_s)
+        if median_wall < min_window_s:
+            res.short_window = True
+            res.notes.append(
+                f"SHORT WINDOW: median wall {median_wall:.3f} s < min_window_s "
+                f"{min_window_s:.1f} s; energy (incl. hardware counter B) is in the "
+                f"unreliable sub-window regime. Loop the workload more per execution."
+            )
 
     # ---- summaries + CV gate (on dynamic energy, the reported quantity) ----
     for key, vals in res.energy_j_dyn.items():
