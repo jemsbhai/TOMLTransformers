@@ -299,3 +299,34 @@ step (10 -> 11 -> 12), decode_step processes a single token, cached K/V carry
 n_kv_heads under GQA, and both growing/fixed_step modes execute. The memory-bound
 signature (cache READ scaling with context) is therefore built correctly; whether
 it produces MCER >> 1 in JOULES is the calibration question EXP-002 will answer.
+
+
+### 2026-05-29 — Encoder workload runs on hardware; B-vs-C is ~1%, not always 0
+
+**Status:** measurement-infrastructure validation + a small correction to a
+stated invariant. Not a calibrated energy result.
+
+The encoder GPU integration test (`test_gpu_encode_through_runner`, probe config
+BERT-large-shaped: 24L, d=1024, s=512, FP16, bidirectional) ran through the
+controlled runner: inner_iters=638, wall 4.03 s, B=599.71 J, A=543.97 J,
+C=606.98 J; A-vs-B=9.29%, A-vs-C=10.38%, B-vs-C=1.2%; only A CV-flagged; window
+cleared the 4 s floor. Encode behaves like prefill (compute-bound, steady power,
+A in the ~8-10% band, only A noisy) — as expected, since a single bidirectional
+pass amortizes weights over the sequence just as prefill does.
+
+**Correction to a stated invariant:** earlier entries said B and C are
+"bit-identical (B-vs-C = 0.0%)". Here B-vs-C = 1.2%. The accurate statement is:
+B and C read the SAME on-die counter but bracket their own measurement windows
+independently, so their windows are not bitwise-coincident; when they differ by a
+few ms they can diverge ~1% on a high-energy window. On the earlier prefill/decode
+runs the brackets happened to coincide (0.0%); they need not. So: B and C agree to
+~1% (often exactly), reading the same counter — NOT "always identical". This does
+not change the B-primary / C-cross-check policy; it slightly softens the
+"bit-identical" phrasing to "~1%, same counter".
+
+ENCODER WORKLOAD CORRECTNESS is established by CPU structural tests: text configs
+use a token-embedding gather (no patch_proj), vision configs use a patch
+projection PATCH_DIM->d_model (no token embedding), ViT fixes s = num_patches + 1
+and ignores seq_len, QKV width is GQA-aware, and the classifier head emits
+num_classes logits (vision) or d_model (text, num_classes=0) on the pooled token.
+Matches encoder.py (bidirectional, no KV cache, no prefill/decode split).
