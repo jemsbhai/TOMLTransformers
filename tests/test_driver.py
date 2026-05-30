@@ -165,3 +165,47 @@ def test_summary_file_written(tmp_path, monkeypatch):
     assert os.path.isfile(summ)
     data = json.load(open(summ, encoding="utf-8"))
     assert "progress" in data and data["progress"]["ok"] == 1
+
+
+def test_max_hours_stops_early_and_resumes(tmp_path, monkeypatch):
+    _clean_git(monkeypatch)
+    # measure_single_point returns ok; we simulate time passing via a fake clock
+    # that jumps past the budget after the first point is measured.
+    pts = [
+        PointSpec(model="GPT-2", arch="decoder_only", phase="prefill", seq_len=128),
+        PointSpec(model="GPT-2", arch="decoder_only", phase="prefill", seq_len=256),
+        PointSpec(model="GPT-2", arch="decoder_only", phase="prefill", seq_len=512),
+    ]
+    measured = []
+
+    # Fake clock: t_start reads 0; the budget check before point 2 reads > budget.
+    clock = {"t": 0.0}
+    seq = iter([0.0,          # t_start
+                0.0,          # budget check before point 1 (under budget)
+                100000.0,     # budget check before point 2 (over budget) -> stop
+                100000.0])    # summary elapsed
+    def fake_time():
+        try:
+            return next(seq)
+        except StopIteration:
+            return 100000.0
+    monkeypatch.setattr(dv.time, "time", fake_time)
+
+    def fake(ps, **kw):
+        measured.append(ps.key())
+        return _fake_record(ps, ok=True)
+    monkeypatch.setattr(dv, "measure_single_point", fake)
+
+    run_dir = str(tmp_path / "run")
+    prog = dv.run_sweep(points=pts, run_dir=run_dir, max_hours=6.0, log=False)
+    # Only the first point measured before the budget halted the run.
+    assert prog.stopped_early is True
+    assert prog.measured == 1
+    assert measured == [pts[0].key()]
+
+    # Resume (no budget): the remaining two points are measured, first is skipped.
+    monkeypatch.setattr(dv.time, "time", lambda: 0.0)
+    measured.clear()
+    prog2 = dv.run_sweep(points=pts, run_dir=run_dir, log=False)
+    assert prog2.skipped_done == 1
+    assert sorted(measured) == sorted([pts[1].key(), pts[2].key()])

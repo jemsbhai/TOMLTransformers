@@ -45,6 +45,8 @@ def main() -> int:
                     help="held-constant dimension for enc-dec source/target sub-sweeps")
     ap.add_argument("--target-s", type=float, default=4.0,
                     help="target per-execution window length (seconds)")
+    ap.add_argument("--max-hours", type=float, default=None,
+                    help="stop cleanly after ~N hours (for nightly chunks; resume by re-running)")
     args = ap.parse_args()
 
     try:
@@ -56,6 +58,7 @@ def main() -> int:
             enc_dec_anchor=args.enc_dec_anchor,
             include_attention_compare=not args.no_attention_compare,
             target_s=args.target_s,
+            max_hours=args.max_hours,
         )
     except PreflightError as exc:
         print(f"\nPRE-FLIGHT FAILED:\n{exc}\n", file=sys.stderr)

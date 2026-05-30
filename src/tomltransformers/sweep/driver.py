@@ -91,6 +91,7 @@ class SweepProgress:
     failed: int = 0
     oom: int = 0
     short_window: int = 0
+    stopped_early: bool = False           # True if a max_hours budget halted the run
     keys_failed: List[str] = field(default_factory=list)
 
     def as_dict(self) -> dict:
@@ -98,7 +99,8 @@ class SweepProgress:
             "total": self.total, "measured": self.measured,
             "skipped_done": self.skipped_done, "ok": self.ok,
             "failed": self.failed, "oom": self.oom,
-            "short_window": self.short_window, "keys_failed": self.keys_failed,
+            "short_window": self.short_window, "stopped_early": self.stopped_early,
+            "keys_failed": self.keys_failed,
         }
 
 
@@ -115,6 +117,7 @@ def run_sweep(
     target_s: float = 4.0,
     min_window_s: float = 4.0,
     sampling_hz: float = 100.0,
+    max_hours: Optional[float] = None,
     log: bool = True,
     progress_callback=None,
 ) -> SweepProgress:
@@ -127,6 +130,11 @@ def run_sweep(
     Pre-flight runs first and HARD-REFUSES a dirty git tree unless allow_dirty
     (records the override). environment.json and the frozen config copy are written
     into run_dir. Results are appended to run_dir/results_filename as JSONL.
+
+    max_hours: if set, the sweep stops cleanly BEFORE starting a point once this
+    wall-clock budget is exceeded (the in-progress point always finishes and is
+    recorded). This supports running the long sweep in nightly chunks: re-run the
+    same command and resume skips the done points. None = no budget (run to end).
 
     Returns a SweepProgress summary. Never raises on a single point's failure: the
     failure is recorded and the sweep continues. PreflightError (dirty tree) is the
@@ -160,11 +168,23 @@ def run_sweep(
               f"results -> {results_path}")
 
     t_start = time.time()
+    budget_s = (max_hours * 3600.0) if max_hours else None
     for i, ps in enumerate(points, 1):
         key = ps.key()
         if key in done:
             prog.skipped_done += 1
             continue
+
+        # Wall-clock budget: stop BEFORE starting a new point once exceeded, so
+        # the in-progress point is never interrupted. Nightly-chunk support.
+        if budget_s is not None and (time.time() - t_start) >= budget_s:
+            prog.stopped_early = True
+            if log:
+                remaining = sum(1 for p in points[i - 1:] if p.key() not in done)
+                print(f"[sweep] max_hours budget ({max_hours}h) reached; stopping "
+                      f"cleanly with ~{remaining} point(s) left. Re-run to resume.",
+                      flush=True)
+            break
 
         repeats = _repeats_for(ps.phase)
         if log:
