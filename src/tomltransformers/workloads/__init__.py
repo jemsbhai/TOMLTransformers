@@ -30,12 +30,14 @@ from __future__ import annotations
 from .protocol import Workload, WorkloadSpec
 from .decoder import build_decoder_workload, calibrate_inner_iters, measure_until_floor
 from .encoder import build_encoder_workload
+from .encoder_decoder import build_enc_dec_workload
 
 __all__ = [
     "Workload",
     "WorkloadSpec",
     "build_decoder_workload",
     "build_encoder_workload",
+    "build_enc_dec_workload",
     "calibrate_inner_iters",
     "measure_until_floor",
 ]
