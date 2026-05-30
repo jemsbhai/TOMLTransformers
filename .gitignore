@@ -32,6 +32,7 @@ test_env/
 # --- Experiment outputs: keep results/ + figures/ tracked, ignore large artifacts ---
 experiments/**/checkpoints/
 experiments/**/logs/
+experiments/_smoke/
 *.pt
 *.pth
 *.ckpt
