@@ -159,3 +159,20 @@ _To be completed after the run._
 - Config (source): `configs/exp_002.yaml`
 - Frozen config / environment / seeds / results: under `experiments/exp_002_size_sweep/`
 - Harness: to be added (next step), entry point will be recorded here.
+- Instrument layer: `src/tomltransformers/measure/instruments.py` (+ `tests/test_instruments.py`), committed 64c8f0c.
+
+### Addendum 2026-05-29 — instrument layer up; Zeus-on-Windows prerequisite RESOLVED
+The three-instrument measurement layer is built and all 91 tests pass. Smoke test
+on the actual Windows + RTX 4090 (Ada) machine confirms all three instruments are
+live: A (our 20 Hz nvmlDeviceGetPowerUsage integration), B (our direct
+nvmlDeviceGetTotalEnergyConsumption read), C (Zeus ZeusMonitor, with
+approx_instant_energy=True). Protocol step 1 is therefore satisfied:
+`measurement.instrument_C` is AVAILABLE on this box, not a fallback; B and C read
+identical energy on a shared window (same hardware accumulator), validating B.
+One known issue carried to the runner: on an uncontrolled window (no idle
+subtraction, no warmup-excluded timing, 19 samples) instrument A read ~27% high
+vs B; this is an upper bound, not a result, and the runner must re-measure A-vs-B
+agreement under thermal-settled, idle-subtracted conditions before any energy is
+reported. See findings.md (2026-05-29 instrument-layer entry) for detail. No
+measurement of the EXP-002 grid has been run; Results/Observations/Interpretation
+remain open.
