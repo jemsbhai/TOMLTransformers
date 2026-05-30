@@ -109,47 +109,106 @@ class _DecoderModel:
             "relu": F.relu,
         }.get(kind, F.gelu)
 
-    def _attn(self, x, attn_kind: str, last_token_only: bool):
+    def _layer_attn_block(self, layer, x, *, attn_kind, kv_cache=None, layer_idx=None):
+        """One transformer layer: pre-norm, attention, post-norm, FFN, residuals.
+
+        If kv_cache is None -> full self-attention over all positions in x
+        (prefill: causal). If kv_cache is provided -> incremental decode: x is a
+        single token; its K/V are appended to kv_cache[layer_idx] and attention
+        runs over the whole cached context (the cache READ grows with context,
+        which is the memory-bound behavior decode_step counts).
+        """
         torch = _torch()
         import torch.nn.functional as F
         B, S, _ = x.shape
         nh, nkv, hd = self.n_heads, self.n_kv_heads, self.head_dim
-        out_results = []
+        q_dim = nh * hd
+        kv_dim = nkv * hd
+
+        h = layer["norm1"](x)
+        qkv = layer["qkv"](h)
+        q = qkv[..., :q_dim].view(B, S, nh, hd).transpose(1, 2)
+        k = qkv[..., q_dim:q_dim + kv_dim].view(B, S, nkv, hd).transpose(1, 2)
+        v = qkv[..., q_dim + kv_dim:].view(B, S, nkv, hd).transpose(1, 2)
+
+        is_causal = True
+        if kv_cache is not None:
+            # Append this step's K/V to the persistent cache, then attend over all.
+            pk, pv = kv_cache[layer_idx]
+            if pk is not None:
+                k = torch.cat([pk, k], dim=2)   # grow along the sequence (time) axis
+                v = torch.cat([pv, v], dim=2)
+            kv_cache[layer_idx] = (k, v)
+            # Single query attends to the entire cached context: no causal masking
+            # needed (everything in the cache is a past/current position).
+            is_causal = False
+
+        if nkv != nh:
+            rep = nh // nkv
+            k = k.repeat_interleave(rep, dim=1)
+            v = v.repeat_interleave(rep, dim=1)
+
+        if attn_kind == "eager":
+            backends = [torch.nn.attention.SDPBackend.MATH]
+        else:
+            backends = [
+                torch.nn.attention.SDPBackend.FLASH_ATTENTION,
+                torch.nn.attention.SDPBackend.EFFICIENT_ATTENTION,
+                torch.nn.attention.SDPBackend.MATH,
+            ]
+        with torch.nn.attention.sdpa_kernel(backends):
+            a = F.scaled_dot_product_attention(q, k, v, is_causal=is_causal)
+        a = a.transpose(1, 2).reshape(B, S, q_dim)
+        x = x + layer["out"](a)
+        h2 = layer["norm2"](x)
+        if self.is_gated:
+            ff = layer["down"](self._act(layer["gate"](h2)) * layer["up"](h2))
+        else:
+            ff = layer["down"](self._act(layer["up"](h2)))
+        x = x + ff
+        return x
+
+    def _attn(self, x, attn_kind: str, last_token_only: bool):
+        """Prefill forward: full causal self-attention over all positions."""
         for layer in self.layers:
-            h = layer["norm1"](x)
-            qkv = layer["qkv"](h)
-            q_dim = nh * hd
-            kv_dim = nkv * hd
-            q = qkv[..., :q_dim].view(B, S, nh, hd).transpose(1, 2)
-            k = qkv[..., q_dim:q_dim + kv_dim].view(B, S, nkv, hd).transpose(1, 2)
-            v = qkv[..., q_dim + kv_dim:].view(B, S, nkv, hd).transpose(1, 2)
-            # GQA: expand kv heads to query heads if needed.
-            if nkv != nh:
-                rep = nh // nkv
-                k = k.repeat_interleave(rep, dim=1)
-                v = v.repeat_interleave(rep, dim=1)
-            # SDPA backend selection: flash/efficient vs math (materialized scores).
-            if attn_kind == "eager":
-                backends = [torch.nn.attention.SDPBackend.MATH]
-            else:
-                backends = [
-                    torch.nn.attention.SDPBackend.FLASH_ATTENTION,
-                    torch.nn.attention.SDPBackend.EFFICIENT_ATTENTION,
-                    torch.nn.attention.SDPBackend.MATH,
-                ]
-            with torch.nn.attention.sdpa_kernel(backends):
-                a = F.scaled_dot_product_attention(q, k, v, is_causal=True)
-            a = a.transpose(1, 2).reshape(B, S, q_dim)
-            x = x + layer["out"](a)
-            h2 = layer["norm2"](x)
-            if self.is_gated:
-                ff = layer["down"](self._act(layer["gate"](h2)) * layer["up"](h2))
-            else:
-                ff = layer["down"](self._act(layer["up"](h2)))
-            x = x + ff
+            x = self._layer_attn_block(layer, x, attn_kind=attn_kind)
         x = self.final_norm(x)
         if last_token_only:
             x = x[:, -1:, :]
+        return self.lm_head(x)
+
+    def new_kv_cache(self):
+        """Fresh per-layer KV cache: list of (K, V) slots, initially empty."""
+        return [(None, None) for _ in range(self.n_layers)]
+
+    def prefill_into_cache(self, ids, *, attn_kind: str):
+        """Run a prefill over `ids`, populating and returning a KV cache.
+
+        This is the realistic decode setup: the context is established by a real
+        prefill pass (so the cache holds true K/V for `ids.shape[1]` positions),
+        after which decode steps append one token at a time.
+        """
+        torch = _torch()
+        x = self.embed(ids)
+        cache = self.new_kv_cache()
+        for li, layer in enumerate(self.layers):
+            x = self._layer_attn_block(layer, x, attn_kind=attn_kind,
+                                       kv_cache=cache, layer_idx=li)
+        return cache
+
+    def decode_step(self, token_ids, kv_cache, *, attn_kind: str):
+        """One decode step: a single token, attending over the full cached context.
+
+        token_ids: (B, 1) int. Computes 1-token QKV, appends K/V to kv_cache,
+        attends over the grown cache, and returns the lm_head logits. Mirrors
+        architectures/decoder.py decode_step: 1-token compute, cache read scales
+        with context.
+        """
+        x = self.embed(token_ids)   # (B, 1, d)
+        for li, layer in enumerate(self.layers):
+            x = self._layer_attn_block(layer, x, attn_kind=attn_kind,
+                                       kv_cache=kv_cache, layer_idx=li)
+        x = self.final_norm(x)
         return self.lm_head(x)
 
 
@@ -257,27 +316,39 @@ def build_decoder_workload(
     inner_iters: int = 1,
     batch_size: int = 1,
     device_index: int = 0,
-    decode_tokens: int = 64,          # K, the decode window (tokens per execution)
+    decode_tokens: int = 64,          # K: tokens generated per execution (growing mode)
+    decode_mode: str = "growing",     # "growing" | "fixed_step"
     pretrained_id: Optional[str] = None,
 ) -> CallableWorkload:
     """Construct a runnable decoder-only workload.
 
     prefill: one forward over `seq_len` tokens (no generation), lm_head on the
              last token. Looped `inner_iters` times per execution.
-    decode:  prefill a KV cache to `seq_len`, then generate `decode_tokens`
-             tokens; the whole generation is one execution, looped `inner_iters`
-             times. (Uses a real KV cache via transformers when weights are
-             pretrained; for random weights, see note below.)
 
-    NOTE: this first build implements the PREFILL path fully for both random and
-    pretrained weights. The decode path is stubbed to raise NotImplementedError
-    pending the KV-cache workload design (next step), so we do not silently
-    measure a wrong decode.
+    decode:  establish a KV cache at context length `seq_len` (via a real prefill),
+             then generate tokens. Two selectable modes:
+               - "growing" (default, TRUE decode): generate `decode_tokens` (K)
+                 tokens; context grows seq_len -> seq_len+K and the cache read
+                 grows each step. One execution = the K-token generation;
+                 per-token energy = window_energy / K. Matches decoder.py
+                 decode_total.
+               - "fixed_step": hold context at exactly `seq_len` and repeatedly
+                 run a single one-token decode step at that fixed context (the
+                 cache is rebuilt to seq_len before each step so context does not
+                 grow). Isolates per-step cost at a known context length. Matches
+                 decoder.py decode_step.
+             Both realize a real incremental KV cache: random-init uses our own
+             module's cache; pretrained uses transformers' past_key_values.
+
+    The window-length floor is met by looping: `inner_iters` repeats of the whole
+    decode execution (use measure_until_floor to size it).
     """
     if precision not in _DTYPE:
         raise ValueError(f"precision must be one of {list(_DTYPE)}, got {precision}")
     if phase not in ("prefill", "decode"):
         raise ValueError(f"phase must be 'prefill' or 'decode', got {phase}")
+    if phase == "decode" and decode_mode not in ("growing", "fixed_step"):
+        raise ValueError(f"decode_mode must be 'growing' or 'fixed_step', got {decode_mode}")
 
     cfg = model if isinstance(model, TransformerConfig) else get_config(model)
     if cfg.arch != "decoder_only":
@@ -286,18 +357,24 @@ def build_decoder_workload(
     torch = _torch()
     device = f"cuda:{device_index}" if torch.cuda.is_available() else "cpu"
 
+    extra = {}
+    if phase == "decode":
+        extra = {"decode_tokens": decode_tokens, "decode_mode": decode_mode}
     spec = WorkloadSpec(
         model_name=cfg.name, arch=cfg.arch, phase=phase, seq_len=seq_len,
         precision=precision, weights=weights, attn_kind=attn_kind,
         inner_iters=inner_iters, batch_size=batch_size,
-        extra={"decode_tokens": decode_tokens} if phase == "decode" else {},
+        extra=extra,
     )
 
     if phase == "decode":
-        raise NotImplementedError(
-            "decode workload (KV-cache path) is the next build step; "
-            "prefill is implemented. This guard prevents measuring a wrong decode."
-        )
+        if weights == "pretrained":
+            return _build_pretrained_decode(
+                cfg, spec, seq_len, precision, device, batch_size,
+                decode_tokens, decode_mode, inner_iters, pretrained_id)
+        return _build_random_decode(
+            cfg, spec, seq_len, precision, device, batch_size,
+            decode_tokens, decode_mode, attn_kind, inner_iters)
 
     # ---- prefill ----
     if weights == "pretrained":
@@ -329,6 +406,81 @@ def build_decoder_workload(
     def free():
         nonlocal dm
         del dm
+        _empty_cache()
+
+    return CallableWorkload(spec=spec, _run=run, _free=free)
+
+
+def _build_random_decode(cfg, spec, seq_len, precision, device, batch_size,
+                         decode_tokens, decode_mode, attn_kind, inner_iters):
+    """Random-init decode via our own incremental KV cache."""
+    torch = _torch()
+    dm = _DecoderModel(cfg, precision, device)
+    vocab = max(cfg.vocab_size, 1)
+    ctx_ids = torch.randint(0, vocab, (batch_size, seq_len), device=device)
+    next_tok = torch.randint(0, vocab, (batch_size, 1), device=device)
+
+    if decode_mode == "growing":
+        @torch.no_grad()
+        def run():
+            for _ in range(inner_iters):
+                # Establish the cache with a real prefill to seq_len, then
+                # generate K tokens; context (and cache read) grows each step.
+                cache = dm.prefill_into_cache(ctx_ids, attn_kind=attn_kind)
+                for _t in range(decode_tokens):
+                    dm.decode_step(next_tok, cache, attn_kind=attn_kind)
+    else:  # fixed_step
+        @torch.no_grad()
+        def run():
+            for _ in range(inner_iters):
+                # Rebuild the cache to exactly seq_len, then run ONE step at that
+                # fixed context. Repeated inner_iters times (context never grows).
+                cache = dm.prefill_into_cache(ctx_ids, attn_kind=attn_kind)
+                dm.decode_step(next_tok, cache, attn_kind=attn_kind)
+
+    def free():
+        nonlocal dm
+        del dm
+        _empty_cache()
+
+    return CallableWorkload(spec=spec, _run=run, _free=free)
+
+
+def _build_pretrained_decode(cfg, spec, seq_len, precision, device, batch_size,
+                             decode_tokens, decode_mode, inner_iters, pretrained_id):
+    """Pretrained decode via transformers past_key_values (downloads weights)."""
+    torch = _torch()
+    from transformers import AutoModelForCausalLM
+    hf_id = pretrained_id or _default_hf_id(cfg.name)
+    dtype = getattr(torch, _DTYPE[precision])
+    model_obj = AutoModelForCausalLM.from_pretrained(hf_id, torch_dtype=dtype).to(device).eval()
+    vocab = model_obj.config.vocab_size
+    ctx_ids = torch.randint(0, vocab, (batch_size, seq_len), device=device)
+    next_tok = torch.randint(0, vocab, (batch_size, 1), device=device)
+
+    def _prefill_cache():
+        out = model_obj(ctx_ids, use_cache=True)
+        return out.past_key_values
+
+    if decode_mode == "growing":
+        @torch.no_grad()
+        def run():
+            for _ in range(inner_iters):
+                pkv = _prefill_cache()
+                tok = next_tok
+                for _t in range(decode_tokens):
+                    out = model_obj(tok, past_key_values=pkv, use_cache=True)
+                    pkv = out.past_key_values   # cache grows each step
+    else:  # fixed_step
+        @torch.no_grad()
+        def run():
+            for _ in range(inner_iters):
+                pkv = _prefill_cache()
+                model_obj(next_tok, past_key_values=pkv, use_cache=True)
+
+    def free():
+        nonlocal model_obj
+        del model_obj
         _empty_cache()
 
     return CallableWorkload(spec=spec, _run=run, _free=free)

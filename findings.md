@@ -251,3 +251,51 @@ configs/exp_002.yaml was not met by A on transformer workloads; that target shou
 be read as aspirational for the sampled-power method, with the hardware counter
 (B/C agreement ~0%) carrying the actual rigor. This will be reflected when the
 first real EXP-002 results are written. Not tuning anything to hide the 10%.
+
+
+### 2026-05-29 — Decode regime is noisier than prefill (sweep-design implication)
+
+**Status:** hardware observation from the workload GPU integration tests. Not a
+calibrated energy result; magnitudes are uncalibrated and not for citation.
+
+First hardware look at decode vs prefill through the controlled runner (probe
+config: 12L, d=1024, FP16, RTX 4090 Laptop), both sized to a ~4 s window by
+measure_until_floor:
+- prefill (s=512): inner_iters=1367, wall 4.72 s, B=668.03 J, A=614.66 J,
+  A-vs-B=7.99%, B-vs-C=0.0%; only A CV-flagged.
+- decode growing (ctx=256, K=32): inner_iters=38, wall 4.11 s, B=161.59 J,
+  A=138.08 J, A-vs-B=14.55%, B-vs-C=0.0%; ALL THREE (A, B, C) CV-flagged.
+
+Two robust qualitative facts (not the numbers, which are uncalibrated):
+1. Decode energy is NOISIER run-to-run than prefill, even on the hardware counter
+   B/C (which were never CV-flagged on prefill but are on decode). Physical
+   reading: decode is memory-latency-bound with tiny per-step compute, so the
+   power trace is lower and choppier (GPU waiting on memory, not saturated), and
+   far fewer executions (38 vs 1367) are averaged into each repeat. This is a
+   property of the regime, not a measurement defect.
+2. The sampled-power instrument A diverges MORE from the counter on decode
+   (14.55% vs 7.99% on prefill), consistent with choppy low-power traces being
+   harder to integrate from 100 Hz samples. Reinforces B-as-primary: A degrades
+   exactly where the workload is hardest to sample.
+
+**Sweep-design implications (to apply when building the driver):**
+- Decode points likely need MORE repeats than prefill to bring the B/C CV under
+  the gate (prefill's 3-5 repeats were enough; decode may need more). Do not
+  silence the CV flag; raise repeats or widen the window for decode.
+- A's agreement gate must be regime-aware: ~8% is normal for prefill, ~15% for
+  decode. A single tight threshold across both phases would false-flag decode.
+- Energy-magnitude sanity (NOT a result): per-execution B is ~0.49 J prefill vs
+  ~4.3 J decode, and one decode execution does prefill-to-256 PLUS 32 growing
+  steps, so decode-per-exec > prefill-per-exec is the expected ordering. Nothing
+  looks broken; full interpretation waits on calibration.
+
+Also a second prefill A-vs-B data point (7.99%) alongside the earlier 9.73%: the
+real-transformer prefill agreement is variable in an ~8-10% band, not a fixed
+value. The "~10%" characterization above covers this; no correction needed.
+
+DECODE WORKLOAD CORRECTNESS (separate from the energy numbers) is established by
+CPU structural tests: the incremental KV cache grows exactly one position per
+step (10 -> 11 -> 12), decode_step processes a single token, cached K/V carry
+n_kv_heads under GQA, and both growing/fixed_step modes execute. The memory-bound
+signature (cache READ scaling with context) is therefore built correctly; whether
+it produces MCER >> 1 in JOULES is the calibration question EXP-002 will answer.

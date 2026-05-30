@@ -2,9 +2,11 @@
 
 Structural tests run on CPU with a tiny config (no GPU, no downloads): they check
 the runnable model mirrors the counted decoder structure (layer count, the right
-projections per layer, GQA-aware QKV width, output shape) and that the spec/label
-are correct. One GPU integration test runs a real prefill through the controlled
-runner and checks A-vs-B agreement at the new 100 Hz default.
+projections per layer, GQA-aware QKV width, output shape), the decode KV-cache
+grows one position per step (the memory-bound signature), and that the spec/label
+are correct. GPU integration tests run a real prefill and a real (growing-cache)
+decode through the controlled runner and check the window floor and A-vs-B
+agreement at the 100 Hz default.
 """
 
 import pytest
@@ -60,9 +62,22 @@ def test_rejects_bad_precision_and_phase():
         wl.build_decoder_workload(_tiny(), phase="generate", seq_len=8)
 
 
-def test_decode_is_guarded_not_silently_wrong():
-    with pytest.raises(NotImplementedError, match="decode"):
-        wl.build_decoder_workload(_tiny(), phase="decode", seq_len=8)
+def test_decode_builds_for_both_modes():
+    # decode is implemented now; both modes build and carry mode in the spec.
+    for mode in ("growing", "fixed_step"):
+        w = wl.build_decoder_workload(_tiny(), phase="decode", seq_len=8,
+                                      precision="fp32", decode_tokens=4,
+                                      decode_mode=mode)
+        assert w.spec.phase == "decode"
+        assert w.spec.extra["decode_mode"] == mode
+        assert w.spec.extra["decode_tokens"] == 4
+        w.free()
+
+
+def test_decode_rejects_bad_mode():
+    with pytest.raises(ValueError, match="decode_mode"):
+        wl.build_decoder_workload(_tiny(), phase="decode", seq_len=8,
+                                  decode_mode="sampling")
 
 
 # --- structural fidelity to architectures/decoder.py (CPU) --------------------
@@ -130,6 +145,71 @@ def test_run_callable_executes_on_cpu():
     w.free()
 
 
+# --- decode KV-cache mechanics (CPU) ------------------------------------------
+
+
+def test_kv_cache_grows_one_position_per_step():
+    """The defining decode property: each step appends exactly one (K,V) position,
+    so the cached context length grows by 1 per step. This is the memory-bound
+    signature the thesis rests on (cache READ scales with context)."""
+    torch = pytest.importorskip("torch")
+    from tomltransformers.workloads.decoder import _DecoderModel
+    cfg = _tiny(gated=False)
+    dm = _DecoderModel(cfg, "float32", "cpu")
+    ctx = torch.randint(0, cfg.vocab_size, (1, 10))
+    cache = dm.prefill_into_cache(ctx, attn_kind="eager")
+    # after prefill, each layer's cache holds the 10 context positions.
+    k0, v0 = cache[0]
+    assert k0.shape[2] == 10 and v0.shape[2] == 10
+    # one decode step -> context length 11 in every layer.
+    tok = torch.randint(0, cfg.vocab_size, (1, 1))
+    dm.decode_step(tok, cache, attn_kind="eager")
+    for li in range(cfg.n_layers):
+        k, v = cache[li]
+        assert k.shape[2] == 11 and v.shape[2] == 11, f"layer {li} cache did not grow"
+    # a second step -> 12.
+    dm.decode_step(tok, cache, attn_kind="eager")
+    k, v = cache[0]
+    assert k.shape[2] == 12 and v.shape[2] == 12
+
+
+def test_decode_step_processes_single_token():
+    """decode_step computes 1-token QKV and returns logits for exactly one token."""
+    torch = pytest.importorskip("torch")
+    from tomltransformers.workloads.decoder import _DecoderModel
+    cfg = _tiny(gated=False)
+    dm = _DecoderModel(cfg, "float32", "cpu")
+    ctx = torch.randint(0, cfg.vocab_size, (1, 6))
+    cache = dm.prefill_into_cache(ctx, attn_kind="eager")
+    tok = torch.randint(0, cfg.vocab_size, (1, 1))
+    logits = dm.decode_step(tok, cache, attn_kind="eager")
+    assert tuple(logits.shape) == (1, 1, cfg.vocab_size)
+
+
+def test_kv_cache_gqa_shapes():
+    """Cached K/V have n_kv_heads (not n_heads) under GQA."""
+    torch = pytest.importorskip("torch")
+    from tomltransformers.workloads.decoder import _DecoderModel
+    cfg = _tiny(n_heads=4, n_kv=2)
+    dm = _DecoderModel(cfg, "float32", "cpu")
+    ctx = torch.randint(0, cfg.vocab_size, (1, 5))
+    cache = dm.prefill_into_cache(ctx, attn_kind="eager")
+    k, v = cache[0]
+    # (B, n_kv_heads, seq, head_dim)
+    assert k.shape[1] == 2 and v.shape[1] == 2
+    assert k.shape[3] == cfg.d_head
+
+
+def test_decode_run_callables_execute_on_cpu():
+    """Both decode modes' run() execute end-to-end on CPU (random-init path)."""
+    for mode in ("growing", "fixed_step"):
+        w = wl.build_decoder_workload(_tiny(), phase="decode", seq_len=6,
+                                      precision="fp32", decode_tokens=3,
+                                      decode_mode=mode, inner_iters=2)
+        w.run()
+        w.free()
+
+
 # --- GPU integration: real prefill through the controlled runner --------------
 
 
@@ -170,6 +250,43 @@ def test_gpu_prefill_through_runner_agreement():
     # number is in the printout.
     if "A" in res.summary:
         assert ag["A-B"] < 0.12, f"A-vs-B {ag['A-B']:.1%}; notes={res.notes}"
+
+
+@pytest.mark.skipif(not ins.nvml_available(), reason="no NVML / GPU")
+def test_gpu_decode_growing_through_runner():
+    """Real decode (growing KV cache) runs through the controlled runner, clears
+    the window floor, and the hardware counter reads positive energy. This is the
+    memory-bound regime; we are validating the workload executes and measures, not
+    yet calibrating its energy."""
+    torch = pytest.importorskip("torch")
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA not available")
+    from tomltransformers.measure import runner as rn
+
+    cfg = _tiny_big()
+
+    def builder(inner):
+        return wl.build_decoder_workload(cfg, phase="decode", seq_len=256,
+                                         precision="fp16", decode_tokens=32,
+                                         decode_mode="growing", inner_iters=inner)
+
+    def measure_fn(work):
+        return rn.measure_point(
+            work.run, work.spec.label(), repeats=3, warmup_iters=3,
+            idle_baseline_s=1.0, thermal_settle=True, thermal_window_s=2.0,
+            min_window_s=4.0,
+        )
+
+    res, inner = wl.measure_until_floor(builder, measure_fn, target_s=4.0)
+    ag = rn.pairwise_agreement(res)
+    print(f"\n[decode-growing] inner_iters={inner} available={res.instruments_available} "
+          f"wall_s={res.summary.get('wall_time_s', {}).get('median'):.2f} "
+          f"short_window={res.short_window} cv_exceeded={res.cv_exceeded} "
+          f"summary={ {k: round(v['mean'], 2) for k, v in res.summary.items()} } "
+          f"agreement={ {k: round(v, 4) for k, v in ag.items()} }")
+    assert res.ok
+    assert "B" in res.instruments_available and res.summary["B"]["mean"] > 0.0
+    assert not res.short_window, "decode failed to clear the 4s window floor"
 
 
 def _tiny_big():
