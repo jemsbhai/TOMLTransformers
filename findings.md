@@ -55,3 +55,32 @@ MCER ≈ 70 is model-independent by construction: at FP16 on GDDR6X it equals
 (0.5 word/param × 232000 fJ/word) / (1650 fJ/MAC) ≈ 70, a per-parameter
 memory/compute ratio. Cannot be reported as confirmatory. Supersedes the
 prototype's MCER ≈ 2.0, which used an HBM prior ~20× too low.
+
+
+### 2026-05-29 — Instrument layer brought up; three instruments live on Windows
+
+**Status:** infrastructure, not a confirmatory result. No energy claim here.
+
+**Key facts established by the instrument smoke test (`tomltransformers.measure`):**
+- All three EXP-002 instruments run on the Windows + RTX 4090 (Ada) box: A (our
+  20 Hz nvmlDeviceGetPowerUsage integration), B (our direct
+  nvmlDeviceGetTotalEnergyConsumption read), and C (Zeus ZeusMonitor). This
+  resolves the pre-registered Zeus-on-Windows prerequisite: C is AVAILABLE, not
+  a fallback. Zeus needed `approx_instant_energy=True` so windows shorter than
+  the energy-counter tick are approximated rather than returned as zero.
+- B and C returned identical energy to 6 sig figs (201.624 J) on the same window,
+  as they must, since both read the same Ada hardware energy accumulator. This is
+  a correctness check on our B implementation against the peer-reviewed tool.
+
+**Open issue to address in the runner (logged so it is not forgotten):** on an
+uncontrolled smoke window (no idle subtraction, no warmup-excluded timing, only
+19 power samples), instrument A read ~27% HIGH versus B (255.96 J vs 201.62 J).
+Direction and cause are known, not noise: sampled instantaneous board power
+integrates high under sustained load, and a coarse trapezoid over few samples is
+sensitive to sample placement. This is far above the pre-registered 5% median
+agreement target. It does not invalidate the layer (which is why the dual-our-
+instrument design exists: to surface exactly this). The runner must close the gap
+with thermal-settled longer windows, a higher effective sample count, and idle-
+baseline subtraction, then re-measure A-vs-B agreement under controlled
+conditions before any energy is reported. The 27% is an UPPER BOUND from an
+uncontrolled window, not a result.
