@@ -112,3 +112,37 @@ starvation from real bias. Outcomes: raise A's sampling rate / move sampling off
 the GIL, OR designate B (hardware counter) as the PRIMARY reported instrument
 with A as an independent sanity check. This decision will be recorded before
 EXP-002 energy is reported. Not tuning test tolerances to mask the gap.
+
+**RESOLVED 2026-05-29 (same day) by the diagnostic** (scripts/diag_instrument_a.py;
+raw data experiments/exp_002_size_sweep/diagnostics/instrument_a.json):
+
+The cause is UNDERSAMPLING, not sampler starvation, not a short integration span,
+not a GIL problem. On a sustained-matmul window swept across sampling rates, the
+A-vs-B relative difference fell monotonically with rate: 24.2% @20Hz, 7.9% @50Hz,
+5.5% @100Hz, 7.4% @200Hz. Two candidate causes were explicitly REJECTED by the
+data: (a) sample-window coverage was ~1.0 at every rate (so A was not integrating
+a truncated span; the [first,last]-sample fix was unnecessary), and (b) the
+external nvidia-smi logger did NOT agree with B either (smi-vs-B 19-51%, never
+converging), so the in-process sampler is not the culprit and nvidia-smi is unfit
+as a reference. 20 Hz (the prior-TOML rate) simply undersamples a fluctuating
+power trace and integrates low.
+
+**Decisions recorded:**
+1. Instrument A sampling rate raised 20 -> 100 Hz (instruments.py and runner.py
+   defaults, and configs/exp_002.yaml, amended with an in-file dated note). At
+   100 Hz A meets the pre-registered 5% agreement target; 200 Hz adds nothing.
+2. A and B both remain PRIMARY (no demotion): they agree to ~5% at 100 Hz, so the
+   dual-our-instrument agreement claim stands. nvidia-smi is NOT a measurement
+   path; B (hardware counter) is the reference.
+3. Added measurement.min_window_s = 2.0. The GPT-2 prefill probe (40 forwards at
+   s=1024) produced SUB-SECOND windows on which even B was self-inconsistent
+   (B = 94/38/47/35 J across the rate runs, n~9 samples). Lesson larger than the
+   rate fix: a window must be long enough that the hardware counter ITSELF is
+   stable. The sweep's workload builders must loop per-execution work enough times
+   to exceed ~2 s for small/fast models.
+
+**Still to confirm (next step):** that 100 Hz holds at <=5% MEDIAN across the
+runner's 5-repeat controlled path (the diagnostic was one window per rate, a
+direction, not a distribution). The matmul window itself was clean and stable
+(B ~520-540 J across rates, n=59-299), which is the regime the sweep must keep
+workloads in.

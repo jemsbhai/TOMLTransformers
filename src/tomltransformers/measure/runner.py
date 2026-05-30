@@ -173,7 +173,7 @@ def measure_point(
     warmup_iters: int = 50,
     idle_baseline_s: float = 3.0,
     cv_threshold: float = 0.05,
-    sampling_hz: float = 20.0,
+    sampling_hz: float = 100.0,
     device_index: int = 0,
     thermal_settle: bool = True,
     thermal_tolerance_c: float = 1.0,

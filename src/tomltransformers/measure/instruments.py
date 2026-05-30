@@ -4,8 +4,12 @@ Three independent instruments measure the energy of a SINGLE GPU-workload
 execution, concentrically (one execution, measured three ways), so their
 readings are directly comparable for agreement analysis:
 
-  A  PowerIntegrator  our 20 Hz nvmlDeviceGetPowerUsage sampling, integrated
-                      over time (the method used by the prior TOML papers).
+  A  PowerIntegrator  our nvmlDeviceGetPowerUsage sampling (default 100 Hz),
+                      integrated over time. NOTE: 100 Hz, not the 20 Hz of the
+                      prior TOML papers. The EXP-002 instrument-A diagnostic
+                      (findings.md 2026-05-29) showed 20 Hz undersamples a
+                      fluctuating power trace and integrates ~14-24% LOW vs the
+                      hardware counter, while 100 Hz agrees with it to ~5%.
   B  EnergyCounter    our direct read of nvmlDeviceGetTotalEnergyConsumption,
                       the on-die energy accumulator (Volta+; the RTX 4090 is Ada).
   C  ZeusInstrument   Zeus ZeusMonitor, an independent peer-reviewed implementation.
@@ -135,12 +139,16 @@ def measure_once(
     use_A: bool = True,
     use_B: bool = True,
     use_C: bool = True,
-    sampling_hz: float = 20.0,
+    sampling_hz: float = 100.0,
     device_index: int = 0,
     sync: bool = True,
 ) -> MeasurementWindow:
     """Run ``fn`` exactly once, measuring its GPU energy with every available
     instrument concentrically.
+
+    ``sampling_hz`` defaults to 100 Hz: the instrument-A diagnostic showed 20 Hz
+    integrates systematically low vs the hardware energy counter, and 100 Hz
+    closes the gap to ~5%. See findings.md (2026-05-29 instrument-A diagnostic).
 
     A CUDA synchronize is issued after ``fn`` returns (before reading any end
     value) so the GPU work is actually complete; otherwise asynchronous kernels
