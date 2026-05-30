@@ -7,6 +7,12 @@ from .instruments import (
     zeus_available,
     energy_counter_supported,
 )
+from .runner import (
+    PointResult,
+    measure_point,
+    pairwise_agreement,
+    wait_for_thermal_settle,
+)
 
 __all__ = [
     "MeasurementWindow",
@@ -14,4 +20,8 @@ __all__ = [
     "nvml_available",
     "zeus_available",
     "energy_counter_supported",
+    "PointResult",
+    "measure_point",
+    "pairwise_agreement",
+    "wait_for_thermal_settle",
 ]

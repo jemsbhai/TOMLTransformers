@@ -84,3 +84,31 @@ with thermal-settled longer windows, a higher effective sample count, and idle-
 baseline subtraction, then re-measure A-vs-B agreement under controlled
 conditions before any energy is reported. The 27% is an UPPER BOUND from an
 uncontrolled window, not a result.
+
+
+### 2026-05-29 — Controlled runner narrows A-vs-B to ~14%, still above 5% target
+
+**Status:** infrastructure / open measurement question. No energy claim here.
+
+**Result of the runner's controlled path** (warmup-excluded, thermal-settled,
+P_idle*dt subtracted uniformly across A/B/C) on a 3.2 s sustained-matmul window:
+A = 428.5 J, B = 497.4 J, C = 497.4 J. B and C identical (same hardware
+accumulator, as expected). A-vs-B agreement = 13.8%, and A was the only
+instrument flagged CV-exceeded (>5% across 3 repeats).
+
+**Reading:** the controls did help (uncontrolled 27% -> controlled 14%), but 14%
+on a long, clean, idle-subtracted window is ~3x the pre-registered 5% median
+target and can no longer be attributed to a too-short window. Instrument A
+(sampled-power integration) reads systematically LOW vs the B/C hardware energy
+counter and is the noisier instrument. Leading hypothesis: A's background
+sampling thread is starved under a GIL-bound, driver-contended saturated GPU, so
+nvmlDeviceGetPowerUsage samples are delayed/unevenly spaced, biasing and
+destabilizing the trapezoid integral. Alternative: genuine bias between smoothed
+instantaneous board power and true integrated energy.
+
+**Action (before any sweep is built on A):** run a throwaway diagnostic that dumps
+A's raw (timestamp, power) samples on one long window to distinguish sampler
+starvation from real bias. Outcomes: raise A's sampling rate / move sampling off
+the GIL, OR designate B (hardware counter) as the PRIMARY reported instrument
+with A as an independent sanity check. This decision will be recorded before
+EXP-002 energy is reported. Not tuning test tolerances to mask the gap.
