@@ -176,3 +176,42 @@ agreement under thermal-settled, idle-subtracted conditions before any energy is
 reported. See findings.md (2026-05-29 instrument-layer entry) for detail. No
 measurement of the EXP-002 grid has been run; Results/Observations/Interpretation
 remain open.
+
+### Addendum 2026-07-18 - Production sweep launched; chunk 1 validated
+Build-phase decisions since the 2026-05-29 addendum (100 Hz instrument-A
+sampling, regime-aware repeats 5 forward / 10 decode-like, measure_until_floor
+with a 4 s window floor, JSONL last-write-wins resume, --max-hours budget) are
+recorded in findings.md, the dated amendment inside configs/exp_002.yaml, and
+the commit history; not re-narrated here.
+
+- 2026-07-17 16:54 EDT: sweep launched at commit ba3347e via
+  `python scripts/run_exp002.py --max-hours 8`, after a clean-tree preflight.
+  The actual results artifact is `experiments/exp_002_size_sweep/energy.jsonl`
+  (supersedes the `results/energy.json` path named in Protocol step 5).
+- Chunk 1 stopped on budget 2026-07-18 00:58 EDT: 85/296 points, all ok, zero
+  failed / OOM / short-window. Coverage: decoder-only, flash, fp16+fp32
+  (DistilGPT2/GPT-2/GPT-2-medium/GPT-2-large complete, GPT-2-XL partial).
+  Median pace 292 s/point; ~17 h projected for the remaining 211 points
+  (~2-3 more chunks).
+- `pytest -q tests/test_driver.py`: 11 passed, closing the previously
+  unverified `test_max_hours_stops_early_and_resumes`; the real chunk also
+  exercised the budget stop and clean summary write end to end.
+- QC pass added and run: `scripts/validate_exp002.py` (read-only) writes
+  `validation_report.{txt,json}` beside the data. Two WARNs, both explained,
+  neither systematic: CV(B)=16.3% on GPT-2-medium fp16 ctx128 decode
+  (smallest-context decode is the noisiest regime; flagged and kept per the
+  no-retry CV policy) and inner_iters=2 on GPT-2-large fp32 ctx4096 decode
+  (4 s wall floor still met). Detail: findings.md, 2026-07-18 entry.
+- Decision: continue the sweep unchanged. Inter-chunk ritual: run the
+  validator, commit the harvest (energy.jsonl, sweep_summary.json, refreshed
+  environment.json, frozen config, validation reports), relaunch the
+  identical command.
+- Scope note (2026-07-18, before any A100 data exists): the A100 plan moves
+  from a time-boxed collaborator machine to self-provisioned Lambda Labs
+  instances (the collaborator run is now optional), making the full shared
+  grid feasible cross-platform. The formal pre-registration amendment
+  (instance type, GPU-hour budget, transfer comparison and acceptance bands,
+  A100-only extrapolation targets) remains to be written BEFORE any A100
+  measurement, per Step 5 of the plan.
+
+Results/Observations/Interpretation for EXP-002 remain open pending the fit.

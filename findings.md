@@ -330,3 +330,90 @@ projection PATCH_DIM->d_model (no token embedding), ViT fixes s = num_patches + 
 and ignores seq_len, QKV width is GQA-aware, and the classifier head emits
 num_classes logits (vision) or d_model (text, num_classes=0) on the pooled token.
 Matches encoder.py (bidirectional, no KV cache, no prefill/decode split).
+
+
+### 2026-07-18 - Production sweep chunk 1 (85/296): measurement quality at scale
+
+**Status:** chunk-level data-quality observations from the first production
+chunk of the EXP-002 sweep (commit ba3347e, 2026-07-17 16:54 to 2026-07-18
+00:58 EDT, `--max-hours 8`). Source: `experiments/exp_002_size_sweep/energy.jsonl`
+analyzed by `scripts/validate_exp002.py`; full distributions in
+`validation_report.{txt,json}` committed beside the data. Instrument B
+(hardware counter) unless stated. Magnitudes remain uncalibrated (no fit yet)
+and are not citable results.
+
+Coverage so far: decoder-only class only, flash attention only, both
+precisions. DistilGPT2 / GPT-2 / GPT-2-medium / GPT-2-large complete (20
+points each: 5 prefill seq_lens x 2 precisions + 5 decode contexts x 2
+precisions); GPT-2-XL partial (its fp16 prefill series, 5 points). Encoder,
+enc-dec, and eager-attention points are still unmeasured, so cross-class
+statements wait.
+
+Outcomes: 85/85 ok. Zero failures, zero OOM skips, zero short windows, zero
+superseded records; repeat protocol held exactly (5 forward, 10 decode-like).
+Pace: median 292 s/point (p25 254, p75 437, max 628), projecting ~17 h for
+the remaining 211 points.
+
+**1. A-vs-B agreement at production scale is tighter than the probe-era
+bands.** Forward class: median 5.45%, p75 5.94%, max 9.58% (probe band was
+~8-10%). Decode-like: median 4.20%, p75 4.89%, max 10.86% (probes suggested
+~13-15%). At the median, decode A-B is no longer categorically worse than
+prefill; only its tail is heavier. Plausible drivers: the production protocol
+(measure_until_floor to a >= 4 s window, regime-aware repeats, median
+statistics) versus single probe runs; also note chunk 1's decode class
+includes fp32 points, whose higher and steadier power is easier for A to
+sample, so the fp16-only comparison to the probes is not exact. The per-class
+medians straddle the pre-registered <= 5% median A-B target (4.20% decode,
+5.45% forward); final assessment waits for the full grid including
+encoder/enc-dec/eager points.
+
+**2. B-vs-C:** median 0.000%, max 1.695% across 85 points. Consistent with
+the corrected invariant (same counter, independent window brackets, ~1%
+worst case).
+
+**3. Regime-aware repeats worked.** The 2026-05-29 decode finding predicted
+decode would need more repeats to bring B under the CV gate. At 10 repeats,
+B is CV-flagged on only 3/40 decode points (and 1/45 prefill); A remains
+flagged on 84/85 points, as expected for the sampled-power method. CV(B):
+forward median 1.56% (max 5.92%); decode median 2.58% with one outlier
+(next item).
+
+**4. The noisiest regime is smallest-context decode.** GPT-2-medium fp16
+ctx128 decode is the worst point on three independent views at once: CV(B)
+16.3%, A-B 10.86%, and the lowest median SM clock in the chunk (1110 MHz).
+The ctx128 decode points of the other models also sit at the low-clock end
+(DistilGPT2 1215, GPT-2 1230 MHz). Physical reading: tiny-context decode is
+launch/latency-bound at low power with choppy clocks. Per the settled design
+the CV gate FLAGS and never retries; the point stands, flagged, and the fit
+can weight it or sensitivity-test it.
+
+**5. Window floor vs inner_iters.** Decode inner_iters spans 2-35 (median
+8); GPT-2-large fp32 ctx4096 decode sits at inner_iters=2 while still
+meeting the wall floor (chunk-wide minimum wall time 4.00 s). The 4 s wall
+window, not inner_iters, is the invariant, and it held on all 85 points.
+The contamination fraction of the naive decode per-unit is largest exactly
+at these big-prefill points (one execution = prefill-to-4096 plus 64 steps),
+reinforcing that decode per-token is ONLY the fit-time prefill-subtracted
+derivation. GPT-2-XL long-context decode may reach inner_iters=1; that is
+still valid under the wall floor.
+
+**6. First measured evidence on the precision axis (Fork 2).** 40 fp32/fp16
+matched-shape pairs, zero inversions (fp32 > fp16 everywhere). Forward-phase
+per-unit ratio: median 3.26, range 2.04-3.90 (n=20). A pure byte-doubling
+picture would suggest ~2x; ratios approaching 4x are plausibly tensor-core
+fp16 versus non-tensor-core fp32 execution paths, but confirming the
+mechanism is out of scope here. The robust part today is the monotone
+ordering and that the multiplier is not a trivial constant, which is exactly
+why Fork 2 fits it rather than assuming it.
+
+**7. Scaling sanity:** all 9 available (model, precision) prefill series are
+monotone in per-forward energy vs seq_len, zero violations.
+
+**8. Thermal and clock state varies between points and is logged.** Settle
+temps 47-68 C; peaks reach 83 C on GPT-2 / GPT-2-medium fp32 prefill. Decode
+points downclock to 1110-1605 MHz median SM clock, a workload-induced
+memory-latency behavior distinct from thermal throttling. The idle baseline
+drifted 3.69-7.31 W across the chunk, which is the drift the per-point idle
+baseline design exists to absorb.
+
+No systematic anomaly found. The sweep continues unchanged.
