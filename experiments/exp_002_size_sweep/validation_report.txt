@@ -1,0 +1,91 @@
+EXP-002 sweep data-quality report
+generated: 2026-07-18T02:23:39-04:00
+data: E:\data\code\claudecode\TOMLTransformers\experiments\exp_002_size_sweep\energy.jsonl
+
+== 1. File integrity ==
+  records: 85 lines parsed, 0 parse errors, 0 without spec.key
+  schema versions: {'tomltransformers.sweep.point.v1': 85}
+  git commits: {'ba3347e62': 85}
+  unique keys: 85  superseded records (last-write-wins): 0
+
+== 2. Outcomes (latest record per key) ==
+  ok: 85   failed: 0   oom_skipped: 0   short_window: 0
+  resume-complete (ok and not short_window): 85
+  earlier short-window records cleared by re-run: 0
+  earlier failed records cleared by re-run: 0
+  n_repeats by phase class (protocol: forward=5, decode-like=10):
+    forward      {5: 45}
+    decode-like  {10: 40}
+
+== 3. sweep_summary.json cross-check ==
+  summary: total=296 measured=85 skipped_done=0 ok=85 failed=0 oom=0 short_window=0 stopped_early=True
+  summary elapsed: 8.06 h   commit: ba3347e62
+  consistent: summary ok+skipped_done == file resume-complete == 85
+
+== 4. Coverage (ok points) ==
+  decoder_only       decode               40
+  decoder_only       prefill              45
+  precision: {'fp16': 45, 'fp32': 40}
+  attn_kind: {'flash': 85}
+  models: DistilGPT2 20, GPT-2 20, GPT-2-XL 5, GPT-2-large 20, GPT-2-medium 20
+  grid progress: 85/296 resume-complete (28.7%)
+
+== 5. Pace and projection ==
+  seconds per point (chunk-internal gaps): n=84  min=221  p25=254  med=292  p75=437  max=628
+  remaining: 211 points -> ~17.1 h at median pace (~2.1 chunks of 8 h, ~2.8 chunks of 6 h)
+
+== 6. Instrument agreement (ok points) ==
+  A-B forward (prior obs ~5-10%): n=45  min=3.76%  p25=4.91%  med=5.45%  p75=5.94%  max=9.58%
+  A-B decode-like (prior obs ~5-15%): n=40  min=2.35%  p25=4.03%  med=4.20%  p75=4.89%  max=10.86%
+    highest A-B: 10.86%  [decode-like]  decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
+    highest A-B: 9.58%  [forward]  decoder_only|GPT-2-medium|prefill|fp16|flash|random|s128|b1
+    highest A-B: 7.02%  [decode-like]  decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
+    highest A-B: 7.00%  [forward]  decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1
+    highest A-B: 6.65%  [decode-like]  decoder_only|GPT-2-medium|decode|fp16|flash|random|s512|b1|ctx512|k64|growing
+  B-C: n=85  min=0.000%  p25=0.000%  med=0.000%  p75=0.010%  max=1.695%
+
+== 7. Repeat noise ==
+  CV(B) forward: n=45  min=0.30%  p25=1.05%  med=1.56%  p75=2.56%  max=5.92%
+  CV(B) decode-like: n=40  min=1.00%  p25=1.93%  med=2.58%  p75=3.85%  max=16.30%
+    highest CV(B): 16.30%  decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
+    highest CV(B): 6.58%  decoder_only|GPT-2|decode|fp32|flash|random|s128|b1|ctx128|k64|growing
+    highest CV(B): 5.92%  decoder_only|GPT-2-medium|prefill|fp16|flash|random|s128|b1
+    highest CV(B): 5.40%  decoder_only|GPT-2|decode|fp16|flash|random|s512|b1|ctx512|k64|growing
+    highest CV(B): 4.90%  decoder_only|GPT-2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
+  cv_exceeded by phase (A-only on forward and A+B+C on decode are the known patterns):
+    decode             {'A': 36, 'A+B+C': 2, 'A+C': 1, 'B+C': 1}
+    prefill            {'A': 44, 'A+B+C': 1}
+
+== 8. Window sizing ==
+  inner_iters forward: n=45  min=19  p25=161  med=445  p75=1003  max=2695
+  inner_iters decode-like: n=40  min=2  p25=6  med=8  p75=16  max=35
+  wall_time_s_median: n=85  min=4.00  p25=4.08  med=4.53  p75=4.77  max=6.61
+
+== 9. Thermal and clocks ==
+  settle temp (C): n=85  min=47  p25=51  med=55  p75=58  max=68
+  max temp during repeats (C): n=85  min=50  p25=59  med=63  p75=72  max=83
+    hottest: 83 C  decoder_only|GPT-2|prefill|fp32|flash|random|s512|b1
+    hottest: 83 C  decoder_only|GPT-2|prefill|fp32|flash|random|s1024|b1
+    hottest: 83 C  decoder_only|GPT-2-medium|prefill|fp32|flash|random|s512|b1
+    hottest: 82 C  decoder_only|GPT-2|prefill|fp32|flash|random|s256|b1
+    hottest: 82 C  decoder_only|GPT-2|prefill|fp32|flash|random|s2048|b1
+  median SM clock, first sample dropped (MHz): n=85  min=1110  p25=1860  med=2280  p75=2325  max=2325
+    lowest clocks: 1110 MHz  decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
+    lowest clocks: 1215 MHz  decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
+    lowest clocks: 1230 MHz  decoder_only|GPT-2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
+    lowest clocks: 1455 MHz  decoder_only|GPT-2-medium|decode|fp16|flash|random|s512|b1|ctx512|k64|growing
+    lowest clocks: 1605 MHz  decoder_only|DistilGPT2|decode|fp16|flash|random|s512|b1|ctx512|k64|growing
+  idle power (W): n=85  min=3.69  p25=3.97  med=4.26  p75=4.52  max=7.31
+
+== 10. Physics sanity ==
+  per_unit_contaminated by phase:
+    decode             True=40 False=0
+    prefill            True=0 False=45
+  seq_len monotonicity (prefill/encode, non-ViT): 9 series checked, 0 violations
+  fp32/fp16 matched-shape pairs: 40   inversions: 0
+  fp32/fp16 per-unit energy ratio (forward phases): n=20  min=2.04  p25=2.56  med=3.26  p75=3.56  max=3.90
+
+== Verdict ==
+  WARNINGS (2):
+    WARN: CV(B) 16.3% above 7.5% (decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing)
+    WARN: inner_iters=2 very low (decoder_only|GPT-2-large|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing)
