@@ -215,3 +215,13 @@ the commit history; not re-narrated here.
   measurement, per Step 5 of the plan.
 
 Results/Observations/Interpretation for EXP-002 remain open pending the fit.
+
+### Addendum 2026-07-18 - Chunk 2 validated; 158/296
+Chunk 2 (commit f5ab202, `--max-hours 8`, 8.08 h): 73 new points, 85
+resume-skipped, all ok; zero failed / OOM / short-window at 158/296 (53.4%).
+Resume semantics exercised at scale for the first time and behaved exactly as
+specified. QC: findings.md 2026-07-18 chunk-2 entry; validation reports
+recommitted with the harvest. All seven validator WARNs fall in the two
+known-benign families (fp16 small-target decode CV; low inner_iters at large
+fp32 decode with the 4 s wall floor met). Decision: continue unchanged.
+Remaining ~138 points (enc-dec, ViT, eager block) projected ~12-15 h.

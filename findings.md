@@ -417,3 +417,42 @@ drifted 3.69-7.31 W across the chunk, which is the drift the per-point idle
 baseline design exists to absorb.
 
 No systematic anomaly found. The sweep continues unchanged.
+
+
+### 2026-07-18 - Chunk 2 (158/296): patterns hold as encoder and enc-dec classes arrive
+
+**Status:** chunk-level QC, same provenance discipline as the chunk 1 entry
+(data spans commits ba3347e and f5ab202; validator reports recommitted beside
+the data). Uncalibrated; not citable results.
+
+- Chunk 2: 73 new points, 85 skipped by resume, all ok. Still zero failed /
+  OOM / short-window across all 158 points, zero superseded records. Coverage
+  now: decoder-only complete (100), encoder-only text complete (DistilBERT /
+  BERT-base / BERT-large, 30), ViT partial (4), T5-small partial (24). All
+  158 points are flash; the eager attention_compare block sits later in the
+  grid order and is still unmeasured.
+- Encode and decoder_prefill enter the distributions TIGHTER than their
+  probes, completing the chunk-1 picture: pooled forward A-B median 5.48%
+  with max 9.98% at the smallest fp16 encode points (the encode probe read
+  9.29% at s512), and all five decoder_prefill points sit at or below 8.75%
+  versus the 13.2% probe. Decode-like A-B median 4.15%. B-C max 1.92%.
+- The noisy regime is a family, not a one-off: all four CV(B) points above
+  7.5% (16.3, 11.9, 9.9, 9.5%) are fp16 small-target decode (ctx128 or
+  ctx512), now including GPT-2-XL and T5-small's target-128 sub-sweep point.
+  Their fp32 siblings are quiet. All flagged and kept per the no-retry
+  policy.
+- inner_iters=1 occurred as anticipated (GPT-2-XL fp32 ctx4096 decode) with
+  the 4 s wall floor met (chunk-wide minimum wall 4.00 s). The decode-like
+  inner_iters maximum of 1831 is a decoder_prefill point, which packs many
+  forwards per window exactly like prefill; expected, not an anomaly.
+- Scaling/physics: 18/18 monotone prefill+encode series; 72 fp32/fp16
+  matched pairs, zero inversions, forward ratio median 3.24 (max 4.07, first
+  encoder pairs included). No ViT invariance data yet (only one point per
+  precision group so far).
+- Remaining 138 points skew to enc-dec, ViT, and the eager block, so the
+  11 h median-pace projection is optimistic; plan on ~12-15 h. The BART-large
+  target-4096 decode points ahead are the first realistic exercise of the
+  still-untested OOM skip-and-log path; oom_skipped records there would be
+  the policy working, not a failure.
+
+Sweep continues unchanged.
