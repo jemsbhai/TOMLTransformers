@@ -1,97 +1,97 @@
 EXP-002 sweep data-quality report
-generated: 2026-07-19T14:00:21-04:00
+generated: 2026-07-19T19:15:15-04:00
 data: E:\data\code\claudecode\TOMLTransformers\experiments\exp_002_size_sweep\energy.jsonl
 
 == 1. File integrity ==
-  records: 239 lines parsed, 0 parse errors, 0 without spec.key
-  schema versions: {'tomltransformers.sweep.point.v1': 239}
-  git commits: {'ba3347e62': 85, 'f5ab202ce': 73, 'd434da284': 81}
-  unique keys: 239  superseded records (last-write-wins): 0
+  records: 269 lines parsed, 0 parse errors, 0 without spec.key
+  schema versions: {'tomltransformers.sweep.point.v1': 269}
+  git commits: {'ba3347e62': 85, 'f5ab202ce': 73, 'd434da284': 81, '99024e884': 30}
+  unique keys: 269  superseded records (last-write-wins): 0
 
 == 2. Outcomes (latest record per key) ==
-  ok: 239   failed: 0   oom_skipped: 0   short_window: 0
-  resume-complete (ok and not short_window): 239
+  ok: 269   failed: 0   oom_skipped: 0   short_window: 0
+  resume-complete (ok and not short_window): 269
   earlier short-window records cleared by re-run: 0
   earlier failed records cleared by re-run: 0
   n_repeats by phase class (protocol: forward=5, decode-like=10):
-    forward      {5: 114}
-    decode-like  {10: 125}
+    forward      {5: 121}
+    decode-like  {10: 148}
 
 == 3. sweep_summary.json cross-check ==
-  summary: total=296 measured=81 skipped_done=158 ok=81 failed=0 oom=0 short_window=0 stopped_early=True
-  summary elapsed: 8.03 h   commit: d434da284
-  consistent: summary ok+skipped_done == file resume-complete == 239
+  summary: total=296 measured=30 skipped_done=239 ok=30 failed=0 oom=0 short_window=0 stopped_early=True
+  summary elapsed: 3.10 h   commit: 99024e884
+  consistent: summary ok+skipped_done == file resume-complete == 269
 
 == 4. Coverage (ok points) ==
   decoder_only       decode               50
   decoder_only       prefill              50
-  encoder_decoder    decode               45
-  encoder_decoder    decoder_prefill      30
-  encoder_decoder    encode               30
+  encoder_decoder    decode               63
+  encoder_decoder    decoder_prefill      35
+  encoder_decoder    encode               37
   encoder_only       encode               34
-  precision: {'fp16': 124, 'fp32': 115}
-  attn_kind: {'flash': 239}
-  models: BART-base 29, BERT-base 10, BERT-large 10, DistilBERT 10, DistilGPT2 20, GPT-2 20, GPT-2-XL 20, GPT-2-large 20, GPT-2-medium 20, T5-base 38, T5-small 38, ViT-B/16 2, ViT-L/16 2
-  grid progress: 239/296 resume-complete (80.7%)
+  precision: {'fp16': 143, 'fp32': 126}
+  attn_kind: {'flash': 269}
+  models: BART-base 38, BART-large 21, BERT-base 10, BERT-large 10, DistilBERT 10, DistilGPT2 20, GPT-2 20, GPT-2-XL 20, GPT-2-large 20, GPT-2-medium 20, T5-base 38, T5-small 38, ViT-B/16 2, ViT-L/16 2
+  grid progress: 269/296 resume-complete (90.9%)
 
 == 5. Pace and projection ==
-  seconds per point (chunk-internal gaps): n=236  min=221  p25=261  med=292  p75=504  max=1475
-  remaining: 57 points -> ~4.6 h at median pace (~0.6 chunks of 8 h, ~0.8 chunks of 6 h)
+  seconds per point (chunk-internal gaps): n=265  min=221  p25=264  med=293  p75=504  max=1475
+  remaining: 27 points -> ~2.2 h at median pace (~0.3 chunks of 8 h, ~0.4 chunks of 6 h)
 
 == 6. Instrument agreement (ok points) ==
-  A-B forward (prior obs ~5-10%): n=114  min=3.76%  p25=4.90%  med=5.47%  p75=6.04%  max=9.98%
-  A-B decode-like (prior obs ~5-15%): n=125  min=2.35%  p25=3.45%  med=4.05%  p75=4.86%  max=10.86%
+  A-B forward (prior obs ~5-10%): n=121  min=3.76%  p25=4.89%  med=5.49%  p75=6.06%  max=9.98%
+  A-B decode-like (prior obs ~5-15%): n=148  min=2.35%  p25=3.44%  med=4.03%  p75=4.77%  max=10.86%
     highest A-B: 10.86%  [decode-like]  decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
     highest A-B: 9.98%  [forward]  encoder_only|DistilBERT|encode|fp16|flash|random|s128|b1
     highest A-B: 9.65%  [forward]  encoder_only|BERT-base|encode|fp16|flash|random|s128|b1
     highest A-B: 9.58%  [forward]  decoder_only|GPT-2-medium|prefill|fp16|flash|random|s128|b1
     highest A-B: 8.75%  [decode-like]  encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing
-  B-C: n=239  min=0.000%  p25=0.000%  med=0.000%  p75=0.234%  max=1.922%
+  B-C: n=269  min=0.000%  p25=0.000%  med=0.000%  p75=0.245%  max=1.922%
 
 == 7. Repeat noise ==
-  CV(B) forward: n=114  min=0.08%  p25=1.14%  med=1.52%  p75=2.47%  max=6.24%
-  CV(B) decode-like: n=125  min=0.69%  p25=1.53%  med=2.50%  p75=3.72%  max=16.30%
+  CV(B) forward: n=121  min=0.08%  p25=1.15%  med=1.55%  p75=2.53%  max=6.24%
+  CV(B) decode-like: n=148  min=0.69%  p25=1.60%  med=2.46%  p75=3.69%  max=16.30%
     highest CV(B): 16.30%  decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
     highest CV(B): 11.94%  decoder_only|GPT-2-XL|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
     highest CV(B): 9.90%  encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing
     highest CV(B): 9.49%  decoder_only|GPT-2-XL|decode|fp16|flash|random|s512|b1|ctx512|k64|growing
     highest CV(B): 7.93%  encoder_decoder|T5-small|decode|fp32|flash|random|s1024|b1|ctx128|k64|growing
   cv_exceeded by phase (A-only on forward and A+B+C on decode are the known patterns):
-    decode             {'A': 81, 'A+B+C': 9, 'A+C': 2, 'B+C': 2, 'none': 1}
-    decoder_prefill    {'A': 30}
-    encode             {'A': 62, 'A+B+C': 2}
+    decode             {'A': 95, 'A+B+C': 13, 'A+C': 2, 'B+C': 2, 'none': 1}
+    decoder_prefill    {'A': 35}
+    encode             {'A': 69, 'A+B+C': 2}
     prefill            {'A': 49, 'A+B+C': 1}
 
 == 8. Window sizing ==
-  inner_iters forward: n=114  min=10  p25=262  med=665  p75=1560  max=3249
-  inner_iters decode-like: n=125  min=1  p25=8  med=18  p75=31  max=1831
-  wall_time_s_median: n=239  min=4.00  p25=4.17  med=4.58  p75=4.71  max=6.61
+  inner_iters forward: n=121  min=10  p25=270  med=731  p75=1512  max=3249
+  inner_iters decode-like: n=148  min=1  p25=10  med=18  p75=30  max=1831
+  wall_time_s_median: n=269  min=4.00  p25=4.20  med=4.59  p75=4.75  max=6.61
 
 == 9. Thermal and clocks ==
-  settle temp (C): n=239  min=44  p25=49  med=54  p75=57  max=68
-  max temp during repeats (C): n=239  min=47  p25=56  med=66  p75=73  max=83
+  settle temp (C): n=269  min=44  p25=49  med=54  p75=57  max=68
+  max temp during repeats (C): n=269  min=47  p25=56  med=65  p75=73  max=83
     hottest: 83 C  decoder_only|GPT-2|prefill|fp32|flash|random|s512|b1
     hottest: 83 C  decoder_only|GPT-2|prefill|fp32|flash|random|s1024|b1
     hottest: 83 C  decoder_only|GPT-2-medium|prefill|fp32|flash|random|s512|b1
     hottest: 82 C  decoder_only|GPT-2|prefill|fp32|flash|random|s256|b1
     hottest: 82 C  decoder_only|GPT-2|prefill|fp32|flash|random|s2048|b1
-  median SM clock, first sample dropped (MHz): n=239  min=1110  p25=1905  med=2250  p75=2325  max=2325
+  median SM clock, first sample dropped (MHz): n=269  min=1110  p25=1920  med=2265  p75=2325  max=2325
     lowest clocks: 1110 MHz  decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
     lowest clocks: 1148 MHz  encoder_decoder|T5-small|encode|fp16|flash|random|s128|b1
     lowest clocks: 1215 MHz  decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
     lowest clocks: 1230 MHz  decoder_only|GPT-2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
     lowest clocks: 1455 MHz  decoder_only|GPT-2-medium|decode|fp16|flash|random|s512|b1|ctx512|k64|growing
-  idle power (W): n=239  min=3.52  p25=3.82  med=4.18  p75=4.47  max=7.31
+  idle power (W): n=269  min=3.52  p25=3.87  med=4.18  p75=4.47  max=7.31
 
 == 10. Physics sanity ==
   per_unit_contaminated by phase:
-    decode             True=95 False=0
-    decoder_prefill    True=0 False=30
-    encode             True=0 False=64
+    decode             True=113 False=0
+    decoder_prefill    True=0 False=35
+    encode             True=0 False=71
     prefill            True=0 False=50
-  seq_len monotonicity (prefill/encode, non-ViT): 22 series checked, 0 violations
-  fp32/fp16 matched-shape pairs: 115   inversions: 0
-  fp32/fp16 per-unit energy ratio (forward phases): n=57  min=2.04  p25=2.58  med=3.24  p75=3.76  max=4.11
+  seq_len monotonicity (prefill/encode, non-ViT): 24 series checked, 0 violations
+  fp32/fp16 matched-shape pairs: 126   inversions: 0
+  fp32/fp16 per-unit energy ratio (forward phases): n=59  min=2.04  p25=2.53  med=3.17  p75=3.75  max=4.11
 
 == Verdict ==
   WARNINGS (8):
@@ -104,4 +104,4 @@ data: E:\data\code\claudecode\TOMLTransformers\experiments\exp_002_size_sweep\en
     WARN: inner_iters=2 very low (decoder_only|GPT-2-XL|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing)
     WARN: inner_iters=1 very low (decoder_only|GPT-2-XL|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing)
   notes (1):
-    note: data spans multiple git commits: {'ba3347e62': 85, 'f5ab202ce': 73, 'd434da284': 81} (expected across chunks if code changed between them)
+    note: data spans multiple git commits: {'ba3347e62': 85, 'f5ab202ce': 73, 'd434da284': 81, '99024e884': 30} (expected across chunks if code changed between them)
