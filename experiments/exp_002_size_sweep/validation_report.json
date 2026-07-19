@@ -1,141 +1,141 @@
 {
   "dists": {
     "pace_s": {
-      "n": 156,
+      "n": 236,
       "min": 220.879011,
-      "p25": 255.743157,
-      "med": 290.763021,
-      "p75": 513.0432444999999,
+      "p25": 261.21575075,
+      "med": 292.19928749999997,
+      "p75": 504.00093475,
       "max": 1474.693921
     },
     "ab_forward_pct": {
-      "n": 94,
+      "n": 114,
       "min": 3.755172370953161,
-      "p25": 4.937204305636668,
-      "med": 5.482358811178374,
-      "p75": 5.95558319170108,
+      "p25": 4.897320188621471,
+      "med": 5.474207417693595,
+      "p75": 6.042588013695262,
       "max": 9.977241027440657
     },
     "ab_decode_pct": {
-      "n": 64,
+      "n": 125,
       "min": 2.345745220454125,
-      "p25": 3.6442820086354395,
-      "med": 4.147485081622573,
-      "p75": 4.915602792167018,
+      "p25": 3.4502493961891254,
+      "med": 4.051121217505609,
+      "p75": 4.863012445693606,
       "max": 10.859148864490145
     },
     "bc_pct": {
-      "n": 158,
+      "n": 239,
       "min": 2.1240349433226809e-13,
-      "p25": 6.87494707683964e-12,
-      "med": 1.8472796245759684e-11,
-      "p75": 6.596523845872881e-11,
+      "p25": 7.251982274817733e-12,
+      "med": 1.993954606097029e-11,
+      "p75": 0.23351217310392525,
       "max": 1.9215941787072297
     },
     "cvb_forward_pct": {
-      "n": 94,
+      "n": 114,
       "min": 0.08461576467111488,
-      "p25": 1.0275192461404452,
-      "med": 1.4820230277193436,
-      "p75": 2.351296252682193,
-      "max": 5.919373464900603
+      "p25": 1.1371401962594887,
+      "med": 1.5172903307828411,
+      "p75": 2.465402659655763,
+      "max": 6.23886259458112
     },
     "cvb_decode_pct": {
-      "n": 64,
-      "min": 1.00262918003258,
-      "p25": 1.8323223280020808,
-      "med": 2.591733782856028,
-      "p75": 3.7846981945885814,
+      "n": 125,
+      "min": 0.6856184395142662,
+      "p25": 1.5316950560724196,
+      "med": 2.4978424622884376,
+      "p75": 3.7157704562903002,
       "max": 16.30307297309006
     },
     "inner_iters_forward": {
-      "n": 94,
+      "n": 114,
       "min": 10,
-      "p25": 210.5,
-      "med": 576.5,
-      "p75": 1461.25,
+      "p25": 261.5,
+      "med": 665.0,
+      "p75": 1559.75,
       "max": 3249
     },
     "inner_iters_decode_like": {
-      "n": 64,
+      "n": 125,
       "min": 1,
-      "p25": 5.0,
-      "med": 12.0,
-      "p75": 27.0,
+      "p25": 8,
+      "med": 18,
+      "p75": 31,
       "max": 1831
     },
     "wall_s": {
-      "n": 158,
+      "n": 239,
       "min": 4.000888300011866,
-      "p25": 4.172248074988602,
-      "med": 4.535334049985977,
-      "p75": 4.666375987479114,
+      "p25": 4.17289454996353,
+      "med": 4.583288099966012,
+      "p75": 4.709455599979265,
       "max": 6.605858499999158
     },
     "settle_temp_c": {
-      "n": 158,
-      "min": 45.0,
-      "p25": 51.0,
-      "med": 55.5,
-      "p75": 58.0,
+      "n": 239,
+      "min": 44.0,
+      "p25": 49.0,
+      "med": 54.0,
+      "p75": 57.0,
       "max": 68.0
     },
     "max_temp_c": {
-      "n": 158,
+      "n": 239,
       "min": 47.0,
-      "p25": 59.0,
+      "p25": 55.5,
       "med": 66.0,
-      "p75": 73.75,
+      "p75": 73.0,
       "max": 83.0
     },
     "median_sm_clock_mhz": {
-      "n": 158,
+      "n": 239,
       "min": 1110.0,
-      "p25": 1837.5,
+      "p25": 1905.0,
       "med": 2250.0,
       "p75": 2325.0,
       "max": 2325.0
     },
     "idle_w": {
-      "n": 158,
-      "min": 3.553628975265018,
-      "p25": 3.957049745280192,
-      "med": 4.301356834666171,
-      "p75": 4.5159064209726445,
+      "n": 239,
+      "min": 3.5170280701754386,
+      "p25": 3.8213128238746332,
+      "med": 4.184939285714285,
+      "p75": 4.4665049695335135,
       "max": 7.314175438596491
     },
     "fp32_over_fp16_forward": {
-      "n": 47,
+      "n": 57,
       "min": 2.0381886723548135,
-      "p25": 2.557993825829759,
-      "med": 3.2399326435475624,
-      "p75": 3.768867919332073,
-      "max": 4.068814099873284
+      "p25": 2.581462873742402,
+      "med": 3.239780738255526,
+      "p75": 3.7631628858173642,
+      "max": 4.105223146715911
     }
   },
-  "generated_at": "2026-07-18T23:48:16-04:00",
+  "generated_at": "2026-07-19T14:00:21-04:00",
   "data_path": "E:\\data\\code\\claudecode\\TOMLTransformers\\experiments\\exp_002_size_sweep\\energy.jsonl",
-  "lines": 158,
+  "lines": 239,
   "parse_errors": 0,
-  "unique_keys": 158,
+  "unique_keys": 239,
   "superseded": 0,
   "outcomes": {
-    "ok": 158,
+    "ok": 239,
     "failed": 0,
     "oom_skipped": 0,
     "short_window": 0,
-    "resume_complete": 158,
+    "resume_complete": 239,
     "cleared_short_window": 0,
     "cleared_failed": 0
   },
   "grid_total": 296,
-  "eta_hours_remaining": 11.145915805,
+  "eta_hours_remaining": 4.626488718749999,
   "monotonicity": {
-    "series_checked": 18,
+    "series_checked": 22,
     "violations": 0
   },
   "fp_pairs": {
-    "n": 72,
+    "n": 115,
     "inversions": 0
   },
   "warnings": [
@@ -143,11 +143,12 @@
     "CV(B) 11.9% above 7.5% (decoder_only|GPT-2-XL|decode|fp16|flash|random|s128|b1|ctx128|k64|growing)",
     "CV(B) 9.5% above 7.5% (decoder_only|GPT-2-XL|decode|fp16|flash|random|s512|b1|ctx512|k64|growing)",
     "CV(B) 9.9% above 7.5% (encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing)",
+    "CV(B) 7.9% above 7.5% (encoder_decoder|T5-small|decode|fp32|flash|random|s1024|b1|ctx128|k64|growing)",
     "inner_iters=2 very low (decoder_only|GPT-2-large|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing)",
     "inner_iters=2 very low (decoder_only|GPT-2-XL|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing)",
     "inner_iters=1 very low (decoder_only|GPT-2-XL|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing)"
   ],
   "notes": [
-    "data spans multiple git commits: {'ba3347e62': 85, 'f5ab202ce': 73} (expected across chunks if code changed between them)"
+    "data spans multiple git commits: {'ba3347e62': 85, 'f5ab202ce': 73, 'd434da284': 81} (expected across chunks if code changed between them)"
   ]
 }
