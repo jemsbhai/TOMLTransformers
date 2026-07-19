@@ -1,146 +1,153 @@
 {
   "dists": {
     "pace_s": {
-      "n": 84,
+      "n": 156,
       "min": 220.879011,
-      "p25": 254.41147475,
-      "med": 291.6306125,
-      "p75": 437.0252595,
-      "max": 628.403214
+      "p25": 255.743157,
+      "med": 290.763021,
+      "p75": 513.0432444999999,
+      "max": 1474.693921
     },
     "ab_forward_pct": {
-      "n": 45,
+      "n": 94,
       "min": 3.755172370953161,
-      "p25": 4.911073788711312,
-      "med": 5.448180105652606,
-      "p75": 5.9351633927203675,
-      "max": 9.580102666734474
+      "p25": 4.937204305636668,
+      "med": 5.482358811178374,
+      "p75": 5.95558319170108,
+      "max": 9.977241027440657
     },
     "ab_decode_pct": {
-      "n": 40,
+      "n": 64,
       "min": 2.345745220454125,
-      "p25": 4.025635443394773,
-      "med": 4.195954700757838,
-      "p75": 4.888855421263328,
+      "p25": 3.6442820086354395,
+      "med": 4.147485081622573,
+      "p75": 4.915602792167018,
       "max": 10.859148864490145
     },
     "bc_pct": {
-      "n": 85,
+      "n": 158,
       "min": 2.1240349433226809e-13,
-      "p25": 5.844834427812474e-12,
-      "med": 1.438798882802705e-11,
-      "p75": 0.009520510906237765,
-      "max": 1.6954570225874976
+      "p25": 6.87494707683964e-12,
+      "med": 1.8472796245759684e-11,
+      "p75": 6.596523845872881e-11,
+      "max": 1.9215941787072297
     },
     "cvb_forward_pct": {
-      "n": 45,
-      "min": 0.2950490647600508,
-      "p25": 1.0497531336791806,
-      "med": 1.5562920291250824,
-      "p75": 2.5567044699029613,
+      "n": 94,
+      "min": 0.08461576467111488,
+      "p25": 1.0275192461404452,
+      "med": 1.4820230277193436,
+      "p75": 2.351296252682193,
       "max": 5.919373464900603
     },
     "cvb_decode_pct": {
-      "n": 40,
+      "n": 64,
       "min": 1.00262918003258,
-      "p25": 1.9295186548313041,
-      "med": 2.5759373380313804,
-      "p75": 3.8482959632752074,
+      "p25": 1.8323223280020808,
+      "med": 2.591733782856028,
+      "p75": 3.7846981945885814,
       "max": 16.30307297309006
     },
     "inner_iters_forward": {
-      "n": 45,
-      "min": 19,
-      "p25": 161,
-      "med": 445,
-      "p75": 1003,
-      "max": 2695
+      "n": 94,
+      "min": 10,
+      "p25": 210.5,
+      "med": 576.5,
+      "p75": 1461.25,
+      "max": 3249
     },
     "inner_iters_decode_like": {
-      "n": 40,
-      "min": 2,
-      "p25": 6.0,
-      "med": 8.5,
-      "p75": 16.5,
-      "max": 35
+      "n": 64,
+      "min": 1,
+      "p25": 5.0,
+      "med": 12.0,
+      "p75": 27.0,
+      "max": 1831
     },
     "wall_s": {
-      "n": 85,
+      "n": 158,
       "min": 4.000888300011866,
-      "p25": 4.078303150017746,
-      "med": 4.531235299946275,
-      "p75": 4.773966149950866,
+      "p25": 4.172248074988602,
+      "med": 4.535334049985977,
+      "p75": 4.666375987479114,
       "max": 6.605858499999158
     },
     "settle_temp_c": {
-      "n": 85,
-      "min": 47.0,
+      "n": 158,
+      "min": 45.0,
       "p25": 51.0,
-      "med": 55.0,
+      "med": 55.5,
       "p75": 58.0,
       "max": 68.0
     },
     "max_temp_c": {
-      "n": 85,
-      "min": 50.0,
+      "n": 158,
+      "min": 47.0,
       "p25": 59.0,
-      "med": 63.0,
-      "p75": 72.0,
+      "med": 66.0,
+      "p75": 73.75,
       "max": 83.0
     },
     "median_sm_clock_mhz": {
-      "n": 85,
+      "n": 158,
       "min": 1110.0,
-      "p25": 1860.0,
-      "med": 2280.0,
+      "p25": 1837.5,
+      "med": 2250.0,
       "p75": 2325.0,
       "max": 2325.0
     },
     "idle_w": {
-      "n": 85,
-      "min": 3.6850462633451957,
-      "p25": 3.9660925266903915,
-      "med": 4.2601543859649125,
-      "p75": 4.524160714285713,
+      "n": 158,
+      "min": 3.553628975265018,
+      "p25": 3.957049745280192,
+      "med": 4.301356834666171,
+      "p75": 4.5159064209726445,
       "max": 7.314175438596491
     },
     "fp32_over_fp16_forward": {
-      "n": 20,
+      "n": 47,
       "min": 2.0381886723548135,
-      "p25": 2.5602719891561136,
-      "med": 3.2647983625843855,
-      "p75": 3.5574615850418025,
-      "max": 3.8994014486744617
+      "p25": 2.557993825829759,
+      "med": 3.2399326435475624,
+      "p75": 3.768867919332073,
+      "max": 4.068814099873284
     }
   },
-  "generated_at": "2026-07-18T02:23:39-04:00",
+  "generated_at": "2026-07-18T23:48:16-04:00",
   "data_path": "E:\\data\\code\\claudecode\\TOMLTransformers\\experiments\\exp_002_size_sweep\\energy.jsonl",
-  "lines": 85,
+  "lines": 158,
   "parse_errors": 0,
-  "unique_keys": 85,
+  "unique_keys": 158,
   "superseded": 0,
   "outcomes": {
-    "ok": 85,
+    "ok": 158,
     "failed": 0,
     "oom_skipped": 0,
     "short_window": 0,
-    "resume_complete": 85,
+    "resume_complete": 158,
     "cleared_short_window": 0,
     "cleared_failed": 0
   },
   "grid_total": 296,
-  "eta_hours_remaining": 17.092794232638887,
+  "eta_hours_remaining": 11.145915805,
   "monotonicity": {
-    "series_checked": 9,
+    "series_checked": 18,
     "violations": 0
   },
   "fp_pairs": {
-    "n": 40,
+    "n": 72,
     "inversions": 0
   },
   "warnings": [
     "CV(B) 16.3% above 7.5% (decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing)",
-    "inner_iters=2 very low (decoder_only|GPT-2-large|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing)"
+    "CV(B) 11.9% above 7.5% (decoder_only|GPT-2-XL|decode|fp16|flash|random|s128|b1|ctx128|k64|growing)",
+    "CV(B) 9.5% above 7.5% (decoder_only|GPT-2-XL|decode|fp16|flash|random|s512|b1|ctx512|k64|growing)",
+    "CV(B) 9.9% above 7.5% (encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing)",
+    "inner_iters=2 very low (decoder_only|GPT-2-large|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing)",
+    "inner_iters=2 very low (decoder_only|GPT-2-XL|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing)",
+    "inner_iters=1 very low (decoder_only|GPT-2-XL|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing)"
   ],
-  "notes": []
+  "notes": [
+    "data spans multiple git commits: {'ba3347e62': 85, 'f5ab202ce': 73} (expected across chunks if code changed between them)"
+  ]
 }
