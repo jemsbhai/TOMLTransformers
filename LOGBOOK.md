@@ -247,3 +247,16 @@ Decisions:
   explicit go-ahead for HF downloads.
 - The A100/Lambda pre-registration amendment (Step 5) must still be
   written BEFORE any A100 measurement.
+
+### Addendum 2026-07-20 - Step 2-3 fit plan frozen (pre-fit)
+experiments/exp_002_size_sweep/fit_plan.md committed as the operative
+analysis plan BEFORE any fit code or results exist. Decisions resolved at
+sign-off: D1 dispatch features = per-execution Python dispatch counts
+(decode 65, forward phases 1, n_fused_steps 0); D2 main-table split =
+stratified 80/20, seed 42, strata (arch, phase-class, precision); D-E
+extrapolation = E2 broad reading primary with E1 strict-literal reported
+alongside, ViT-L/16 evaluated at native shape; D3 layerwise baseline = raw
+structural counts without to_costs priors. Ambiguity policy: both
+pre-registration readings computed and reported, no post-hoc selection.
+Next: feature bridge with unit-test gates (fit_plan section 3), then
+scripts/fit_exp002.py.
