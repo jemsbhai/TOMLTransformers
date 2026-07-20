@@ -1,15 +1,15 @@
 {
   "progress": {
     "total": 296,
-    "measured": 30,
-    "skipped_done": 239,
-    "ok": 30,
+    "measured": 24,
+    "skipped_done": 269,
+    "ok": 24,
     "failed": 0,
     "oom": 0,
     "short_window": 0,
     "stopped_early": true,
     "keys_failed": []
   },
-  "git_commit": "99024e884e72d602515739006c10f00cef331826",
-  "elapsed_s": 11167.123566627502
+  "git_commit": "33592b37877dc952470c91dfbbbac8576d44336a",
+  "elapsed_s": 11212.989965438843
 }
