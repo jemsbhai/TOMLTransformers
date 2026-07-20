@@ -1,55 +1,55 @@
 EXP-002 sweep data-quality report
-generated: 2026-07-20T09:37:18-04:00
+generated: 2026-07-20T09:59:46-04:00
 data: E:\data\code\claudecode\TOMLTransformers\experiments\exp_002_size_sweep\energy.jsonl
 
 == 1. File integrity ==
-  records: 293 lines parsed, 0 parse errors, 0 without spec.key
-  schema versions: {'tomltransformers.sweep.point.v1': 293}
-  git commits: {'ba3347e62': 85, 'f5ab202ce': 73, 'd434da284': 81, '99024e884': 30, '33592b378': 24}
-  unique keys: 293  superseded records (last-write-wins): 0
+  records: 296 lines parsed, 0 parse errors, 0 without spec.key
+  schema versions: {'tomltransformers.sweep.point.v1': 296}
+  git commits: {'ba3347e62': 85, 'f5ab202ce': 73, 'd434da284': 81, '99024e884': 30, '33592b378': 24, 'b5972620d': 3}
+  unique keys: 296  superseded records (last-write-wins): 0
 
 == 2. Outcomes (latest record per key) ==
-  ok: 293   failed: 0   oom_skipped: 0   short_window: 0
-  resume-complete (ok and not short_window): 293
+  ok: 296   failed: 0   oom_skipped: 0   short_window: 0
+  resume-complete (ok and not short_window): 296
   earlier short-window records cleared by re-run: 0
   earlier failed records cleared by re-run: 0
   n_repeats by phase class (protocol: forward=5, decode-like=10):
-    forward      {5: 131}
+    forward      {5: 134}
     decode-like  {10: 162}
 
 == 3. sweep_summary.json cross-check ==
-  summary: total=296 measured=24 skipped_done=269 ok=24 failed=0 oom=0 short_window=0 stopped_early=True
-  summary elapsed: 3.11 h   commit: 33592b378
-  consistent: summary ok+skipped_done == file resume-complete == 293
+  summary: total=296 measured=3 skipped_done=293 ok=3 failed=0 oom=0 short_window=0 stopped_early=False
+  summary elapsed: 0.36 h   commit: b5972620d
+  consistent: summary ok+skipped_done == file resume-complete == 296
 
 == 4. Coverage (ok points) ==
   decoder_only       decode               50
-  decoder_only       prefill              57
+  decoder_only       prefill              60
   encoder_decoder    decode               72
   encoder_decoder    decoder_prefill      40
   encoder_decoder    encode               40
   encoder_only       encode               34
-  precision: {'fp16': 150, 'fp32': 143}
-  attn_kind: {'eager': 6, 'flash': 287}
-  models: BART-base 38, BART-large 38, BERT-base 10, BERT-large 10, DistilBERT 10, DistilGPT2 25, GPT-2 22, GPT-2-XL 20, GPT-2-large 20, GPT-2-medium 20, T5-base 38, T5-small 38, ViT-B/16 2, ViT-L/16 2
-  grid progress: 293/296 resume-complete (99.0%)
+  precision: {'fp16': 153, 'fp32': 143}
+  attn_kind: {'eager': 8, 'flash': 288}
+  models: BART-base 38, BART-large 38, BERT-base 10, BERT-large 10, DistilBERT 10, DistilGPT2 25, GPT-2 25, GPT-2-XL 20, GPT-2-large 20, GPT-2-medium 20, T5-base 38, T5-small 38, ViT-B/16 2, ViT-L/16 2
+  grid progress: 296/296 resume-complete (100.0%)
 
 == 5. Pace and projection ==
-  seconds per point (chunk-internal gaps): n=288  min=221  p25=265  med=297  p75=519  max=1475
-  remaining: 3 points -> ~0.2 h at median pace (~0.0 chunks of 8 h, ~0.0 chunks of 6 h)
+  seconds per point (chunk-internal gaps): n=290  min=221  p25=265  med=297  p75=519  max=1475
+  remaining: 0 points -> ~0.0 h at median pace (~0.0 chunks of 8 h, ~0.0 chunks of 6 h)
 
 == 6. Instrument agreement (ok points) ==
-  A-B forward (prior obs ~5-10%): n=131  min=3.76%  p25=4.91%  med=5.53%  p75=6.08%  max=9.98%
+  A-B forward (prior obs ~5-10%): n=134  min=3.76%  p25=4.92%  med=5.53%  p75=6.04%  max=9.98%
   A-B decode-like (prior obs ~5-15%): n=162  min=2.35%  p25=3.39%  med=4.03%  p75=4.67%  max=10.86%
     highest A-B: 10.86%  [decode-like]  decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
     highest A-B: 9.98%  [forward]  encoder_only|DistilBERT|encode|fp16|flash|random|s128|b1
     highest A-B: 9.65%  [forward]  encoder_only|BERT-base|encode|fp16|flash|random|s128|b1
     highest A-B: 9.58%  [forward]  decoder_only|GPT-2-medium|prefill|fp16|flash|random|s128|b1
     highest A-B: 8.75%  [decode-like]  encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing
-  B-C: n=293  min=0.000%  p25=0.000%  med=0.000%  p75=0.239%  max=1.922%
+  B-C: n=296  min=0.000%  p25=0.000%  med=0.000%  p75=0.241%  max=1.922%
 
 == 7. Repeat noise ==
-  CV(B) forward: n=131  min=0.08%  p25=1.15%  med=1.56%  p75=2.39%  max=6.24%
+  CV(B) forward: n=134  min=0.08%  p25=1.15%  med=1.54%  p75=2.37%  max=6.24%
   CV(B) decode-like: n=162  min=0.62%  p25=1.52%  med=2.29%  p75=3.41%  max=16.30%
     highest CV(B): 16.30%  decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
     highest CV(B): 11.94%  decoder_only|GPT-2-XL|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
@@ -60,35 +60,35 @@ data: E:\data\code\claudecode\TOMLTransformers\experiments\exp_002_size_sweep\en
     decode             {'A': 104, 'A+B+C': 13, 'A+C': 2, 'B+C': 2, 'none': 1}
     decoder_prefill    {'A': 40}
     encode             {'A': 72, 'A+B+C': 2}
-    prefill            {'A': 56, 'A+B+C': 1}
+    prefill            {'A': 59, 'A+B+C': 1}
 
 == 8. Window sizing ==
-  inner_iters forward: n=131  min=10  p25=264  med=645  p75=1442  max=3249
+  inner_iters forward: n=134  min=10  p25=246  med=600  p75=1403  max=3249
   inner_iters decode-like: n=162  min=1  p25=10  med=16  p75=34  max=1831
-  wall_time_s_median: n=293  min=4.00  p25=4.20  med=4.59  p75=4.72  max=6.61
+  wall_time_s_median: n=296  min=4.00  p25=4.20  med=4.59  p75=4.72  max=6.61
 
 == 9. Thermal and clocks ==
-  settle temp (C): n=293  min=44  p25=50  med=55  p75=58  max=68
-  max temp during repeats (C): n=293  min=47  p25=56  med=66  p75=73  max=83
+  settle temp (C): n=296  min=44  p25=50  med=55  p75=58  max=68
+  max temp during repeats (C): n=296  min=47  p25=57  med=66  p75=73  max=83
     hottest: 83 C  decoder_only|GPT-2|prefill|fp32|flash|random|s512|b1
     hottest: 83 C  decoder_only|GPT-2|prefill|fp32|flash|random|s1024|b1
     hottest: 83 C  decoder_only|GPT-2-medium|prefill|fp32|flash|random|s512|b1
     hottest: 82 C  decoder_only|GPT-2|prefill|fp32|flash|random|s256|b1
     hottest: 82 C  decoder_only|GPT-2|prefill|fp32|flash|random|s2048|b1
-  median SM clock, first sample dropped (MHz): n=293  min=1110  p25=1912  med=2280  p75=2325  max=2325
+  median SM clock, first sample dropped (MHz): n=296  min=1110  p25=1918  med=2280  p75=2325  max=2325
     lowest clocks: 1110 MHz  decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
     lowest clocks: 1148 MHz  encoder_decoder|T5-small|encode|fp16|flash|random|s128|b1
     lowest clocks: 1215 MHz  decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
     lowest clocks: 1230 MHz  decoder_only|GPT-2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing
     lowest clocks: 1455 MHz  decoder_only|GPT-2-medium|decode|fp16|flash|random|s512|b1|ctx512|k64|growing
-  idle power (W): n=293  min=3.52  p25=3.89  med=4.23  p75=4.48  max=7.31
+  idle power (W): n=296  min=3.52  p25=3.89  med=4.23  p75=4.50  max=7.31
 
 == 10. Physics sanity ==
   per_unit_contaminated by phase:
     decode             True=122 False=0
     decoder_prefill    True=0 False=40
     encode             True=0 False=74
-    prefill            True=0 False=57
+    prefill            True=0 False=60
   seq_len monotonicity (prefill/encode, non-ViT): 26 series checked, 0 violations
   fp32/fp16 matched-shape pairs: 143   inversions: 0
   fp32/fp16 per-unit energy ratio (forward phases): n=62  min=2.04  p25=2.55  med=3.24  p75=3.79  max=4.11
@@ -104,4 +104,4 @@ data: E:\data\code\claudecode\TOMLTransformers\experiments\exp_002_size_sweep\en
     WARN: inner_iters=2 very low (decoder_only|GPT-2-XL|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing)
     WARN: inner_iters=1 very low (decoder_only|GPT-2-XL|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing)
   notes (1):
-    note: data spans multiple git commits: {'ba3347e62': 85, 'f5ab202ce': 73, 'd434da284': 81, '99024e884': 30, '33592b378': 24} (expected across chunks if code changed between them)
+    note: data spans multiple git commits: {'ba3347e62': 85, 'f5ab202ce': 73, 'd434da284': 81, '99024e884': 30, '33592b378': 24, 'b5972620d': 3} (expected across chunks if code changed between them)
