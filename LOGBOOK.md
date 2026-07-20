@@ -225,3 +225,25 @@ recommitted with the harvest. All seven validator WARNs fall in the two
 known-benign families (fp16 small-target decode CV; low inner_iters at large
 fp32 decode with the 4 s wall floor met). Decision: continue unchanged.
 Remaining ~138 points (enc-dec, ViT, eager block) projected ~12-15 h.
+
+### Addendum 2026-07-20 - EXP-002 measurement campaign COMPLETE: 296/296
+Grid exhausted naturally on chunk 6 (stopped_early=False). Ledger: 85
+(ba3347e, 8 h) + 73 (f5ab202, 8 h) + 81 (d434da2, 8 h) + 30 (99024e8, 3 h
+budget) + 24 (33592b3, 2 h budget) + 3 (b597262, 0.36 h); ~29.5 h wall total
+versus the ~30 h pre-launch estimate. 296/296 ok; zero failed / OOM /
+short-window / superseded across the campaign; resume semantics behaved
+exactly as specified across five restarts. Full-grid QC is the findings.md
+2026-07-20 entry (the paper's measurement-quality record). Final WARN
+ledger: 8, all inside the two characterized benign families (fp16-dominated
+small-target decode CV; low inner_iters at large fp32 decode with the 4 s
+wall floor met); frozen as-is. The OOM skip-and-log path never fired
+(everything fit in 16 GB) and remains unexercised going into A100 work.
+Decisions:
+- energy.jsonl is FROZEN as the EXP-002 RTX 4090 dataset; any future
+  re-measurement appends under a new commit via last-write-wins.
+- Next: Step 2, fit the M0-M9 NNLS family against instrument B per the
+  pre-registration (CPU-only). No further 4090 measurement is planned for
+  EXP-002 except the Step 4 representativeness spot checks, which require
+  explicit go-ahead for HF downloads.
+- The A100/Lambda pre-registration amendment (Step 5) must still be
+  written BEFORE any A100 measurement.

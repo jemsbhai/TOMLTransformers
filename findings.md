@@ -456,3 +456,72 @@ the data). Uncalibrated; not citable results.
   the policy working, not a failure.
 
 Sweep continues unchanged.
+
+
+### 2026-07-20 - EXP-002 measurement campaign complete: full-grid QC at 296/296
+
+**Status:** consolidated QC for chunks 3-6 plus the full-grid validator pass
+(2026-07-20 09:59 EDT over all 296 points; reports committed beside the
+data). Uncalibrated magnitudes; the confirmatory analyses (fit,
+extrapolation, baselines) have NOT been run. This entry is the
+measurement-quality record for the paper.
+
+**Campaign ledger.** Six resumable chunks, one grid, no manual intervention
+beyond launch and commit: 85 (ba3347e) + 73 (f5ab202) + 81 (d434da2) + 30
+(99024e8) + 24 (33592b3) + 3 (b597262) = 296. The three 8 h chunks measured
+8.03-8.08 h each; chunks 4-6 ran within 3 h, 2 h, and 0.36 h budgets, so
+the campaign cost ~29.5 h wall time against the ~30 h pre-launch estimate.
+Final pace: median 297 s/point (p25 265, p75 519, max 1475).
+
+**Perfect outcome record.** 296/296 ok; zero failed, zero OOM-skipped, zero
+short-window, zero superseded records; repeat protocol exact (134 forward
+at 5 repeats, 162 decode-like at 10); resume never re-measured a completed
+point across five restarts. Consequence worth recording honestly: the OOM
+skip-and-log path never fired, so every pre-registered point fit in 16 GB,
+and that path remains UNEXERCISED on real hardware going into the A100
+work.
+
+**Two grid facts discovered during QC** (both expander behavior, both
+sensible, neither previously written down):
+- ViT entries are deduped to one point per precision (2 per model, 4
+  total) because the vision workload ignores seq_len; the planned ViT
+  seq-len-invariance replicate check is therefore vacuous by design, not
+  data-starved.
+- The attention_compare block adds 10 points (DistilGPT2 and GPT-2: eager
+  fp16 at s512/1024/2048/4096, plus flash fp16 s4096, which the main grid
+  lacks), bringing those models to 25 points each. All eager data landed
+  in the final chunks; eager-vs-flash energy ratios are a fit-time
+  analysis, not repeated here.
+
+**Full-grid instrument story (the paper's measurement-quality numbers):**
+- A-B: forward median 5.53% (p25 4.92, p75 6.04, max 9.98); decode-like
+  median 4.03% (p25 3.39, p75 4.67, max 10.86). Per-class medians straddle
+  the pre-registered <= 5% median target: decode-like meets it, forward is
+  half a point over. The pooled-median verdict will be computed exactly in
+  the fit-time analysis rather than eyeballed here.
+- B-C: median 0.000%, p75 0.241%, max 1.922% over 296 points.
+- CV(B): forward median 1.54% (max 6.24%); decode-like median 2.29%. The
+  noisy family froze at five members, all small-target decode (four fp16,
+  one fp32 at 7.9%); BART-large's small-target decode points did NOT join
+  it. B was CV-flagged on 18/296 points, A on 293/296.
+- Window floor: minimum wall 4.00 s across all 296 points; the three
+  low-inner_iters WARNs (2, 2, 1) are all large fp32 decoder decode where
+  a single execution approaches the floor by itself; valid under the floor
+  invariant.
+- Thermal/clocks: settle 44-68 C, peak 83 C (GPT-2 / GPT-2-medium fp32
+  prefill); small fp16 decode/encode points downclock to 1110-1605 MHz;
+  idle baseline spanned 3.52-7.31 W across the campaign, absorbed by the
+  per-point baseline design.
+
+**Physics sanity, final:** 26/26 prefill+encode series monotone in seq_len
+(including both eager series through s4096); 143/143 fp32/fp16 matched
+pairs correctly ordered; forward-phase precision ratio median 3.24x, range
+2.04-4.11x (n=62); contamination flags exact (decode 122 True, all other
+phases False).
+
+**Data freeze.** energy.jsonl (296 records across 6 commits) is now the
+frozen EXP-002 RTX 4090 dataset. Any future re-measurement appends under a
+new commit and stays distinguishable via last-write-wins provenance. Next
+per the pre-registration: the M0-M9 fit against instrument B (Step 2),
+then the pre-registered extrapolation split and baseline bake-off (Step
+3), then the representativeness check (Step 4).
