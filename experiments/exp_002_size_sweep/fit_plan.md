@@ -12,8 +12,11 @@ be computed and reported, so no post-hoc selection occurs.
 
 - Data: experiments/exp_002_size_sweep/energy.jsonl, frozen at 296 records
   (six commits, ba3347e..b597262), last-write-wins latest per key, all ok.
-- Target y: per_execution_j["B"] (median over repeats), joules per execution.
-  Instrument B is primary per the settled decision. A and C are not fit.
+- Target y: per_execution_median_j["B"] (median over repeats), joules per
+  execution. Instrument B is primary per the settled decision. A and C are
+  not fit. (Field name corrected 2026-07-20 pre-fit: the records'
+  per_execution_j field is the MEAN over repeats; the committed intent, the
+  median, lives in per_execution_median_j.)
 - Uncertainty carried per point: per_execution std over repeats (from the
   record), used for error bars and the decode per-token propagation, NOT as
   fit weights (see section 6).
@@ -69,7 +72,8 @@ as 1). n_fused_steps = 0 everywhere (no fused-sequential kernels exist in
 these workloads), so M4 and M9 degenerate to M3 and M8 plus an AIC penalty;
 they remain in the family for completeness and this degeneration is stated
 in the paper. ALTERNATIVE: all dispatch features 0, making M3/M4/M8/M9
-inert. Decision required before fitting.
+inert. Decision required before fitting. (Resolution: see section 11, D1',
+amended 2026-07-20.)
 
 ## 5. Splits
 
@@ -164,10 +168,23 @@ LOGBOOK line BEFORE fit code lands.
 
 ## 11. Resolutions (2026-07-20, approved before any fit code)
 
-- D1: ADOPTED as proposed. n_launches = Python-level forward dispatches per
-  execution (forward phases 1; decode 65). n_fused_steps = 0 everywhere;
-  M4/M9 degenerate to M3/M8 plus an information-criterion penalty, stated
-  openly in the paper.
+- D1: originally ADOPTED as proposed at sign-off, then AMENDED the same day,
+  still pre-fit, to D1' after code review found that architectures/common.py
+  already implements a documented kernel-launch convention designed to drive
+  the M3+ dispatch term: each GEMM, norm, and embedding gather counts one
+  launch; fused elementwise ops count zero; standard attention counts 3 vs
+  flash 1; KV-cache reads/writes count 0. D1': the bridge uses these
+  built-in GEMM-level launch counts exactly as emitted and summed through
+  the execution composition; no overwriting with flat Python-dispatch
+  counts. Rationale: matches the signals-paper So semantics (CUDA kernel
+  launches), carries the launch-bound small-context-decode floor the QC data
+  showed, and is sequence-independent per forward so the column decouples
+  from the TO features. These launch counts are a structural PROXY for
+  kernel launches, not a profiled count; the fitted coefficient absorbs the
+  proxy scale, and this is stated in the paper. n_fused_steps remains 0 by
+  construction; the M4/M9 degeneration statement is unchanged. Amendment
+  approved with an explicit thoroughness condition, honored by
+  launch-specific invariants in the bridge test gates.
 - D2: ADOPTED. Stratified random 80/20, seed 42, strata (arch, phase-class,
   precision).
 - D-E: E2 (broad reading) is PRIMARY; E1 (strict-literal) is computed and

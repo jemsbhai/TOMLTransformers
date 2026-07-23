@@ -260,3 +260,18 @@ structural counts without to_costs priors. Ambiguity policy: both
 pre-registration readings computed and reported, no post-hoc selection.
 Next: feature bridge with unit-test gates (fit_plan section 3), then
 scripts/fit_exp002.py.
+
+### Addendum 2026-07-20 - Pre-fit amendments: D1 -> D1', target field name
+Two dated amendments to fit_plan.md, both made BEFORE any fit code or
+results exist: (1) D1 amended to D1': the dispatch feature uses the
+GEMM-level kernel-launch convention already built into
+architectures/common.py and attention.py (each GEMM/norm/embedding gather =
+1 launch, fused elementwise = 0, standard attention 3 vs flash 1, KV-cache
+ops 0), summed through the execution composition, instead of flat
+Python-dispatch counts. Signals-paper So semantics; a structural proxy
+whose scale the fitted coefficient absorbs. Amendment approved with an
+explicit thoroughness condition, honored via launch-specific invariants in
+the bridge test gates. (2) Target field name corrected: the fit reads
+per_execution_median_j["B"], the plan's committed median intent; the
+records' per_execution_j field is the mean. Next: feature bridge plus test
+gates; scripts/fit_exp002.py only after the gates are green.
