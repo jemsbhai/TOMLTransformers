@@ -15,8 +15,16 @@ Reads the frozen dataset, fits the M0-M9 family per the approved fit plan
     experiments/exp_002_size_sweep/fit/fit_results.json
     experiments/exp_002_size_sweep/fit/per_point_predictions.jsonl
 
-Everything printed is also in fit_report.txt. This script is deterministic
-(seed 42 stratified split; NNLS is deterministic).
+Everything printed is also in fit_report.txt. Deterministic (seed 42
+stratified split; NNLS is deterministic).
+
+TARGET UNITS (corrected 2026-07-23): the record fields per_execution_*_j
+are per repeat WINDOW, i.e. inner_iters composite executions sized by
+measure_until_floor to the 4 s floor. The fit target is therefore
+per_execution_median_j["B"] / inner_iters: joules per ONE composite
+execution as defined by fit_plan section 2. A consistency gate below
+cross-checks this against the independently stored per_unit_j field on
+every record and aborts on any units disagreement.
 """
 
 from __future__ import annotations
@@ -52,6 +60,7 @@ CV_B_EXCLUDE = 0.075          # R2: the five CV(B)-flagged points
 INNER_ITERS_EXCLUDE = 2       # R3: the three inner_iters <= 2 points
 AB_TARGET = 0.05              # pre-registered pooled A-B median target
 EXTRAP_TARGET_MAPE = 25.0     # pre-registered extrapolation band (percent)
+UNITS_GATE_RTOL = 0.2         # derived target vs stored per_unit (mean vs median)
 
 MEMORY_FEATS = frozenset({"to_sram", "to_hbm"})
 COMPUTE_FEATS = frozenset({"to_mac", "to_nonlinear"})
@@ -80,11 +89,27 @@ def git_commit() -> str:
 
 
 def target_y(rec: dict) -> float:
-    return float(rec["per_execution_median_j"]["B"])
+    """Joules per composite execution (window median / inner_iters)."""
+    return float(rec["per_execution_median_j"]["B"]) / int(rec["inner_iters"])
 
 
 def y_std(rec: dict) -> float:
-    return float(rec.get("per_execution_std_j", {}).get("B", 0.0))
+    return (float(rec.get("per_execution_std_j", {}).get("B", 0.0))
+            / int(rec["inner_iters"]))
+
+
+def units_gate(records, ys) -> None:
+    """Abort on any target/units inconsistency (added 2026-07-23 after the
+    window-vs-execution error; see LOGBOOK). Forward phases: y ~ per_unit.
+    Decode: y ~ per_unit * decode_tokens (per_unit is the naive per-token)."""
+    for r, y in zip(records, ys):
+        s = r["spec"]
+        pu = float(r["per_unit_j"]["B"])
+        expect = pu * int(s["decode_tokens"]) if s["phase"] == "decode" else pu
+        if not math.isclose(y, expect, rel_tol=UNITS_GATE_RTOL):
+            raise AssertionError(
+                f"target/units inconsistency at {s['key']}: derived {y:.6g} J "
+                f"per execution vs per_unit-implied {expect:.6g} J")
 
 
 def fresh(name: str) -> EnergyModel:
@@ -160,7 +185,11 @@ def main() -> int:
     assert len(records) == 296, len(records)
     feats = [features_for_spec(r["spec"]) for r in records]
     ys = [target_y(r) for r in records]
-    out(f"records: {len(records)} (all ok; target = per_execution_median_j['B'])")
+    units_gate(records, ys)
+    out(f"records: {len(records)} (all ok)")
+    out("target: per_execution_median_j['B'] / inner_iters = J per composite "
+        "execution (units corrected 2026-07-23; per_unit consistency gate "
+        "passed on all 296)")
 
     # ------------------------------------------------------------------
     out()
@@ -380,6 +409,8 @@ def main() -> int:
         "git_commit": commit,
         "seed": SEED,
         "n_records": len(records),
+        "target": "per_execution_median_j[B] / inner_iters (J per composite "
+                  "execution; units corrected 2026-07-23)",
         "pooled_ab_median": float(pooled),
         "pooled_ab_target_met": bool(ab_pass),
         "main_table": [{

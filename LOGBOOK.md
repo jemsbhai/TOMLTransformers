@@ -275,3 +275,22 @@ the bridge test gates. (2) Target field name corrected: the fit reads
 per_execution_median_j["B"], the plan's committed median intent; the
 records' per_execution_j field is the mean. Next: feature bridge plus test
 gates; scripts/fit_exp002.py only after the gates are green.
+
+### Addendum 2026-07-23 - First fit run INVALID: target units error, caught pre-acceptance
+The first execution of scripts/fit_exp002.py produced physically impossible
+outputs: R2 ~ 0 with all of M2-M9 identical, a zero memory coefficient, a
+~539 J intercept, and negative decode per-token energies. Diagnosis: the
+record fields per_execution_*_j are per repeat WINDOW (inner_iters composite
+executions, sized by measure_until_floor to the 4 s floor), not per
+execution, so the fitted target was nearly constant by construction while
+the features varied by orders of magnitude. NOT a measurement problem: the
+GPU was uninvolved (CPU-only analysis) and the frozen dataset is unaffected
+(its physics QC already passed). Fix, recorded as a dated units correction
+in fit_plan.md section 1: y = per_execution_median_j["B"] / inner_iters
+(joules per composite execution, matching the plan's section 2 boundary
+table), std treated identically, and a new fit-time consistency gate
+cross-checks the derived target against the independently stored per_unit_j
+on all 296 records (forward phases y ~ per_unit; decode y ~ per_unit x
+decode_tokens), aborting on any disagreement. The invalid artifacts were
+never committed and are overwritten by the corrected run. Lesson recorded:
+the bridge gates verified features only; targets now have their own gate.

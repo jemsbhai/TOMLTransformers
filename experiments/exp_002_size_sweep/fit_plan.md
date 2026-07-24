@@ -12,14 +12,23 @@ be computed and reported, so no post-hoc selection occurs.
 
 - Data: experiments/exp_002_size_sweep/energy.jsonl, frozen at 296 records
   (six commits, ba3347e..b597262), last-write-wins latest per key, all ok.
-- Target y: per_execution_median_j["B"] (median over repeats), joules per
-  execution. Instrument B is primary per the settled decision. A and C are
-  not fit. (Field name corrected 2026-07-20 pre-fit: the records'
-  per_execution_j field is the MEAN over repeats; the committed intent, the
-  median, lives in per_execution_median_j.)
-- Uncertainty carried per point: per_execution std over repeats (from the
-  record), used for error bars and the decode per-token propagation, NOT as
-  fit weights (see section 6).
+- Target y: per_execution_median_j["B"] / inner_iters, joules per ONE
+  composite execution as defined in section 2. Instrument B is primary per
+  the settled decision. A and C are not fit.
+  (2026-07-20 correction: the median lives in per_execution_median_j; the
+  per_execution_j field is the mean. 2026-07-23 UNITS correction, made
+  pre-acceptance: the per_execution_*_j fields are per repeat WINDOW, i.e.
+  inner_iters composite executions sized by measure_until_floor to the 4 s
+  floor. The first fit run surfaced the error unmistakably, R2 ~ 0 with a
+  ~539 J intercept matching the window energy the floor targets by
+  construction and negative per-token values, and was discarded before any
+  result was accepted or committed. A fit-time consistency gate now
+  cross-checks the derived target against the independently stored
+  per_unit_j on every record: forward phases y ~ per_unit, decode y ~
+  per_unit x decode_tokens.)
+- Uncertainty carried per point: window std over repeats / inner_iters
+  (joules per composite execution), used for error bars and the decode
+  per-token propagation, NOT as fit weights (see section 6).
 
 ## 2. Execution boundary table (verified against workload code)
 
