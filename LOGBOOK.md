@@ -314,3 +314,19 @@ section applying the R1 estimator to both extrapolation readings, MCER, and
 the model-subtracted per-token rows; confirmatory outputs unchanged; the
 exploratory results inform the paper's estimator discussion and the A100
 pre-registration amendment only, and are never presented as pre-registered.
+
+### Addendum 2026-07-24 - Exploratory R1 run complete; results recorded
+Rerun at commit aac684f: confirmatory sections byte-identical to the
+50a15b3 run (determinism check passed); units gate green on all 296.
+Exploratory R1 headline: E2 pooled MAPE 15.24% on the identical split that
+fails at 50.37% under the pre-registered absolute estimator (E1 13.25%),
+attributing the E2 failure to estimator scale-weighting rather than the TO
+feature set; MCER under R1 recovers the EXP-001 regime split (forward
+0.22-0.43, decode 9.8-10.5); per-token monotonicity restored on the three
+model-subtracted rows. Full record: findings.md 2026-07-24 entry; artifacts
+committed with this addendum. Next, in order: Step 3 baselines (roofline
+with cited RTX 4090 Laptop peak specs, layerwise regressor per D3, Wilcoxon
+plus Holm), then Step 4 representativeness (requires explicit go-ahead for
+HF downloads), then the Step 5 A100/Lambda pre-registration amendment,
+which will pre-register R1 as the primary estimator for the cross-platform
+test before any A100 data exists.

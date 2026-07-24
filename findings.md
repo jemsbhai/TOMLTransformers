@@ -525,3 +525,78 @@ new commit and stays distinguishable via last-write-wins provenance. Next
 per the pre-registration: the M0-M9 fit against instrument B (Step 2),
 then the pre-registered extrapolation split and baseline bake-off (Step
 3), then the representativeness check (Step 4).
+
+
+### 2026-07-24 - EXP-002 confirmatory fit results (pre-registered), plus labeled exploratory R1
+
+**Status:** CONFIRMATORY results per fit_plan.md, recorded exactly as they
+fell, produced by scripts/fit_exp002.py at commit aac684f (artifacts in
+experiments/exp_002_size_sweep/fit/). Deterministic: the confirmatory
+sections reproduced byte-identical across the 50a15b3 and aac684f runs,
+which doubles as a reproducibility check. The exploratory subsection is
+post-hoc, approved 2026-07-24 before its run, labeled everywhere, and never
+presented as pre-registered. Baselines and significance tests (plan section
+8) have NOT been run yet.
+
+**Pre-registered verdicts:**
+1. Pooled A-B median 4.80% over all 296 points: the <= 5% target is MET
+   (forward 5.53%, decode-like 4.03%). The 100 Hz plus hardware-counter
+   methods contribution now carries a met pre-registered target.
+2. Model selection: M8_split_dispatch wins by AIC (R2_test 0.987, R2_train
+   0.973). M9 lands at exactly M8 plus the information-criterion penalty,
+   the degeneration predicted in writing before any fit (n_fused_steps is 0
+   by construction). The launch term is retained by selection at ~0.93 mJ
+   per launch (absolute fit), carrying the launch-bound small-context
+   decode floor the QC data showed.
+3. Extrapolation: E2 broad (PRIMARY) FAILS its pre-registered band, pooled
+   MAPE 50.37% vs 25% (decoder 33.1%, enc-dec 61.0%, encoder 42.5%). E1
+   strict-literal PASSES at 14.34%. Both verdicts stand as registered.
+4. Calibrated MCER (absolute estimator, winner refit on all 296): decode
+   12.6-13.1 vs forward 3.0-4.1 medians. The prefill-vs-decode phase
+   transition is confirmed in calibrated joules, no longer prior-weighted
+   TO ratios.
+5. Clean per-token decode: positive and monotone in context on all 74
+   measured-subtracted rows. Examples (fp16): DistilGPT2 87 -> 202 mJ/token
+   over ctx 128 -> 4096; GPT-2-XL 1.52 -> 1.90 J/token over ctx 128 -> 2048.
+
+**Central methods finding: the pre-registered estimator is scale-blind on
+this data.** R2_test 0.987 coexists with MAPE_test 88% on the same held-out
+set: absolute NNLS over a target spanning roughly four decades is dominated
+by the largest-energy points and butchers the smallest in relative terms.
+The distortion is visible in the coefficients (to_sram 1.97e-12, about 350x
+to_hbm, physically inverted, and unstable under R3, which zeroes to_mac
+entirely) and in the three model-subtracted ctx4096 per-token rows, which
+break monotonicity only because the inflated SRAM coefficient overpredicts
+the subtracted prefill component.
+
+**Exploratory (post-hoc, labeled; R1 relative-error NNLS, winner form):**
+- Full data: R2 0.924, MAPE 18.2%. Coefficients are physically sensible and
+  stable between the train-split and all-296 fits (to_mac 3.4e-15, to_sram
+  2.5-2.7e-14, to_hbm 7.5-7.7e-15 J/TO, launch 0.76-0.82 mJ). The fitted
+  sram/hbm per-TO coefficients land within ~3.5x of each other, meaning the
+  45 nm priors already carry most of the memory-hierarchy ratio.
+- E2 under R1: pooled MAPE 15.24% on the IDENTICAL split that fails at
+  50.37% under the absolute estimator (E1: 13.25%). Same features, same
+  splits, estimator swapped: the E2 failure is attributable to estimator
+  scale-weighting, not to the TO feature set. Stated with the exploratory
+  label; the pre-registered E2 verdict remains FAIL.
+- MCER under R1 recovers the EXP-001 regime split qualitatively: forward
+  phases 0.22-0.43 (below 1, compute-dominated), decode 9.8-10.5 (far above
+  1, memory-dominated). Calibrated decode MCER sits well below EXP-001's
+  prior-weighted TO ratio (~66-70); part of the gap is that the fitted
+  launch term absorbs decode energy outside both the MCER numerator and
+  denominator, part is the priors' HBM weighting. Quantifying that split is
+  paper analysis, not asserted here.
+- Per-token monotonicity is restored on the three model-subtracted rows
+  (GPT-2-medium 0.92 J, GPT-2-large 1.60 J, GPT-2-XL 2.60 J per token at
+  ctx4096), with all measured-subtracted rows identical by construction.
+
+**Implications recorded now, before further analysis:** (a) the paper
+reports both estimators with the confirmatory/exploratory boundary
+explicit; (b) the A100 pre-registration amendment (Step 5) will
+pre-register the relative-error estimator as PRIMARY for the cross-platform
+test, informed by this exploratory result and written before any A100 data
+exists; (c) the baseline bake-off (plan section 8) runs next on the
+identical splits, with the absolute-estimator comparison as the
+pre-registered one and an R1 companion reported under the same exploratory
+label.
