@@ -1,0 +1,89 @@
+EXP-002 fit report (plan sections 5-7; baselines are the next step)
+generated: 2026-07-24T16:00:52-04:00
+git commit: aac684f2746efbe7f784dbe18be34601c331b96a
+data: E:\data\code\claudecode\TOMLTransformers\experiments\exp_002_size_sweep\energy.jsonl
+records: 296 (all ok)
+target: per_execution_median_j['B'] / inner_iters = J per composite execution (units corrected 2026-07-23; per_unit consistency gate passed on all 296)
+
+== Pooled A-B agreement (pre-registered target: median <= 5%) ==
+  pooled median A-B over 296 points: 4.80%  (forward 5.53%, decode-like 4.03%)
+  pre-registered <= 5% pooled median: MET
+
+== Main table: stratified 80/20 (seed 42), M0-M9, AIC selection ==
+  train 238 / test 58
+model                k  R2_train   R2_test    MAPE%        AIC        BIC
+--------------------------------------------------------------------------
+M8_split_dispatch    6    0.9727    0.9873    88.26     1038.9     1063.2
+M9_full              7    0.9727    0.9873    88.26     1040.9     1068.6
+M5_mem_split         4    0.9687    0.9847    92.91     1067.8     1085.2
+M7_full_split        5    0.9687    0.9847    92.71     1069.8     1090.6
+M3_dispatch          4    0.9665    0.9851    63.53     1084.1     1101.4
+M4_fused             5    0.9665    0.9851    63.53     1086.1     1106.9
+M6_compute_split     4    0.9603    0.9827   187.41     1124.2     1141.6
+M2_overhead          3    0.9560    0.9741   233.55     1146.6     1160.5
+M0_flops             1    0.9548    0.9715    49.44     1149.0     1156.0
+M1_comp_mem          2    0.9551    0.9714    52.66     1149.8     1160.2
+  winner by AIC: M8_split_dispatch  (R2_test 0.9873, MAPE_test 88.26%)
+  final coefficients (winner refit on all 296): to_mac=2.704e-15  to_nonlinear=0  to_sram=1.968e-12  to_hbm=5.555e-15  n_launches=0.0009265  intercept=0
+  full-data fit quality: R2 0.9754, MAPE 93.25%
+
+== Robustness (pre-specified; never used for selection) ==
+  R1 relative-error NNLS:   test MAPE 20.10%  (primary 88.26%)
+     coefficients: to_mac=3.387e-15  to_nonlinear=0  to_sram=2.465e-14  to_hbm=7.549e-15  n_launches=0.0008163  intercept=0
+  R2_cv_flagged: excluded 5 points; test MAPE 90.57%
+     coefficients: to_mac=2.488e-15  to_nonlinear=0  to_sram=2.054e-12  to_hbm=5.462e-15  n_launches=0.0009487  intercept=0
+  R3_low_inner_iters: excluded 3 points; test MAPE 69.55%
+     coefficients: to_mac=0  to_nonlinear=0  to_sram=2.028e-12  to_hbm=4.496e-15  n_launches=0.001607  intercept=0
+
+== Pre-registered extrapolation (target: held-out MAPE <= 25%) ==
+  E2 broad (PRIMARY): train 164, predict 14
+    M8_split_dispatch  pooled MAPE  50.37%  [FAIL vs 25%]  decoder_only=33.1%  encoder_decoder=61.0%  encoder_only=42.5%
+    M0_flops           pooled MAPE  59.18%  [FAIL vs 25%]  decoder_only=62.3%  encoder_decoder=57.7%  encoder_only=59.1%
+  E1 strict-literal: train 86, predict 6
+    M8_split_dispatch  pooled MAPE  14.34%  [PASS vs 25%]  decoder_only=16.3%  encoder_decoder=18.7%  encoder_only=8.0%
+    M0_flops           pooled MAPE  16.18%  [PASS vs 25%]  decoder_only=17.2%  encoder_decoder=18.7%  encoder_only=12.6%
+
+== Calibrated MCER by phase (fitted memory / fitted compute) ==
+  source: winner M8_split_dispatch (refit on all 296)
+  decoder_only     decode           median MCER     12.612  [3.763, 74.721]  n=50
+  decoder_only     prefill          median MCER      3.054  [1.457, 5.901]  n=60
+  encoder_decoder  decode           median MCER     13.065  [4.986, 48.890]  n=72
+  encoder_decoder  decoder_prefill  median MCER      4.107  [2.267, 6.656]  n=40
+  encoder_decoder  encode           median MCER      4.078  [2.260, 6.758]  n=40
+  encoder_only     encode           median MCER      3.424  [2.251, 5.188]  n=34
+
+== Clean decode per-token (prefill-subtracted; plan section 7) ==
+  rows: 122 decode points (74 measured-subtracted, 48 model-subtracted; model-subtracted std excludes component model uncertainty)
+  decoder-only fp16 per-token (mJ):
+    DistilGPT2     ctx128=87.1  ctx512=103.5  ctx1024=149.0  ctx2048=171.9  ctx4096=202.0
+    GPT-2          ctx128=155.5  ctx512=208.7  ctx1024=294.4  ctx2048=331.9  ctx4096=397.6
+    GPT-2-XL       ctx128=1516.5  ctx512=1520.4  ctx1024=1559.5  ctx2048=1897.4  ctx4096=1270.7*
+    GPT-2-large    ctx128=931.9  ctx512=1039.2  ctx1024=1124.3  ctx2048=1257.4  ctx4096=789.8*
+    GPT-2-medium   ctx128=294.9  ctx512=460.8  ctx1024=723.3  ctx2048=795.1  ctx4096=476.2*
+    (* = model-subtracted; full rows incl. fp32 and enc-dec in JSON)
+
+== EXPLORATORY: R1 relative-error estimator (post-hoc; NOT pre-registered) ==
+  Approved 2026-07-24 after the confirmatory run surfaced strong
+  heteroscedasticity (high R2 with high MAPE under absolute NNLS).
+  The confirmatory sections above are the pre-registered record and
+  stand unchanged; this section informs the estimator discussion and
+  the A100 pre-registration amendment only.
+  R1-final coefficients (winner form, all 296): to_mac=3.441e-15  to_nonlinear=0  to_sram=2.693e-14  to_hbm=7.664e-15  n_launches=0.0007571  intercept=0
+  R1 full-data quality: R2 0.9235, MAPE 18.24%
+  E2 under R1: pooled MAPE  15.24%  (25% band as exploratory reference only)  decoder_only=10.0%  encoder_decoder=18.1%  encoder_only=14.2%
+  E1 under R1: pooled MAPE  13.25%  (25% band as exploratory reference only)  decoder_only=15.5%  encoder_decoder=16.7%  encoder_only=7.6%
+  MCER under R1 coefficients:
+  source: winner form M8_split_dispatch under R1 (all 296)
+  decoder_only     decode           median MCER     10.501  [1.990, 77.578]  n=50
+  decoder_only     prefill          median MCER      0.429  [0.075, 2.362]  n=60
+  encoder_decoder  decode           median MCER      9.769  [2.239, 47.531]  n=72
+  encoder_decoder  decoder_prefill  median MCER      0.225  [0.143, 0.350]  n=40
+  encoder_decoder  encode           median MCER      0.267  [0.068, 1.239]  n=40
+  encoder_only     encode           median MCER      0.324  [0.068, 1.250]  n=34
+  decoder-only fp16 per-token (mJ) with model-subtracted rows (*)
+  recomputed under R1 (measured-subtracted rows identical):
+    DistilGPT2     ctx128=87.1  ctx512=103.5  ctx1024=149.0  ctx2048=171.9  ctx4096=202.0
+    GPT-2          ctx128=155.5  ctx512=208.7  ctx1024=294.4  ctx2048=331.9  ctx4096=397.6
+    GPT-2-XL       ctx128=1516.5  ctx512=1520.4  ctx1024=1559.5  ctx2048=1897.4  ctx4096=2603.4*
+    GPT-2-large    ctx128=931.9  ctx512=1039.2  ctx1024=1124.3  ctx2048=1257.4  ctx4096=1604.0*
+    GPT-2-medium   ctx128=294.9  ctx512=460.8  ctx1024=723.3  ctx2048=795.1  ctx4096=916.6*

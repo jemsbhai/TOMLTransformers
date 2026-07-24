@@ -1,0 +1,3080 @@
+{
+  "generated_at": "2026-07-24T16:00:53-04:00",
+  "git_commit": "aac684f2746efbe7f784dbe18be34601c331b96a",
+  "seed": 42,
+  "n_records": 296,
+  "target": "per_execution_median_j[B] / inner_iters (J per composite execution; units corrected 2026-07-23)",
+  "pooled_ab_median": 0.04801177749832096,
+  "pooled_ab_target_met": true,
+  "main_table": [
+    {
+      "name": "M8_split_dispatch",
+      "n_params": 6,
+      "r2_train": 0.972726740885705,
+      "r2_test": 0.9873362051606543,
+      "mape_test": 88.264934897898,
+      "aic": 1038.8680871300055,
+      "bic": 1063.1739818457058,
+      "coef": {
+        "to_mac": 2.511851778994131e-15,
+        "to_nonlinear": 0.0,
+        "to_sram": 2.041787374839214e-12,
+        "to_hbm": 5.455261865357488e-15,
+        "n_launches": 0.0009624743087175066,
+        "intercept": 0.0
+      }
+    },
+    {
+      "name": "M9_full",
+      "n_params": 7,
+      "r2_train": 0.972726740885705,
+      "r2_test": 0.9873362051606543,
+      "mape_test": 88.264934897898,
+      "aic": 1040.8680871300055,
+      "bic": 1068.6462525193774,
+      "coef": {
+        "to_mac": 2.511851778994131e-15,
+        "to_nonlinear": 0.0,
+        "to_sram": 2.041787374839214e-12,
+        "to_hbm": 5.455261865357488e-15,
+        "n_launches": 0.0009624743087175066,
+        "n_fused_steps": 0.0,
+        "intercept": 0.0
+      }
+    },
+    {
+      "name": "M5_mem_split",
+      "n_params": 4,
+      "r2_train": 0.9686750415896841,
+      "r2_test": 0.9846575543976778,
+      "mape_test": 92.91397613735126,
+      "aic": 1067.8331031262906,
+      "bic": 1085.194456494648,
+      "coef": {
+        "to_mac+to_nonlinear": 1.267813309619808e-16,
+        "to_sram": 2.7383898057313304e-12,
+        "to_hbm": 7.106333269975261e-15,
+        "intercept": 0.0
+      }
+    },
+    {
+      "name": "M7_full_split",
+      "n_params": 5,
+      "r2_train": 0.9686784800601007,
+      "r2_test": 0.9846596712750137,
+      "mape_test": 92.71091821950445,
+      "aic": 1069.80697696624,
+      "bic": 1090.6406010082687,
+      "coef": {
+        "to_mac": 1.7789543686428779e-16,
+        "to_nonlinear": 0.0,
+        "to_sram": 2.722455836000602e-12,
+        "to_hbm": 7.1044357882797475e-15,
+        "intercept": 0.0
+      }
+    },
+    {
+      "name": "M3_dispatch",
+      "n_params": 4,
+      "r2_train": 0.9664626885495929,
+      "r2_test": 0.9850732639872303,
+      "mape_test": 63.52894156166802,
+      "aic": 1084.0750372256214,
+      "bic": 1101.4363905939788,
+      "coef": {
+        "to_mac+to_nonlinear": 8.395996461280806e-15,
+        "to_sram+to_hbm": 4.669979073588177e-15,
+        "n_launches": 0.0014641474409593403,
+        "intercept": 0.0
+      }
+    },
+    {
+      "name": "M4_fused",
+      "n_params": 5,
+      "r2_train": 0.9664626885495929,
+      "r2_test": 0.9850732639872303,
+      "mape_test": 63.52894156166802,
+      "aic": 1086.0750372256214,
+      "bic": 1106.9086612676501,
+      "coef": {
+        "to_mac+to_nonlinear": 8.395996461280806e-15,
+        "to_sram+to_hbm": 4.669979073588177e-15,
+        "n_launches": 0.0014641474409593403,
+        "n_fused_steps": 0.0,
+        "intercept": 0.0
+      }
+    },
+    {
+      "name": "M6_compute_split",
+      "n_params": 4,
+      "r2_train": 0.9602961658587167,
+      "r2_test": 0.9826667316414386,
+      "mape_test": 187.41013460916795,
+      "aic": 1124.246859022234,
+      "bic": 1141.6082123905915,
+      "coef": {
+        "to_mac": 6.053790230620969e-15,
+        "to_nonlinear": 2.012202433285711e-13,
+        "to_sram+to_hbm": 7.065018148895086e-15,
+        "intercept": 1.2793861499739607
+      }
+    },
+    {
+      "name": "M2_overhead",
+      "n_params": 3,
+      "r2_train": 0.9560130554479318,
+      "r2_test": 0.974091773662864,
+      "mape_test": 233.55005786014834,
+      "aic": 1146.6287962180497,
+      "bic": 1160.5178789127356,
+      "coef": {
+        "to_mac+to_nonlinear": 7.691675372574753e-15,
+        "to_sram+to_hbm": 7.122556252164536e-15,
+        "intercept": 1.750532114220497
+      }
+    },
+    {
+      "name": "M0_flops",
+      "n_params": 1,
+      "r2_train": 0.9548108850790361,
+      "r2_test": 0.9715297368507049,
+      "mape_test": 49.43909122956775,
+      "aic": 1149.046076454884,
+      "bic": 1155.990617802227,
+      "coef": {
+        "to_mac+to_nonlinear+to_sram+to_hbm": 7.448958613460992e-15
+      }
+    },
+    {
+      "name": "M1_comp_mem",
+      "n_params": 2,
+      "r2_train": 0.9550545316896296,
+      "r2_test": 0.9713828425799401,
+      "mape_test": 52.663381664455635,
+      "aic": 1149.7593775546006,
+      "bic": 1160.1761895756151,
+      "coef": {
+        "to_mac+to_nonlinear": 7.762458265396295e-15,
+        "to_sram+to_hbm": 7.226096535904908e-15
+      }
+    }
+  ],
+  "winner": "M8_split_dispatch",
+  "final_coef_all296": {
+    "to_mac": 2.7039919934497578e-15,
+    "to_nonlinear": 0.0,
+    "to_sram": 1.968317523311136e-12,
+    "to_hbm": 5.5548332885193544e-15,
+    "n_launches": 0.0009264997869067471,
+    "intercept": 0.0
+  },
+  "robustness": {
+    "R1_relative": {
+      "mape_test": 20.100341114492153,
+      "coef": {
+        "to_mac": 3.387359357403204e-15,
+        "to_nonlinear": 0.0,
+        "to_sram": 2.4647305125273854e-14,
+        "to_hbm": 7.549353153905273e-15,
+        "n_launches": 0.0008163306317381651,
+        "intercept": 0.0
+      }
+    },
+    "R2_cv_flagged": {
+      "excluded": 5,
+      "mape_test": 90.56624422505351,
+      "coef": {
+        "to_mac": 2.4879991704219123e-15,
+        "to_nonlinear": 0.0,
+        "to_sram": 2.0535258562751925e-12,
+        "to_hbm": 5.4620585968675845e-15,
+        "n_launches": 0.0009487473114046745,
+        "intercept": 0.0
+      }
+    },
+    "R3_low_inner_iters": {
+      "excluded": 3,
+      "mape_test": 69.55049406933692,
+      "coef": {
+        "to_mac": 0.0,
+        "to_nonlinear": 0.0,
+        "to_sram": 2.0280434425855277e-12,
+        "to_hbm": 4.496008941379983e-15,
+        "n_launches": 0.0016069977519648291,
+        "intercept": 0.0
+      }
+    }
+  },
+  "extrapolation": {
+    "E2": {
+      "n_train": 164,
+      "n_predict": 14,
+      "models": {
+        "M8_split_dispatch": {
+          "pooled_mape": 50.371767308139404,
+          "per_class_mape": {
+            "decoder_only": 33.09715408551766,
+            "encoder_decoder": 60.98466812647453,
+            "encoder_only": 42.4693904800425
+          },
+          "pass": false
+        },
+        "M0_flops": {
+          "pooled_mape": 59.17585156003173,
+          "per_class_mape": {
+            "decoder_only": 62.260661149520445,
+            "encoder_decoder": 57.66056046454775,
+            "encoder_only": 59.06739676299018
+          },
+          "pass": false
+        }
+      },
+      "predict_keys": [
+        "decoder_only|GPT-2-XL|prefill|fp16|flash|random|s2048|b1",
+        "decoder_only|GPT-2-XL|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing",
+        "decoder_only|GPT-2-XL|prefill|fp32|flash|random|s2048|b1",
+        "decoder_only|GPT-2-XL|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing",
+        "encoder_only|ViT-L/16|encode|fp16|flash|random|sNone|b1",
+        "encoder_only|ViT-L/16|encode|fp32|flash|random|sNone|b1",
+        "encoder_decoder|BART-large|encode|fp16|flash|random|s2048|b1",
+        "encoder_decoder|BART-large|decoder_prefill|fp16|flash|random|s2048|b1|tgt1024",
+        "encoder_decoder|BART-large|decode|fp16|flash|random|s2048|b1|ctx1024|k64|growing",
+        "encoder_decoder|BART-large|decode|fp16|flash|random|s1024|b1|ctx2048|k64|growing",
+        "encoder_decoder|BART-large|encode|fp32|flash|random|s2048|b1",
+        "encoder_decoder|BART-large|decoder_prefill|fp32|flash|random|s2048|b1|tgt1024",
+        "encoder_decoder|BART-large|decode|fp32|flash|random|s2048|b1|ctx1024|k64|growing",
+        "encoder_decoder|BART-large|decode|fp32|flash|random|s1024|b1|ctx2048|k64|growing"
+      ]
+    },
+    "E1": {
+      "n_train": 86,
+      "n_predict": 6,
+      "models": {
+        "M8_split_dispatch": {
+          "pooled_mape": 14.336390412312719,
+          "per_class_mape": {
+            "decoder_only": 16.32972073843776,
+            "encoder_decoder": 18.666056452612057,
+            "encoder_only": 8.013394045888337
+          },
+          "pass": true
+        },
+        "M0_flops": {
+          "pooled_mape": 16.178690957569792,
+          "per_class_mape": {
+            "decoder_only": 17.24736831952105,
+            "encoder_decoder": 18.659506294214086,
+            "encoder_only": 12.629198258974242
+          },
+          "pass": true
+        }
+      },
+      "predict_keys": [
+        "decoder_only|GPT-2-XL|prefill|fp16|flash|random|s2048|b1",
+        "decoder_only|GPT-2-XL|prefill|fp32|flash|random|s2048|b1",
+        "encoder_only|ViT-L/16|encode|fp16|flash|random|sNone|b1",
+        "encoder_only|ViT-L/16|encode|fp32|flash|random|sNone|b1",
+        "encoder_decoder|BART-large|encode|fp16|flash|random|s2048|b1",
+        "encoder_decoder|BART-large|encode|fp32|flash|random|s2048|b1"
+      ]
+    }
+  },
+  "mcer_source": "winner M8_split_dispatch (refit on all 296)",
+  "mcer_summary": {
+    "decoder_only/decode": {
+      "median": 12.61199870522861,
+      "min": 3.7628766557095883,
+      "max": 74.72057549505011,
+      "n": 50
+    },
+    "decoder_only/prefill": {
+      "median": 3.0544271494989137,
+      "min": 1.4566924999369433,
+      "max": 5.900971696285399,
+      "n": 60
+    },
+    "encoder_decoder/decode": {
+      "median": 13.06479108998024,
+      "min": 4.986041424009359,
+      "max": 48.890337392753075,
+      "n": 72
+    },
+    "encoder_decoder/decoder_prefill": {
+      "median": 4.106646918937381,
+      "min": 2.267119419772638,
+      "max": 6.656410028041034,
+      "n": 40
+    },
+    "encoder_decoder/encode": {
+      "median": 4.077881238113188,
+      "min": 2.259516190283394,
+      "max": 6.758443582150805,
+      "n": 40
+    },
+    "encoder_only/encode": {
+      "median": 3.4237615155623287,
+      "min": 2.250703960552865,
+      "max": 5.188139886814398,
+      "n": 34
+    }
+  },
+  "decode_per_token": [
+    {
+      "key": "decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing",
+      "model": "DistilGPT2",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 128,
+      "context": 128,
+      "per_token_j": 0.08710023527215274,
+      "std_j": 0.0023659185617354744,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|DistilGPT2|decode|fp16|flash|random|s512|b1|ctx512|k64|growing",
+      "model": "DistilGPT2",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 512,
+      "context": 512,
+      "per_token_j": 0.1035270340228256,
+      "std_j": 0.004272037048246152,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|DistilGPT2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "DistilGPT2",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.1489652182473408,
+      "std_j": 0.007266931885139688,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|DistilGPT2|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing",
+      "model": "DistilGPT2",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 2048,
+      "context": 2048,
+      "per_token_j": 0.17187330789617025,
+      "std_j": 0.0069087617150495224,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|DistilGPT2|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing",
+      "model": "DistilGPT2",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 4096,
+      "context": 4096,
+      "per_token_j": 0.20197997966765346,
+      "std_j": 0.0044153501499606,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|DistilGPT2|decode|fp32|flash|random|s128|b1|ctx128|k64|growing",
+      "model": "DistilGPT2",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 128,
+      "context": 128,
+      "per_token_j": 0.17388954512203478,
+      "std_j": 0.007077858741456185,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|DistilGPT2|decode|fp32|flash|random|s512|b1|ctx512|k64|growing",
+      "model": "DistilGPT2",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 512,
+      "context": 512,
+      "per_token_j": 0.1850149761130864,
+      "std_j": 0.005876954194409926,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|DistilGPT2|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "DistilGPT2",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.19974589476308735,
+      "std_j": 0.00235340256772657,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|DistilGPT2|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing",
+      "model": "DistilGPT2",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 2048,
+      "context": 2048,
+      "per_token_j": 0.2682581252406503,
+      "std_j": 0.009740295357181525,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|DistilGPT2|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing",
+      "model": "DistilGPT2",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 4096,
+      "context": 4096,
+      "per_token_j": 0.31805720408819704,
+      "std_j": 0.005715667232196849,
+      "subtraction": "model"
+    },
+    {
+      "key": "decoder_only|GPT-2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing",
+      "model": "GPT-2",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 128,
+      "context": 128,
+      "per_token_j": 0.15550774241002124,
+      "std_j": 0.007899753471383669,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2|decode|fp16|flash|random|s512|b1|ctx512|k64|growing",
+      "model": "GPT-2",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 512,
+      "context": 512,
+      "per_token_j": 0.20867364115737047,
+      "std_j": 0.011714035964608622,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "GPT-2",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.29437133519132863,
+      "std_j": 0.012403849616485423,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing",
+      "model": "GPT-2",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 2048,
+      "context": 2048,
+      "per_token_j": 0.3318816888026125,
+      "std_j": 0.013006829828488784,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing",
+      "model": "GPT-2",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 4096,
+      "context": 4096,
+      "per_token_j": 0.39760891766282935,
+      "std_j": 0.009141459218415773,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2|decode|fp32|flash|random|s128|b1|ctx128|k64|growing",
+      "model": "GPT-2",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 128,
+      "context": 128,
+      "per_token_j": 0.32971089022261246,
+      "std_j": 0.021838903886300068,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2|decode|fp32|flash|random|s512|b1|ctx512|k64|growing",
+      "model": "GPT-2",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 512,
+      "context": 512,
+      "per_token_j": 0.37422725355977154,
+      "std_j": 0.009145062945331696,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "GPT-2",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.3715701047662789,
+      "std_j": 0.013219237133365815,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing",
+      "model": "GPT-2",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 2048,
+      "context": 2048,
+      "per_token_j": 0.500201749371935,
+      "std_j": 0.006301168901457581,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing",
+      "model": "GPT-2",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 4096,
+      "context": 4096,
+      "per_token_j": 0.5861841803900789,
+      "std_j": 0.02379550234796411,
+      "subtraction": "model"
+    },
+    {
+      "key": "decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing",
+      "model": "GPT-2-medium",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 128,
+      "context": 128,
+      "per_token_j": 0.29487587912201313,
+      "std_j": 0.05182613500833064,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-medium|decode|fp16|flash|random|s512|b1|ctx512|k64|growing",
+      "model": "GPT-2-medium",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 512,
+      "context": 512,
+      "per_token_j": 0.4608457965300052,
+      "std_j": 0.0144024450722399,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-medium|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "GPT-2-medium",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.7233364362640897,
+      "std_j": 0.020061958867910477,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-medium|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing",
+      "model": "GPT-2-medium",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 2048,
+      "context": 2048,
+      "per_token_j": 0.7950603222945841,
+      "std_j": 0.01975615169333182,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-medium|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing",
+      "model": "GPT-2-medium",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 4096,
+      "context": 4096,
+      "per_token_j": 0.4761657776352809,
+      "std_j": 0.026977942105704984,
+      "subtraction": "model"
+    },
+    {
+      "key": "decoder_only|GPT-2-medium|decode|fp32|flash|random|s128|b1|ctx128|k64|growing",
+      "model": "GPT-2-medium",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 128,
+      "context": 128,
+      "per_token_j": 0.7736160973107351,
+      "std_j": 0.025368331206433125,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-medium|decode|fp32|flash|random|s512|b1|ctx512|k64|growing",
+      "model": "GPT-2-medium",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 512,
+      "context": 512,
+      "per_token_j": 0.7911255450689033,
+      "std_j": 0.016489518063862802,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-medium|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "GPT-2-medium",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.8017164758714083,
+      "std_j": 0.009436644003514254,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-medium|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing",
+      "model": "GPT-2-medium",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 2048,
+      "context": 2048,
+      "per_token_j": 1.1431615292690593,
+      "std_j": 0.034841345227527,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-medium|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing",
+      "model": "GPT-2-medium",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 4096,
+      "context": 4096,
+      "per_token_j": 1.2881811948307826,
+      "std_j": 0.04640099358779432,
+      "subtraction": "model"
+    },
+    {
+      "key": "decoder_only|GPT-2-large|decode|fp16|flash|random|s128|b1|ctx128|k64|growing",
+      "model": "GPT-2-large",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 128,
+      "context": 128,
+      "per_token_j": 0.9318550190034126,
+      "std_j": 0.03741318273215595,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-large|decode|fp16|flash|random|s512|b1|ctx512|k64|growing",
+      "model": "GPT-2-large",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 512,
+      "context": 512,
+      "per_token_j": 1.0391986381970253,
+      "std_j": 0.041419146530880455,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-large|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "GPT-2-large",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 1.124324731127461,
+      "std_j": 0.05747248927878112,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-large|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing",
+      "model": "GPT-2-large",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 2048,
+      "context": 2048,
+      "per_token_j": 1.2573980974222823,
+      "std_j": 0.026414518714367594,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-large|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing",
+      "model": "GPT-2-large",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 4096,
+      "context": 4096,
+      "per_token_j": 0.7898213010829187,
+      "std_j": 0.04413683166563003,
+      "subtraction": "model"
+    },
+    {
+      "key": "decoder_only|GPT-2-large|decode|fp32|flash|random|s128|b1|ctx128|k64|growing",
+      "model": "GPT-2-large",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 128,
+      "context": 128,
+      "per_token_j": 1.2253377219499586,
+      "std_j": 0.03078706461943847,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-large|decode|fp32|flash|random|s512|b1|ctx512|k64|growing",
+      "model": "GPT-2-large",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 512,
+      "context": 512,
+      "per_token_j": 1.3133241274008696,
+      "std_j": 0.0307290770952647,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-large|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "GPT-2-large",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 1.5827248803186338,
+      "std_j": 0.022437017418182804,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-large|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing",
+      "model": "GPT-2-large",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 2048,
+      "context": 2048,
+      "per_token_j": 2.210755033226489,
+      "std_j": 0.04493658619828154,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-large|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing",
+      "model": "GPT-2-large",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 4096,
+      "context": 4096,
+      "per_token_j": 2.312836074960255,
+      "std_j": 0.05040600244323877,
+      "subtraction": "model"
+    },
+    {
+      "key": "decoder_only|GPT-2-XL|decode|fp16|flash|random|s128|b1|ctx128|k64|growing",
+      "model": "GPT-2-XL",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 128,
+      "context": 128,
+      "per_token_j": 1.516536403901568,
+      "std_j": 0.1897414430742225,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-XL|decode|fp16|flash|random|s512|b1|ctx512|k64|growing",
+      "model": "GPT-2-XL",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 512,
+      "context": 512,
+      "per_token_j": 1.5204215304557154,
+      "std_j": 0.1580708496069859,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-XL|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "GPT-2-XL",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 1.5595098586835363,
+      "std_j": 0.03155179071095349,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-XL|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing",
+      "model": "GPT-2-XL",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 2048,
+      "context": 2048,
+      "per_token_j": 1.897396470888948,
+      "std_j": 0.04028518770895112,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-XL|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing",
+      "model": "GPT-2-XL",
+      "arch": "decoder_only",
+      "precision": "fp16",
+      "src_len": 4096,
+      "context": 4096,
+      "per_token_j": 1.2706628395288528,
+      "std_j": 0.04422522758760017,
+      "subtraction": "model"
+    },
+    {
+      "key": "decoder_only|GPT-2-XL|decode|fp32|flash|random|s128|b1|ctx128|k64|growing",
+      "model": "GPT-2-XL",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 128,
+      "context": 128,
+      "per_token_j": 2.021732730576225,
+      "std_j": 0.030915228955657816,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-XL|decode|fp32|flash|random|s512|b1|ctx512|k64|growing",
+      "model": "GPT-2-XL",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 512,
+      "context": 512,
+      "per_token_j": 2.3270926967885965,
+      "std_j": 0.0397022235295415,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-XL|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "GPT-2-XL",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 2.7863864732344297,
+      "std_j": 0.03424811771046699,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-XL|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing",
+      "model": "GPT-2-XL",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 2048,
+      "context": 2048,
+      "per_token_j": 3.7313232200558653,
+      "std_j": 0.07333553365443067,
+      "subtraction": "measured"
+    },
+    {
+      "key": "decoder_only|GPT-2-XL|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing",
+      "model": "GPT-2-XL",
+      "arch": "decoder_only",
+      "precision": "fp32",
+      "src_len": 4096,
+      "context": 4096,
+      "per_token_j": 4.113099315148451,
+      "std_j": 0.11893648787211114,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s128|b1|ctx1024|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 128,
+      "context": 1024,
+      "per_token_j": 0.09401912019140525,
+      "std_j": 0.0027267204697300454,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s512|b1|ctx1024|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 512,
+      "context": 1024,
+      "per_token_j": 0.11671035960902361,
+      "std_j": 0.003947096663036612,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.13744941570750857,
+      "std_j": 0.004244253857745063,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s2048|b1|ctx1024|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 2048,
+      "context": 1024,
+      "per_token_j": 0.15644079498512248,
+      "std_j": 0.007364673631410311,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s4096|b1|ctx1024|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 4096,
+      "context": 1024,
+      "per_token_j": 0.1253716511481268,
+      "std_j": 0.004117093556946694,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 128,
+      "per_token_j": 0.08612846821695212,
+      "std_j": 0.00927085773153135,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx512|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 512,
+      "per_token_j": 0.09943120132622935,
+      "std_j": 0.00321498566294177,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx2048|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 2048,
+      "per_token_j": 0.12269741202365296,
+      "std_j": 0.004342371160004484,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx4096|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 4096,
+      "per_token_j": 0.08733588552163131,
+      "std_j": 0.00941724529489436,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s128|b1|ctx1024|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 128,
+      "context": 1024,
+      "per_token_j": 0.20220887399614473,
+      "std_j": 0.010568185966959947,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s512|b1|ctx1024|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 512,
+      "context": 1024,
+      "per_token_j": 0.1983946190409424,
+      "std_j": 0.00880659542127616,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.19351397032276005,
+      "std_j": 0.009854913992291188,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s2048|b1|ctx1024|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 2048,
+      "context": 1024,
+      "per_token_j": 0.2445985237656789,
+      "std_j": 0.0077856248379881395,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s4096|b1|ctx1024|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 4096,
+      "context": 1024,
+      "per_token_j": 0.2996747696603471,
+      "std_j": 0.00548395273251508,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s1024|b1|ctx128|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 128,
+      "per_token_j": 0.19925678555093546,
+      "std_j": 0.016603913456006068,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s1024|b1|ctx512|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 512,
+      "per_token_j": 0.18800749060572391,
+      "std_j": 0.006362246774025606,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s1024|b1|ctx2048|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 2048,
+      "per_token_j": 0.1913800891940895,
+      "std_j": 0.0039589499310043914,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s1024|b1|ctx4096|k64|growing",
+      "model": "T5-small",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 4096,
+      "per_token_j": 0.2436661554551453,
+      "std_j": 0.010024839450159287,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s128|b1|ctx1024|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 128,
+      "context": 1024,
+      "per_token_j": 0.30008957540703896,
+      "std_j": 0.012836108545486506,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s512|b1|ctx1024|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 512,
+      "context": 1024,
+      "per_token_j": 0.33169698890486593,
+      "std_j": 0.01579108932489699,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.39528560276229435,
+      "std_j": 0.01247849860551692,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s2048|b1|ctx1024|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 2048,
+      "context": 1024,
+      "per_token_j": 0.4309092470487333,
+      "std_j": 0.017289405629705202,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s4096|b1|ctx1024|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 4096,
+      "context": 1024,
+      "per_token_j": 0.3339788684831287,
+      "std_j": 0.02591130322754991,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 128,
+      "per_token_j": 0.24707551885523021,
+      "std_j": 0.0053373558828697385,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s1024|b1|ctx512|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 512,
+      "per_token_j": 0.2872535776083531,
+      "std_j": 0.009487217494694996,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s1024|b1|ctx2048|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 2048,
+      "per_token_j": 0.3378463192989746,
+      "std_j": 0.01637218374614499,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s1024|b1|ctx4096|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 4096,
+      "per_token_j": 0.24278021556142715,
+      "std_j": 0.01849490532795228,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s128|b1|ctx1024|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 128,
+      "context": 1024,
+      "per_token_j": 0.4728493778584538,
+      "std_j": 0.016247359155086093,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s512|b1|ctx1024|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 512,
+      "context": 1024,
+      "per_token_j": 0.4599285120786623,
+      "std_j": 0.015773655164087325,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.4856613806137832,
+      "std_j": 0.008950672158663284,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s2048|b1|ctx1024|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 2048,
+      "context": 1024,
+      "per_token_j": 0.580457784845043,
+      "std_j": 0.012581191595908271,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s4096|b1|ctx1024|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 4096,
+      "context": 1024,
+      "per_token_j": 0.7041453938893832,
+      "std_j": 0.013974997216479603,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s1024|b1|ctx128|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 128,
+      "per_token_j": 0.44672578342866703,
+      "std_j": 0.02293703061616597,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s1024|b1|ctx512|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 512,
+      "per_token_j": 0.40979573752614773,
+      "std_j": 0.025608143783693277,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s1024|b1|ctx2048|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 2048,
+      "per_token_j": 0.44154091513938704,
+      "std_j": 0.01288306831562193,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s1024|b1|ctx4096|k64|growing",
+      "model": "T5-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 4096,
+      "per_token_j": 0.5018159595182161,
+      "std_j": 0.021325363974523396,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s128|b1|ctx1024|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 128,
+      "context": 1024,
+      "per_token_j": 0.1614000306352309,
+      "std_j": 0.0053809414165284465,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s512|b1|ctx1024|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 512,
+      "context": 1024,
+      "per_token_j": 0.17949507503539328,
+      "std_j": 0.009238687710285893,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.20668111221089175,
+      "std_j": 0.00686531966446306,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s2048|b1|ctx1024|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 2048,
+      "context": 1024,
+      "per_token_j": 0.22411825125450396,
+      "std_j": 0.013543251013712131,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s4096|b1|ctx1024|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 4096,
+      "context": 1024,
+      "per_token_j": 0.19309588516162945,
+      "std_j": 0.006114973824709271,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 128,
+      "per_token_j": 0.13500656051853333,
+      "std_j": 0.005285654554620734,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s1024|b1|ctx512|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 512,
+      "per_token_j": 0.15315377144708228,
+      "std_j": 0.008006123444527174,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s1024|b1|ctx2048|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 2048,
+      "per_token_j": 0.19417794969761298,
+      "std_j": 0.009091024868328471,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s1024|b1|ctx4096|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 4096,
+      "per_token_j": 0.13326662506799428,
+      "std_j": 0.007393972312509571,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s128|b1|ctx1024|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 128,
+      "context": 1024,
+      "per_token_j": 0.2305644392228729,
+      "std_j": 0.002444728092634001,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s512|b1|ctx1024|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 512,
+      "context": 1024,
+      "per_token_j": 0.24216492883470747,
+      "std_j": 0.006277146241847144,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.2636253646203662,
+      "std_j": 0.006022796837298841,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s2048|b1|ctx1024|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 2048,
+      "context": 1024,
+      "per_token_j": 0.3207673381695884,
+      "std_j": 0.008228330906932674,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s4096|b1|ctx1024|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 4096,
+      "context": 1024,
+      "per_token_j": 0.3829798504214015,
+      "std_j": 0.00803604381148321,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s1024|b1|ctx128|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 128,
+      "per_token_j": 0.24308512594819567,
+      "std_j": 0.006161703397856907,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s1024|b1|ctx512|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 512,
+      "per_token_j": 0.23949548209767588,
+      "std_j": 0.014623590318962605,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s1024|b1|ctx2048|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 2048,
+      "per_token_j": 0.26217168537417673,
+      "std_j": 0.006445659058520698,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s1024|b1|ctx4096|k64|growing",
+      "model": "BART-base",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 4096,
+      "per_token_j": 0.2867228476219007,
+      "std_j": 0.01397607443998414,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s128|b1|ctx1024|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 128,
+      "context": 1024,
+      "per_token_j": 0.41467625557848803,
+      "std_j": 0.012574089902645727,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s512|b1|ctx1024|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 512,
+      "context": 1024,
+      "per_token_j": 0.4564282997075357,
+      "std_j": 0.019678130479339844,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.47117469203356604,
+      "std_j": 0.015157946051473609,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s2048|b1|ctx1024|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 2048,
+      "context": 1024,
+      "per_token_j": 0.4991325282877231,
+      "std_j": 0.03277049509054615,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s4096|b1|ctx1024|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 4096,
+      "context": 1024,
+      "per_token_j": 0.41422557636723795,
+      "std_j": 0.019307470618476215,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 128,
+      "per_token_j": 0.32461049974947503,
+      "std_j": 0.025522504848636537,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s1024|b1|ctx512|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 512,
+      "per_token_j": 0.40471482856871516,
+      "std_j": 0.025587467380376847,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s1024|b1|ctx2048|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 2048,
+      "per_token_j": 0.38200560308976517,
+      "std_j": 0.015205618226448721,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s1024|b1|ctx4096|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp16",
+      "src_len": 1024,
+      "context": 4096,
+      "per_token_j": 0.26129556500706874,
+      "std_j": 0.02119438141080028,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s128|b1|ctx1024|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 128,
+      "context": 1024,
+      "per_token_j": 0.48620338595184587,
+      "std_j": 0.011947017476447885,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s512|b1|ctx1024|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 512,
+      "context": 1024,
+      "per_token_j": 0.5367993466382472,
+      "std_j": 0.0068448223585448765,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 1024,
+      "per_token_j": 0.5995051340226039,
+      "std_j": 0.008577736182044363,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s2048|b1|ctx1024|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 2048,
+      "context": 1024,
+      "per_token_j": 0.720810979954224,
+      "std_j": 0.015920621398234424,
+      "subtraction": "measured"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s4096|b1|ctx1024|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 4096,
+      "context": 1024,
+      "per_token_j": 0.8044044167655341,
+      "std_j": 0.008111609310706919,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s1024|b1|ctx128|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 128,
+      "per_token_j": 0.43250942683627164,
+      "std_j": 0.0048170572128662815,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s1024|b1|ctx512|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 512,
+      "per_token_j": 0.4562786876745052,
+      "std_j": 0.016488685257022115,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s1024|b1|ctx2048|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 2048,
+      "per_token_j": 0.5717601900519226,
+      "std_j": 0.020750041702294986,
+      "subtraction": "model"
+    },
+    {
+      "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s1024|b1|ctx4096|k64|growing",
+      "model": "BART-large",
+      "arch": "encoder_decoder",
+      "precision": "fp32",
+      "src_len": 1024,
+      "context": 4096,
+      "per_token_j": 0.5849607962447957,
+      "std_j": 0.027936098582572445,
+      "subtraction": "model"
+    }
+  ],
+  "exploratory": {
+    "label": "post-hoc, approved 2026-07-24; NOT pre-registered; the confirmatory sections are the pre-registered record",
+    "estimator": "R1 relative-error NNLS, winner form",
+    "r1_final_coef": {
+      "to_mac": 3.441445472855863e-15,
+      "to_nonlinear": 0.0,
+      "to_sram": 2.6928653279927877e-14,
+      "to_hbm": 7.663623058034302e-15,
+      "n_launches": 0.000757073086298195,
+      "intercept": 0.0
+    },
+    "r1_full_r2": 0.9235027252333923,
+    "r1_full_mape": 18.23805338423746,
+    "extrapolation_r1": {
+      "E2": {
+        "pooled_mape": 15.235011946056625,
+        "per_class_mape": {
+          "decoder_only": 10.018114487834392,
+          "encoder_decoder": 18.101069765493516,
+          "encoder_only": 14.204575584753542
+        }
+      },
+      "E1": {
+        "pooled_mape": 13.253343895668138,
+        "per_class_mape": {
+          "decoder_only": 15.459373010532534,
+          "encoder_decoder": 16.6771788432536,
+          "encoder_only": 7.623479833218284
+        }
+      }
+    },
+    "mcer_source_r1": "winner form M8_split_dispatch under R1 (all 296)",
+    "mcer_summary_r1": {
+      "decoder_only/decode": {
+        "median": 10.5012941887714,
+        "min": 1.9896182348155507,
+        "max": 77.57758734047854,
+        "n": 50
+      },
+      "decoder_only/prefill": {
+        "median": 0.4291022586395774,
+        "min": 0.07484510557345116,
+        "max": 2.361981204690541,
+        "n": 60
+      },
+      "encoder_decoder/decode": {
+        "median": 9.769341342878814,
+        "min": 2.2390809958953475,
+        "max": 47.5313245280648,
+        "n": 72
+      },
+      "encoder_decoder/decoder_prefill": {
+        "median": 0.2248028889299924,
+        "min": 0.1427232593188474,
+        "max": 0.34972643101636075,
+        "n": 40
+      },
+      "encoder_decoder/encode": {
+        "median": 0.2672795093003884,
+        "min": 0.0680612928556616,
+        "max": 1.2385507987955542,
+        "n": 40
+      },
+      "encoder_only/encode": {
+        "median": 0.32402690486944064,
+        "min": 0.06785013277734976,
+        "max": 1.249521064827822,
+        "n": 34
+      }
+    },
+    "decode_per_token_r1": [
+      {
+        "key": "decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing",
+        "model": "DistilGPT2",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 128,
+        "context": 128,
+        "per_token_j": 0.08710023527215274,
+        "std_j": 0.0023659185617354744,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|DistilGPT2|decode|fp16|flash|random|s512|b1|ctx512|k64|growing",
+        "model": "DistilGPT2",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 512,
+        "context": 512,
+        "per_token_j": 0.1035270340228256,
+        "std_j": 0.004272037048246152,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|DistilGPT2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "DistilGPT2",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.1489652182473408,
+        "std_j": 0.007266931885139688,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|DistilGPT2|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing",
+        "model": "DistilGPT2",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 2048,
+        "context": 2048,
+        "per_token_j": 0.17187330789617025,
+        "std_j": 0.0069087617150495224,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|DistilGPT2|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing",
+        "model": "DistilGPT2",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 4096,
+        "context": 4096,
+        "per_token_j": 0.20197997966765346,
+        "std_j": 0.0044153501499606,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|DistilGPT2|decode|fp32|flash|random|s128|b1|ctx128|k64|growing",
+        "model": "DistilGPT2",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 128,
+        "context": 128,
+        "per_token_j": 0.17388954512203478,
+        "std_j": 0.007077858741456185,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|DistilGPT2|decode|fp32|flash|random|s512|b1|ctx512|k64|growing",
+        "model": "DistilGPT2",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 512,
+        "context": 512,
+        "per_token_j": 0.1850149761130864,
+        "std_j": 0.005876954194409926,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|DistilGPT2|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "DistilGPT2",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.19974589476308735,
+        "std_j": 0.00235340256772657,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|DistilGPT2|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing",
+        "model": "DistilGPT2",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 2048,
+        "context": 2048,
+        "per_token_j": 0.2682581252406503,
+        "std_j": 0.009740295357181525,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|DistilGPT2|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing",
+        "model": "DistilGPT2",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 4096,
+        "context": 4096,
+        "per_token_j": 0.4803140728979542,
+        "std_j": 0.005715667232196849,
+        "subtraction": "model"
+      },
+      {
+        "key": "decoder_only|GPT-2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing",
+        "model": "GPT-2",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 128,
+        "context": 128,
+        "per_token_j": 0.15550774241002124,
+        "std_j": 0.007899753471383669,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2|decode|fp16|flash|random|s512|b1|ctx512|k64|growing",
+        "model": "GPT-2",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 512,
+        "context": 512,
+        "per_token_j": 0.20867364115737047,
+        "std_j": 0.011714035964608622,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "GPT-2",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.29437133519132863,
+        "std_j": 0.012403849616485423,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing",
+        "model": "GPT-2",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 2048,
+        "context": 2048,
+        "per_token_j": 0.3318816888026125,
+        "std_j": 0.013006829828488784,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing",
+        "model": "GPT-2",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 4096,
+        "context": 4096,
+        "per_token_j": 0.39760891766282935,
+        "std_j": 0.009141459218415773,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2|decode|fp32|flash|random|s128|b1|ctx128|k64|growing",
+        "model": "GPT-2",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 128,
+        "context": 128,
+        "per_token_j": 0.32971089022261246,
+        "std_j": 0.021838903886300068,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2|decode|fp32|flash|random|s512|b1|ctx512|k64|growing",
+        "model": "GPT-2",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 512,
+        "context": 512,
+        "per_token_j": 0.37422725355977154,
+        "std_j": 0.009145062945331696,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "GPT-2",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.3715701047662789,
+        "std_j": 0.013219237133365815,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing",
+        "model": "GPT-2",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 2048,
+        "context": 2048,
+        "per_token_j": 0.500201749371935,
+        "std_j": 0.006301168901457581,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing",
+        "model": "GPT-2",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 4096,
+        "context": 4096,
+        "per_token_j": 0.9110033331922787,
+        "std_j": 0.02379550234796411,
+        "subtraction": "model"
+      },
+      {
+        "key": "decoder_only|GPT-2-medium|decode|fp16|flash|random|s128|b1|ctx128|k64|growing",
+        "model": "GPT-2-medium",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 128,
+        "context": 128,
+        "per_token_j": 0.29487587912201313,
+        "std_j": 0.05182613500833064,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-medium|decode|fp16|flash|random|s512|b1|ctx512|k64|growing",
+        "model": "GPT-2-medium",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 512,
+        "context": 512,
+        "per_token_j": 0.4608457965300052,
+        "std_j": 0.0144024450722399,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-medium|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "GPT-2-medium",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.7233364362640897,
+        "std_j": 0.020061958867910477,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-medium|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing",
+        "model": "GPT-2-medium",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 2048,
+        "context": 2048,
+        "per_token_j": 0.7950603222945841,
+        "std_j": 0.01975615169333182,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-medium|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing",
+        "model": "GPT-2-medium",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 4096,
+        "context": 4096,
+        "per_token_j": 0.9166117853308375,
+        "std_j": 0.026977942105704984,
+        "subtraction": "model"
+      },
+      {
+        "key": "decoder_only|GPT-2-medium|decode|fp32|flash|random|s128|b1|ctx128|k64|growing",
+        "model": "GPT-2-medium",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 128,
+        "context": 128,
+        "per_token_j": 0.7736160973107351,
+        "std_j": 0.025368331206433125,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-medium|decode|fp32|flash|random|s512|b1|ctx512|k64|growing",
+        "model": "GPT-2-medium",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 512,
+        "context": 512,
+        "per_token_j": 0.7911255450689033,
+        "std_j": 0.016489518063862802,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-medium|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "GPT-2-medium",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.8017164758714083,
+        "std_j": 0.009436644003514254,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-medium|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing",
+        "model": "GPT-2-medium",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 2048,
+        "context": 2048,
+        "per_token_j": 1.1431615292690593,
+        "std_j": 0.034841345227527,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-medium|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing",
+        "model": "GPT-2-medium",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 4096,
+        "context": 4096,
+        "per_token_j": 2.136183619806094,
+        "std_j": 0.04640099358779432,
+        "subtraction": "model"
+      },
+      {
+        "key": "decoder_only|GPT-2-large|decode|fp16|flash|random|s128|b1|ctx128|k64|growing",
+        "model": "GPT-2-large",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 128,
+        "context": 128,
+        "per_token_j": 0.9318550190034126,
+        "std_j": 0.03741318273215595,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-large|decode|fp16|flash|random|s512|b1|ctx512|k64|growing",
+        "model": "GPT-2-large",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 512,
+        "context": 512,
+        "per_token_j": 1.0391986381970253,
+        "std_j": 0.041419146530880455,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-large|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "GPT-2-large",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 1.124324731127461,
+        "std_j": 0.05747248927878112,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-large|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing",
+        "model": "GPT-2-large",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 2048,
+        "context": 2048,
+        "per_token_j": 1.2573980974222823,
+        "std_j": 0.026414518714367594,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-large|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing",
+        "model": "GPT-2-large",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 4096,
+        "context": 4096,
+        "per_token_j": 1.6040013949309508,
+        "std_j": 0.04413683166563003,
+        "subtraction": "model"
+      },
+      {
+        "key": "decoder_only|GPT-2-large|decode|fp32|flash|random|s128|b1|ctx128|k64|growing",
+        "model": "GPT-2-large",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 128,
+        "context": 128,
+        "per_token_j": 1.2253377219499586,
+        "std_j": 0.03078706461943847,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-large|decode|fp32|flash|random|s512|b1|ctx512|k64|growing",
+        "model": "GPT-2-large",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 512,
+        "context": 512,
+        "per_token_j": 1.3133241274008696,
+        "std_j": 0.0307290770952647,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-large|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "GPT-2-large",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 1.5827248803186338,
+        "std_j": 0.022437017418182804,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-large|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing",
+        "model": "GPT-2-large",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 2048,
+        "context": 2048,
+        "per_token_j": 2.210755033226489,
+        "std_j": 0.04493658619828154,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-large|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing",
+        "model": "GPT-2-large",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 4096,
+        "context": 4096,
+        "per_token_j": 3.8683924123178524,
+        "std_j": 0.05040600244323877,
+        "subtraction": "model"
+      },
+      {
+        "key": "decoder_only|GPT-2-XL|decode|fp16|flash|random|s128|b1|ctx128|k64|growing",
+        "model": "GPT-2-XL",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 128,
+        "context": 128,
+        "per_token_j": 1.516536403901568,
+        "std_j": 0.1897414430742225,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-XL|decode|fp16|flash|random|s512|b1|ctx512|k64|growing",
+        "model": "GPT-2-XL",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 512,
+        "context": 512,
+        "per_token_j": 1.5204215304557154,
+        "std_j": 0.1580708496069859,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-XL|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "GPT-2-XL",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 1.5595098586835363,
+        "std_j": 0.03155179071095349,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-XL|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing",
+        "model": "GPT-2-XL",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 2048,
+        "context": 2048,
+        "per_token_j": 1.897396470888948,
+        "std_j": 0.04028518770895112,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-XL|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing",
+        "model": "GPT-2-XL",
+        "arch": "decoder_only",
+        "precision": "fp16",
+        "src_len": 4096,
+        "context": 4096,
+        "per_token_j": 2.6033536033855764,
+        "std_j": 0.04422522758760017,
+        "subtraction": "model"
+      },
+      {
+        "key": "decoder_only|GPT-2-XL|decode|fp32|flash|random|s128|b1|ctx128|k64|growing",
+        "model": "GPT-2-XL",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 128,
+        "context": 128,
+        "per_token_j": 2.021732730576225,
+        "std_j": 0.030915228955657816,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-XL|decode|fp32|flash|random|s512|b1|ctx512|k64|growing",
+        "model": "GPT-2-XL",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 512,
+        "context": 512,
+        "per_token_j": 2.3270926967885965,
+        "std_j": 0.0397022235295415,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-XL|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "GPT-2-XL",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 2.7863864732344297,
+        "std_j": 0.03424811771046699,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-XL|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing",
+        "model": "GPT-2-XL",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 2048,
+        "context": 2048,
+        "per_token_j": 3.7313232200558653,
+        "std_j": 0.07333553365443067,
+        "subtraction": "measured"
+      },
+      {
+        "key": "decoder_only|GPT-2-XL|decode|fp32|flash|random|s4096|b1|ctx4096|k64|growing",
+        "model": "GPT-2-XL",
+        "arch": "decoder_only",
+        "precision": "fp32",
+        "src_len": 4096,
+        "context": 4096,
+        "per_token_j": 6.63377057328686,
+        "std_j": 0.11893648787211114,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s128|b1|ctx1024|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 128,
+        "context": 1024,
+        "per_token_j": 0.09401912019140525,
+        "std_j": 0.0027267204697300454,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s512|b1|ctx1024|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 512,
+        "context": 1024,
+        "per_token_j": 0.11671035960902361,
+        "std_j": 0.003947096663036612,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.13744941570750857,
+        "std_j": 0.004244253857745063,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s2048|b1|ctx1024|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 2048,
+        "context": 1024,
+        "per_token_j": 0.15644079498512248,
+        "std_j": 0.007364673631410311,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s4096|b1|ctx1024|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 4096,
+        "context": 1024,
+        "per_token_j": 0.15369686139626568,
+        "std_j": 0.004117093556946694,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 128,
+        "per_token_j": 0.08859430798521517,
+        "std_j": 0.00927085773153135,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx512|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 512,
+        "per_token_j": 0.10676607217189518,
+        "std_j": 0.00321498566294177,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx2048|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 2048,
+        "per_token_j": 0.15470371189342147,
+        "std_j": 0.004342371160004484,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx4096|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 4096,
+        "per_token_j": 0.16516796026849348,
+        "std_j": 0.00941724529489436,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s128|b1|ctx1024|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 128,
+        "context": 1024,
+        "per_token_j": 0.20220887399614473,
+        "std_j": 0.010568185966959947,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s512|b1|ctx1024|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 512,
+        "context": 1024,
+        "per_token_j": 0.1983946190409424,
+        "std_j": 0.00880659542127616,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.19351397032276005,
+        "std_j": 0.009854913992291188,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s2048|b1|ctx1024|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 2048,
+        "context": 1024,
+        "per_token_j": 0.2445985237656789,
+        "std_j": 0.0077856248379881395,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s4096|b1|ctx1024|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 4096,
+        "context": 1024,
+        "per_token_j": 0.35481662167433436,
+        "std_j": 0.00548395273251508,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s1024|b1|ctx128|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 128,
+        "per_token_j": 0.203806864998345,
+        "std_j": 0.016603913456006068,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s1024|b1|ctx512|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 512,
+        "per_token_j": 0.20206785998059762,
+        "std_j": 0.006362246774025606,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s1024|b1|ctx2048|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 2048,
+        "per_token_j": 0.2536947608612998,
+        "std_j": 0.0039589499310043914,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-small|decode|fp32|flash|random|s1024|b1|ctx4096|k64|growing",
+        "model": "T5-small",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 4096,
+        "per_token_j": 0.39573927393964325,
+        "std_j": 0.010024839450159287,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s128|b1|ctx1024|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 128,
+        "context": 1024,
+        "per_token_j": 0.30008957540703896,
+        "std_j": 0.012836108545486506,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s512|b1|ctx1024|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 512,
+        "context": 1024,
+        "per_token_j": 0.33169698890486593,
+        "std_j": 0.01579108932489699,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.39528560276229435,
+        "std_j": 0.01247849860551692,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s2048|b1|ctx1024|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 2048,
+        "context": 1024,
+        "per_token_j": 0.4309092470487333,
+        "std_j": 0.017289405629705202,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s4096|b1|ctx1024|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 4096,
+        "context": 1024,
+        "per_token_j": 0.4176382995523441,
+        "std_j": 0.02591130322754991,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 128,
+        "per_token_j": 0.25399247820380727,
+        "std_j": 0.0053373558828697385,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s1024|b1|ctx512|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 512,
+        "per_token_j": 0.3085376112695974,
+        "std_j": 0.009487217494694996,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s1024|b1|ctx2048|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 2048,
+        "per_token_j": 0.4321845643543624,
+        "std_j": 0.01637218374614499,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp16|flash|random|s1024|b1|ctx4096|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 4096,
+        "per_token_j": 0.4733156843438766,
+        "std_j": 0.01849490532795228,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s128|b1|ctx1024|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 128,
+        "context": 1024,
+        "per_token_j": 0.4728493778584538,
+        "std_j": 0.016247359155086093,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s512|b1|ctx1024|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 512,
+        "context": 1024,
+        "per_token_j": 0.4599285120786623,
+        "std_j": 0.015773655164087325,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.4856613806137832,
+        "std_j": 0.008950672158663284,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s2048|b1|ctx1024|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 2048,
+        "context": 1024,
+        "per_token_j": 0.580457784845043,
+        "std_j": 0.012581191595908271,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s4096|b1|ctx1024|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 4096,
+        "context": 1024,
+        "per_token_j": 0.8661520351343065,
+        "std_j": 0.013974997216479603,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s1024|b1|ctx128|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 128,
+        "per_token_j": 0.45949205839815094,
+        "std_j": 0.02293703061616597,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s1024|b1|ctx512|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 512,
+        "per_token_j": 0.4503643908538375,
+        "std_j": 0.025608143783693277,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s1024|b1|ctx2048|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 2048,
+        "per_token_j": 0.6239585096473397,
+        "std_j": 0.01288306831562193,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|T5-base|decode|fp32|flash|random|s1024|b1|ctx4096|k64|growing",
+        "model": "T5-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 4096,
+        "per_token_j": 0.9496236068823691,
+        "std_j": 0.021325363974523396,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s128|b1|ctx1024|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 128,
+        "context": 1024,
+        "per_token_j": 0.1614000306352309,
+        "std_j": 0.0053809414165284465,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s512|b1|ctx1024|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 512,
+        "context": 1024,
+        "per_token_j": 0.17949507503539328,
+        "std_j": 0.009238687710285893,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.20668111221089175,
+        "std_j": 0.00686531966446306,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s2048|b1|ctx1024|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 2048,
+        "context": 1024,
+        "per_token_j": 0.22411825125450396,
+        "std_j": 0.013543251013712131,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s4096|b1|ctx1024|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 4096,
+        "context": 1024,
+        "per_token_j": 0.23482985402312087,
+        "std_j": 0.006114973824709271,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 128,
+        "per_token_j": 0.13837060859474645,
+        "std_j": 0.005285654554620734,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s1024|b1|ctx512|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 512,
+        "per_token_j": 0.16370079307604005,
+        "std_j": 0.008006123444527174,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s1024|b1|ctx2048|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 2048,
+        "per_token_j": 0.2412498226092867,
+        "std_j": 0.009091024868328471,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp16|flash|random|s1024|b1|ctx4096|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 4096,
+        "per_token_j": 0.248434103957391,
+        "std_j": 0.007393972312509571,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s128|b1|ctx1024|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 128,
+        "context": 1024,
+        "per_token_j": 0.2305644392228729,
+        "std_j": 0.002444728092634001,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s512|b1|ctx1024|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 512,
+        "context": 1024,
+        "per_token_j": 0.24216492883470747,
+        "std_j": 0.006277146241847144,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.2636253646203662,
+        "std_j": 0.006022796837298841,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s2048|b1|ctx1024|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 2048,
+        "context": 1024,
+        "per_token_j": 0.3207673381695884,
+        "std_j": 0.008228330906932674,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s4096|b1|ctx1024|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 4096,
+        "context": 1024,
+        "per_token_j": 0.46378719223774745,
+        "std_j": 0.00803604381148321,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s1024|b1|ctx128|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 128,
+        "per_token_j": 0.2492749147769037,
+        "std_j": 0.006161703397856907,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s1024|b1|ctx512|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 512,
+        "per_token_j": 0.2595853328983089,
+        "std_j": 0.014623590318962605,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s1024|b1|ctx2048|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 2048,
+        "per_token_j": 0.35318149793622955,
+        "std_j": 0.006445659058520698,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-base|decode|fp32|flash|random|s1024|b1|ctx4096|k64|growing",
+        "model": "BART-base",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 4096,
+        "per_token_j": 0.5104216748404382,
+        "std_j": 0.01397607443998414,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s128|b1|ctx1024|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 128,
+        "context": 1024,
+        "per_token_j": 0.41467625557848803,
+        "std_j": 0.012574089902645727,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s512|b1|ctx1024|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 512,
+        "context": 1024,
+        "per_token_j": 0.4564282997075357,
+        "std_j": 0.019678130479339844,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.47117469203356604,
+        "std_j": 0.015157946051473609,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s2048|b1|ctx1024|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 2048,
+        "context": 1024,
+        "per_token_j": 0.4991325282877231,
+        "std_j": 0.03277049509054615,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s4096|b1|ctx1024|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 4096,
+        "context": 1024,
+        "per_token_j": 0.523999490328129,
+        "std_j": 0.019307470618476215,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 128,
+        "per_token_j": 0.33317881124160953,
+        "std_j": 0.025522504848636537,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s1024|b1|ctx512|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 512,
+        "per_token_j": 0.4321177109754472,
+        "std_j": 0.025587467380376847,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s1024|b1|ctx2048|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 2048,
+        "per_token_j": 0.5055279880128538,
+        "std_j": 0.015205618226448721,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp16|flash|random|s1024|b1|ctx4096|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp16",
+        "src_len": 1024,
+        "context": 4096,
+        "per_token_j": 0.564699431331793,
+        "std_j": 0.02119438141080028,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s128|b1|ctx1024|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 128,
+        "context": 1024,
+        "per_token_j": 0.48620338595184587,
+        "std_j": 0.011947017476447885,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s512|b1|ctx1024|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 512,
+        "context": 1024,
+        "per_token_j": 0.5367993466382472,
+        "std_j": 0.0068448223585448765,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 1024,
+        "per_token_j": 0.5995051340226039,
+        "std_j": 0.008577736182044363,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s2048|b1|ctx1024|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 2048,
+        "context": 1024,
+        "per_token_j": 0.720810979954224,
+        "std_j": 0.015920621398234424,
+        "subtraction": "measured"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s4096|b1|ctx1024|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 4096,
+        "context": 1024,
+        "per_token_j": 1.015642219404295,
+        "std_j": 0.008111609310706919,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s1024|b1|ctx128|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 128,
+        "per_token_j": 0.4481470234070567,
+        "std_j": 0.0048170572128662815,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s1024|b1|ctx512|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 512,
+        "per_token_j": 0.508011794271508,
+        "std_j": 0.016488685257022115,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s1024|b1|ctx2048|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 2048,
+        "per_token_j": 0.8087279070837157,
+        "std_j": 0.020750041702294986,
+        "subtraction": "model"
+      },
+      {
+        "key": "encoder_decoder|BART-large|decode|fp32|flash|random|s1024|b1|ctx4096|k64|growing",
+        "model": "BART-large",
+        "arch": "encoder_decoder",
+        "precision": "fp32",
+        "src_len": 1024,
+        "context": 4096,
+        "per_token_j": 1.170585502232998,
+        "std_j": 0.027936098582572445,
+        "subtraction": "model"
+      }
+    ]
+  }
+}
