@@ -294,3 +294,23 @@ on all 296 records (forward phases y ~ per_unit; decode y ~ per_unit x
 decode_tokens), aborting on any disagreement. The invalid artifacts were
 never committed and are overwritten by the corrected run. Lesson recorded:
 the bridge gates verified features only; targets now have their own gate.
+
+### Addendum 2026-07-24 - Confirmatory fit landed; exploratory R1 extension approved (post-hoc, labeled)
+The corrected fit ran cleanly (units gate passed on all 296; artifacts at
+commit 50a15b3). Pre-registered verdicts, recorded as they fell: pooled A-B
+median 4.80%, <= 5% target MET; winner M8_split_dispatch (R2_test 0.987;
+M9 degenerates to M8 plus the AIC penalty exactly as predicted pre-fit);
+extrapolation E2 broad (PRIMARY) FAIL at 50.4% pooled MAPE, E1
+strict-literal PASS at 14.3%, both stand. Calibrated MCER confirms the
+phase transition (decode ~12.6-13.1 vs forward ~3-4 median). Central
+methods finding: strong heteroscedasticity under the pre-registered
+absolute-NNLS estimator (R2 0.987 with MAPE 88% on the same held-out set),
+with coefficient distortion (to_sram 1.97e-12, ~350x to_hbm, unstable under
+R3) that also breaks monotonicity in the three model-subtracted per-token
+rows; the pre-specified R1 robustness probe reaches 20.1% test MAPE with
+physically sensible coefficients. DECISION (post-hoc, approved before the
+rerun): extend scripts/fit_exp002.py with an explicitly labeled EXPLORATORY
+section applying the R1 estimator to both extrapolation readings, MCER, and
+the model-subtracted per-token rows; confirmatory outputs unchanged; the
+exploratory results inform the paper's estimator discussion and the A100
+pre-registration amendment only, and are never presented as pre-registered.

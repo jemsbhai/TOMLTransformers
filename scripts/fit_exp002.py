@@ -1,30 +1,31 @@
 #!/usr/bin/env python
 """EXP-002 fit: plan sections 5-7 (main table, robustness, extrapolation,
-derived quantities). Baselines and significance tests (section 8) are the
-next step and are NOT run here.
+derived quantities), plus a labeled EXPLORATORY section (approved
+2026-07-24, post-hoc) that applies the pre-specified R1 relative-error
+estimator to the extrapolation readings, MCER, and the model-subtracted
+per-token rows. Confirmatory sections are the pre-registered record and are
+computed exactly as before; the exploratory section never alters them.
+Baselines and significance tests (section 8) are the next step.
 
-Run from the repo root, after the bridge test gates are green and the code
-is committed (artifact provenance records the commit):
+Run from the repo root with the code committed (artifact provenance records
+the commit):
 
     python scripts/fit_exp002.py
 
-Reads the frozen dataset, fits the M0-M9 family per the approved fit plan
-(experiments/exp_002_size_sweep/fit_plan.md), and writes:
-
+Writes:
     experiments/exp_002_size_sweep/fit/fit_report.txt
     experiments/exp_002_size_sweep/fit/fit_results.json
     experiments/exp_002_size_sweep/fit/per_point_predictions.jsonl
 
-Everything printed is also in fit_report.txt. Deterministic (seed 42
-stratified split; NNLS is deterministic).
+Deterministic (seed 42 stratified split; NNLS is deterministic).
 
 TARGET UNITS (corrected 2026-07-23): the record fields per_execution_*_j
 are per repeat WINDOW, i.e. inner_iters composite executions sized by
 measure_until_floor to the 4 s floor. The fit target is therefore
 per_execution_median_j["B"] / inner_iters: joules per ONE composite
-execution as defined by fit_plan section 2. A consistency gate below
-cross-checks this against the independently stored per_unit_j field on
-every record and aborts on any units disagreement.
+execution as defined by fit_plan section 2. A consistency gate cross-checks
+this against the independently stored per_unit_j field on every record and
+aborts on any units disagreement.
 """
 
 from __future__ import annotations
@@ -225,8 +226,6 @@ def main() -> int:
     out(f"  winner by AIC: {winner.name}  "
         f"(R2_test {winner.r2_test:.4f}, MAPE_test {winner.mape_test:.2f}%)")
 
-    # Final coefficients: winner form refit on all 296 (conventional
-    # select-on-split, refit-on-full; used for derived quantities below).
     final = fit_absolute(winner.name, feats, ys)
     out(f"  final coefficients (winner refit on all 296): {coef_line(final)}")
     yhat_full = final.predict(feats)
@@ -297,6 +296,26 @@ def main() -> int:
         extrap[reading] = entry
 
     # ------------------------------------------------------------------
+    def mcer_tables(model_for_mcer: EnergyModel, note: str):
+        out(f"  source: {note}")
+        pts = {}
+        for r, f in zip(records, feats):
+            mem, comp = fitted_split_energy(model_for_mcer, f)
+            pts[r["spec"]["key"]] = (mem / comp) if comp > 0 else float("inf")
+        summary = {}
+        bp = defaultdict(list)
+        for r in records:
+            bp[(r["spec"]["arch"], r["spec"]["phase"])].append(
+                pts[r["spec"]["key"]])
+        for (arch, phase), vals in sorted(bp.items()):
+            med = statistics.median(vals)
+            out(f"  {arch:16s} {phase:16s} median MCER {med:10.3f}  "
+                f"[{min(vals):.3f}, {max(vals):.3f}]  n={len(vals)}")
+            summary[f"{arch}/{phase}"] = {
+                "median": _jf(med), "min": _jf(min(vals)),
+                "max": _jf(max(vals)), "n": len(vals)}
+        return pts, summary
+
     out()
     out("== Calibrated MCER by phase (fitted memory / fitted compute) ==")
     if separable(final):
@@ -308,23 +327,7 @@ def main() -> int:
         mcer_model = fit_absolute(sep.name, feats, ys)
         mcer_note = (f"winner {winner.name} does not separate compute/memory; "
                      f"using best separable model {sep.name} (refit on all 296)")
-    out(f"  source: {mcer_note}")
-    mcer_by_point = {}
-    for r, f in zip(records, feats):
-        mem, comp = fitted_split_energy(mcer_model, f)
-        mcer_by_point[r["spec"]["key"]] = (mem / comp) if comp > 0 else float("inf")
-    mcer_summary = {}
-    by_phase = defaultdict(list)
-    for r in records:
-        by_phase[(r["spec"]["arch"], r["spec"]["phase"])].append(
-            mcer_by_point[r["spec"]["key"]])
-    for (arch, phase), vals in sorted(by_phase.items()):
-        med = statistics.median(vals)
-        out(f"  {arch:16s} {phase:16s} median MCER {med:10.3f}  "
-            f"[{min(vals):.3f}, {max(vals):.3f}]  n={len(vals)}")
-        mcer_summary[f"{arch}/{phase}"] = {
-            "median": _jf(med), "min": _jf(min(vals)),
-            "max": _jf(max(vals)), "n": len(vals)}
+    mcer_by_point, mcer_summary = mcer_tables(mcer_model, mcer_note)
 
     # ------------------------------------------------------------------
     out()
@@ -340,6 +343,7 @@ def main() -> int:
             dp_lut[(s["model"], s["precision"], s["seq_len"], s["tgt_len"])] = r
 
     per_token_rows = []
+    pt_internal = []          # (row, comp_feat or None, e_d, sd_d, k)
     n_measured = n_model = 0
     for r in records:
         s = r["spec"]
@@ -354,53 +358,120 @@ def main() -> int:
             comp_spec = dict(s, phase="decoder_prefill", tgt_len=s["tgt_ctx"])
             match = dp_lut.get((s["model"], s["precision"], s["seq_len"],
                                 s["tgt_ctx"]))
+        comp_feat = None
         if match is not None:
             e_p, sd_p = target_y(match), y_std(match)
             source = "measured"
             std = (sd_d ** 2 + sd_p ** 2) ** 0.5 / k
             n_measured += 1
         else:
-            e_p = float(final.predict([features_for_spec(comp_spec)])[0])
+            comp_feat = features_for_spec(comp_spec)
+            e_p = float(final.predict([comp_feat])[0])
             source = "model"       # std excludes component model uncertainty
             std = sd_d / k
             n_model += 1
-        per_token_rows.append({
+        row = {
             "key": s["key"], "model": s["model"], "arch": s["arch"],
             "precision": s["precision"], "src_len": s["seq_len"],
             "context": s["seq_len"] if s["arch"] == "decoder_only"
             else s["tgt_ctx"],
             "per_token_j": (e_d - e_p) / k, "std_j": std,
             "subtraction": source,
-        })
+        }
+        per_token_rows.append(row)
+        pt_internal.append((row, comp_feat, e_d, sd_d, k))
+
+    def print_decoder_fp16(rows):
+        drows = [row for row in rows
+                 if row["arch"] == "decoder_only" and row["precision"] == "fp16"]
+        for model in sorted({row["model"] for row in drows}):
+            cells = "  ".join(
+                f"ctx{row['context']}={1000 * row['per_token_j']:.1f}"
+                f"{'*' if row['subtraction'] == 'model' else ''}"
+                for row in sorted(drows, key=lambda x: x["context"])
+                if row["model"] == model)
+            out(f"    {model:14s} {cells}")
+
     out(f"  rows: {len(per_token_rows)} decode points "
         f"({n_measured} measured-subtracted, {n_model} model-subtracted; "
         f"model-subtracted std excludes component model uncertainty)")
     out("  decoder-only fp16 per-token (mJ):")
-    dec_rows = [row for row in per_token_rows
-                if row["arch"] == "decoder_only" and row["precision"] == "fp16"]
-    for model in sorted({row["model"] for row in dec_rows}):
-        cells = "  ".join(
-            f"ctx{row['context']}={1000 * row['per_token_j']:.1f}"
-            f"{'*' if row['subtraction'] == 'model' else ''}"
-            for row in sorted(dec_rows, key=lambda x: x["context"])
-            if row["model"] == model)
-        out(f"    {model:14s} {cells}")
+    print_decoder_fp16(per_token_rows)
     out("    (* = model-subtracted; full rows incl. fp32 and enc-dec in JSON)")
+
+    # ------------------------------------------------------------------
+    out()
+    out("== EXPLORATORY: R1 relative-error estimator (post-hoc; NOT pre-registered) ==")
+    out("  Approved 2026-07-24 after the confirmatory run surfaced strong")
+    out("  heteroscedasticity (high R2 with high MAPE under absolute NNLS).")
+    out("  The confirmatory sections above are the pre-registered record and")
+    out("  stand unchanged; this section informs the estimator discussion and")
+    out("  the A100 pre-registration amendment only.")
+    r1_final = fit_relative(winner.name, feats, ys)
+    yhat_r1 = r1_final.predict(feats)
+    out(f"  R1-final coefficients (winner form, all 296): {coef_line(r1_final)}")
+    out(f"  R1 full-data quality: R2 {r2_score(np.array(ys), yhat_r1):.4f}, "
+        f"MAPE {mape(np.array(ys), yhat_r1):.2f}%")
+
+    extrap_r1 = {}
+    for reading in ("E2", "E1"):
+        etr, epr = extrapolation_split(records, reading)
+        fe_tr = [feats[idx[r["spec"]["key"]]] for r in etr]
+        ye_tr = [ys[idx[r["spec"]["key"]]] for r in etr]
+        fe_pr = [feats[idx[r["spec"]["key"]]] for r in epr]
+        ye_pr = [ys[idx[r["spec"]["key"]]] for r in epr]
+        m = fit_relative(winner.name, fe_tr, ye_tr)
+        pooled_m = mape(np.array(ye_pr), m.predict(fe_pr))
+        per_class = group_mape(epr, fe_pr, ye_pr, m,
+                               lambda r: r["spec"]["arch"])
+        cls = "  ".join(f"{k}={v:.1f}%" for k, v in per_class.items())
+        out(f"  {reading} under R1: pooled MAPE {pooled_m:6.2f}%  "
+            f"(25% band as exploratory reference only)  {cls}")
+        extrap_r1[reading] = {
+            "pooled_mape": float(pooled_m),
+            "per_class_mape": {k: float(v) for k, v in per_class.items()}}
+
+    out("  MCER under R1 coefficients:")
+    if separable(r1_final):
+        r1_mcer_model = r1_final
+        r1_mcer_note = f"winner form {winner.name} under R1 (all 296)"
+    else:
+        sep = next((r for r in results if separable(fresh(r.name))), None)
+        assert sep is not None
+        r1_mcer_model = fit_relative(sep.name, feats, ys)
+        r1_mcer_note = f"best separable form {sep.name} under R1 (all 296)"
+    mcer_r1_by_point, mcer_r1_summary = mcer_tables(r1_mcer_model, r1_mcer_note)
+
+    per_token_r1 = []
+    for row, comp_feat, e_d, sd_d, k in pt_internal:
+        if comp_feat is None:
+            per_token_r1.append(dict(row))
+        else:
+            e_p = float(r1_final.predict([comp_feat])[0])
+            nr = dict(row)
+            nr["per_token_j"] = (e_d - e_p) / k
+            per_token_r1.append(nr)
+    out("  decoder-only fp16 per-token (mJ) with model-subtracted rows (*)")
+    out("  recomputed under R1 (measured-subtracted rows identical):")
+    print_decoder_fp16(per_token_r1)
 
     # ------------------------------------------------------------------
     # Artifacts
     test_keys = {r["spec"]["key"] for r in test_r}
     with (FIT_DIR / "per_point_predictions.jsonl").open(
             "w", encoding="utf-8") as fh:
-        for r, f, y, yh in zip(records, feats, ys, yhat_full):
+        for r, f, y, yh, yh1 in zip(records, feats, ys, yhat_full, yhat_r1):
             fh.write(json.dumps({
                 "key": r["spec"]["key"], "arch": r["spec"]["arch"],
                 "phase": r["spec"]["phase"],
                 "precision": r["spec"]["precision"],
                 "y_j": float(y), "yhat_full_j": float(yh),
                 "ape_pct": float(abs(y - yh) / y * 100.0),
+                "yhat_r1_j": float(yh1),
+                "ape_r1_pct": float(abs(y - yh1) / y * 100.0),
                 "in_main_test": r["spec"]["key"] in test_keys,
                 "mcer_fit": _jf(mcer_by_point[r["spec"]["key"]]),
+                "mcer_fit_r1": _jf(mcer_r1_by_point[r["spec"]["key"]]),
             }) + "\n")
 
     payload = {
@@ -428,6 +499,19 @@ def main() -> int:
         "mcer_source": mcer_note,
         "mcer_summary": mcer_summary,
         "decode_per_token": per_token_rows,
+        "exploratory": {
+            "label": "post-hoc, approved 2026-07-24; NOT pre-registered; "
+                     "the confirmatory sections are the pre-registered record",
+            "estimator": "R1 relative-error NNLS, winner form",
+            "r1_final_coef": dict(zip(r1_final.column_names,
+                                      map(float, r1_final.coef_))),
+            "r1_full_r2": float(r2_score(np.array(ys), yhat_r1)),
+            "r1_full_mape": float(mape(np.array(ys), yhat_r1)),
+            "extrapolation_r1": extrap_r1,
+            "mcer_source_r1": r1_mcer_note,
+            "mcer_summary_r1": mcer_r1_summary,
+            "decode_per_token_r1": per_token_r1,
+        },
     }
     (FIT_DIR / "fit_results.json").write_text(
         json.dumps(payload, indent=2), encoding="utf-8")
