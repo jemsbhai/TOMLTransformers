@@ -600,3 +600,57 @@ exists; (c) the baseline bake-off (plan section 8) runs next on the
 identical splits, with the absolute-estimator comparison as the
 pre-registered one and an R1 companion reported under the same exploratory
 label.
+
+
+### 2026-07-24 - Section-8 baseline bake-off (pre-registered), completing Steps 2-3 on the 4090
+
+**Status:** CONFIRMATORY bake-off per fit_plan sections 8 and 12, recorded
+as it fell; artifacts at commit db1f984 supersede aac684f. Registry-
+correction footprint verified exactly as predicted: every to_hbm
+coefficient rescaled by precisely 232/240 (e.g. winner 5.555e-15 ->
+5.37e-15), split-column results otherwise identical, and the combined-
+column models drifted only in trailing digits (M0 MAPE_test 49.44 ->
+47.93; the M0/M1 tail order in the AIC table swapped at a 0.7-point AIC
+gap). No verdict moved.
+
+**Pre-registered primary comparison (58-point main test, absolute
+estimator, one-sided Wilcoxon, Holm, alpha 0.05):** the TOML winner
+(MAPE 88.26%) significantly BEATS layerwise (96.50%, Holm p = 5.1e-4) and
+does NOT beat M0_flops (47.93%) or roofline (29.81%) on MAPE. Secondary E2
+set (n=14): winner 50.37%, M0 56.52%, roofline 30.42%, layerwise 49.53%,
+no comparison significant. These verdicts stand. They are the
+heteroscedasticity finding expressing itself through the pre-registered
+protocol: the winner dominates every model on likelihood and variance
+explained (R2_test 0.987 vs M0's 0.972) while the absolute loss butchers
+relative error on small points, and single-scale baselines are naturally
+MAPE-robust.
+
+**Two diagnostics worth the paper's ink:**
+- The roofline's fitted P_avg is 378.4 W (379.0 W at the 2325 MHz
+  sensitivity ceiling), 2.2-2.5x the part's 150-175 W envelope. A fitted
+  average power that exceeds the physical power limit is direct evidence
+  the roofline's time model underestimates real time (single-batch
+  workloads run far below peak, and launch/latency floors are absent), so
+  its decent MAPE comes from a compensating scale, not physics.
+- The layerwise regressor (priors stripped, D3/D5) zeroes raw_macs
+  entirely and still lands last (96.5%): removing the precision-aware MAC
+  weighting and the cost hierarchy is what the winner's single
+  pre-registered significant victory is measuring.
+
+**Exploratory R1 companion (labeled; main test set, MAPE only):** with the
+scale-aware loss the identical feature set leads everything: winner_R1
+20.10% < layerwise_R1 24.61% < roofline_R1 30.21% < M0_R1 32.41%. Together
+with E2 under R1 at 15.24% (vs the absolute winner's 50.37% and roofline's
+30.42% on the same predict set), the full-story ordering is consistent:
+the TO feature set carries the signal; the estimator must be scale-aware
+to express it in relative error. The paper reports the pre-registered
+table and this companion side by side with the boundary explicit.
+
+**Implication, recorded before Step 5:** the A100/Lambda pre-registration
+amendment will name relative-error NNLS as the PRIMARY estimator and the
+absolute fit as the secondary, with this section cited as the motivating
+evidence, written before any A100 data exists. Steps 2-3 are now complete
+on the 4090; remaining for EXP-002: Step 4 representativeness spot checks
+(requires explicit go-ahead for HF downloads and brief GPU time), Step 5
+amendment, Steps 6-7 A100 runs and transfer analysis, Step 8 figures and
+manuscript.

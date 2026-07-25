@@ -347,3 +347,19 @@ the to_hbm column, absorbed exactly by NNLS; only the printed to_hbm
 coefficient shifts vs the aac684f artifacts, which the regenerated artifacts
 supersede). Desktop entry preserved as rtx4090_desktop; self-test and a new
 unit test lock the mapping.
+
+### Addendum 2026-07-24 - Bake-off complete; Steps 2-3 closed on the 4090
+Section-8 run at commit db1f984 (registry-correction footprint verified:
+to_hbm coefficients scaled by exactly 232/240; no verdict moved).
+Pre-registered primary (58-pt test, absolute): winner beats layerwise
+(Holm p=5.1e-4), does not beat M0 or roofline on MAPE; secondary E2 (n=14)
+nothing significant. Diagnostics recorded: roofline P_avg fits to 378 W,
+2.2-2.5x the part's power envelope, exposing its time model as
+compensating rather than physical; priors-stripped layerwise zeroes
+raw_macs and finishes last. Exploratory R1 companion (labeled): winner_R1
+20.10% leads layerwise_R1 24.61%, roofline_R1 30.21%, M0_R1 32.41%.
+Verdicts stand as registered; full record in findings.md (second
+2026-07-24 entry). Decision reaffirmed: the Step 5 amendment names R1 as
+primary for the A100, citing this evidence, before any A100 data exists.
+Next: Step 4 representativeness (gated on explicit go-ahead for HF
+downloads), then Step 5.
