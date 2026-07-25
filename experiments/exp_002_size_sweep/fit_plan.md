@@ -200,3 +200,39 @@ LOGBOOK line BEFORE fit code lands.
   reported alongside. ViT-L/16 evaluated at native shape per recorded
   clarification 1.
 - D3: ADOPTED as specified (raw structural counts, no to_costs priors).
+
+
+## 12. Section-8 operationalization (2026-07-24, approved pre-bake-off)
+
+- Roofline constants, cited in fit/baselines.py: RTX 4090 Laptop GPU
+  (AD103, GN21-X11), 9,728 CUDA cores, rated boost 2,040 MHz at the 150 W
+  TGP configuration, 256-bit GDDR6 at 18 Gbps, 576.0 GB/s (TechPowerUp GPU
+  Database; TechSpot Feb 2023 review; VideoCardz). Peak FP32 = 2 x 9728 x
+  2.040e9 = 39.69 TFLOP/s (formula stated). Peak FP16 = 2 x peak FP32 =
+  79.38 TFLOP/s, recorded explicitly as the standard Ada dense tensor-core
+  assumption for the cuBLAS/SDPA paths the workloads use. P_avg is the
+  roofline's single fitted parameter (LS through the origin). Sensitivity
+  line only: the frozen dataset's maximum sustained median SM clock,
+  2,325 MHz, gives a 45.24 TFLOP/s machine-observed ceiling.
+- Raw structural counts for roofline and layerwise are recovered EXACTLY by
+  inverting to_costs with the same constants the bridge used.
+- Layerwise regressor (D3, refined as D5): NNLS on the winner's selected
+  support with the physics priors stripped: columns raw_macs, sram_words,
+  hbm_words, n_launches, intercept. to_nonlinear is excluded: it aggregates
+  ops with different TO costs (no exact raw inverse) and the winner fitted
+  it to zero under both estimators.
+- Significance sets: PRIMARY = the 58-point main test split under the
+  pre-registered absolute estimator (best paired-test power); SECONDARY =
+  the E2 predict set (n=14). One-sided Wilcoxon signed-rank (winner APEs
+  smaller), Holm-Bonferroni across the three must-beats, alpha 0.05. R1
+  companions of everything are reported under the existing exploratory
+  label, MAPE only.
+- Device-registry correction (2026-07-24, discovered while wiring the
+  inversion): to_costs registered "rtx4090" with the desktop GDDR6X tier;
+  the Laptop GPU uses GDDR6 at 18 Gbps. Corrected in to_costs.py (desktop
+  entry preserved as "rtx4090_desktop"). Effect: a uniform 240/232 rescale
+  of the to_hbm feature column, absorbed exactly by the fitted coefficient;
+  predictions, fit quality, AIC/BIC, MCER (a ratio), extrapolation MAPE,
+  and every pre-registered verdict are invariant. Only the printed to_hbm
+  coefficient shifts by that factor versus the aac684f artifacts, and the
+  regenerated artifacts supersede them.

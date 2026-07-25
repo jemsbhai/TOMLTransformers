@@ -330,3 +330,20 @@ plus Holm), then Step 4 representativeness (requires explicit go-ahead for
 HF downloads), then the Step 5 A100/Lambda pre-registration amendment,
 which will pre-register R1 as the primary estimator for the cross-platform
 test before any A100 data exists.
+
+### Addendum 2026-07-24 - Section-8 baselines built; device registry corrected
+Roofline constants sourced and cited (RTX 4090 Laptop GPU: 9728 cores, 2040
+MHz rated boost at 150 W, 256-bit GDDR6 18 Gbps, 576.0 GB/s; TechPowerUp /
+TechSpot / VideoCardz concordant; peak FP32 39.69 TFLOP/s by stated formula;
+FP16 = 2x as a recorded Ada tensor-core assumption; 2325 MHz machine ceiling
+from energy.jsonl as sensitivity only). fit/baselines.py (roofline with
+fitted P_avg; layerwise NNLS on raw structural counts per D3/D5),
+fit/stats.py (one-sided Wilcoxon, Holm), tests, and the section-8 extension
+of scripts/fit_exp002.py landed; operationalization frozen as fit_plan
+section 12 BEFORE the bake-off runs. Found and corrected during the build:
+to_costs registered rtx4090 with the desktop GDDR6X tier; the Laptop GPU is
+GDDR6 (18 Gbps). Correction is verdict-invariant (uniform 240/232 rescale of
+the to_hbm column, absorbed exactly by NNLS; only the printed to_hbm
+coefficient shifts vs the aac684f artifacts, which the regenerated artifacts
+supersede). Desktop entry preserved as rtx4090_desktop; self-test and a new
+unit test lock the mapping.

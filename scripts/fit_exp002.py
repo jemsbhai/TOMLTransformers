@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-"""EXP-002 fit: plan sections 5-7 (main table, robustness, extrapolation,
-derived quantities), plus a labeled EXPLORATORY section (approved
-2026-07-24, post-hoc) that applies the pre-specified R1 relative-error
-estimator to the extrapolation readings, MCER, and the model-subtracted
-per-token rows. Confirmatory sections are the pre-registered record and are
-computed exactly as before; the exploratory section never alters them.
-Baselines and significance tests (section 8) are the next step.
+"""EXP-002 fit: plan sections 5-8 (main table, robustness, extrapolation,
+derived quantities, baselines bake-off), plus a labeled EXPLORATORY section
+(approved 2026-07-24, post-hoc) applying the pre-specified R1 relative-error
+estimator. Confirmatory sections are the pre-registered record; the
+exploratory content never alters them.
 
 Run from the repo root with the code committed (artifact provenance records
 the commit):
@@ -26,6 +24,13 @@ per_execution_median_j["B"] / inner_iters: joules per ONE composite
 execution as defined by fit_plan section 2. A consistency gate cross-checks
 this against the independently stored per_unit_j field on every record and
 aborts on any units disagreement.
+
+DEVICE REGISTRY (corrected 2026-07-24): the rtx4090 entry now carries the
+Laptop GPU's GDDR6 tier (was desktop GDDR6X). This uniformly rescales the
+to_hbm feature column by 240/232; NNLS absorbs it exactly, so predictions,
+fit quality, MCER, and every pre-registered verdict are invariant, and only
+the printed to_hbm coefficient shifts by that factor versus the aac684f
+artifacts.
 """
 
 from __future__ import annotations
@@ -48,9 +53,14 @@ sys.path.insert(0, str(REPO / "src"))
 from tomltransformers.energy_model import (EnergyModel, best_by,
                                            fit_and_select, mape, model_family,
                                            r2_score, summary_table)
+from tomltransformers.fit.baselines import (PEAK_BY_PRECISION_MEASURED,
+                                            LayerwiseBaseline,
+                                            RooflineBaseline)
 from tomltransformers.fit.bridge import features_for_spec, load_latest_records
 from tomltransformers.fit.splits import (extrapolation_split, phase_class,
                                          stratified_split)
+from tomltransformers.fit.stats import (ALPHA, ape_pct, holm_adjust,
+                                        wilcoxon_less)
 
 RUN_DIR = REPO / "experiments" / "exp_002_size_sweep"
 DATA = RUN_DIR / "energy.jsonl"
@@ -177,7 +187,7 @@ def main() -> int:
     FIT_DIR.mkdir(parents=True, exist_ok=True)
     commit = git_commit()
 
-    out("EXP-002 fit report (plan sections 5-7; baselines are the next step)")
+    out("EXP-002 fit report (plan sections 5-8)")
     out(f"generated: {datetime.now().astimezone().isoformat(timespec='seconds')}")
     out(f"git commit: {commit}")
     out(f"data: {DATA}")
@@ -191,6 +201,8 @@ def main() -> int:
     out("target: per_execution_median_j['B'] / inner_iters = J per composite "
         "execution (units corrected 2026-07-23; per_unit consistency gate "
         "passed on all 296)")
+    out("device registry: rtx4090 = Laptop GPU GDDR6 tier (corrected "
+        "2026-07-24; verdict-invariant, see module docstring)")
 
     # ------------------------------------------------------------------
     out()
@@ -401,6 +413,98 @@ def main() -> int:
 
     # ------------------------------------------------------------------
     out()
+    out("== Baselines bake-off (plan section 8; PRE-REGISTERED) ==")
+    out("  Primary set: the 58-point main test split, absolute estimator.")
+    out("  One-sided Wilcoxon (winner APEs smaller), Holm across the three "
+        "must-beats, alpha 0.05.")
+    precs = [r["spec"]["precision"] for r in records]
+    p_tr = [precs[i] for i in tr_i]
+    p_te = [precs[i] for i in te_i]
+
+    m_win_tr = fit_absolute(winner.name, f_tr, y_tr)
+    ape_win = ape_pct(y_te, m_win_tr.predict(f_te))
+    m0_tr = fit_absolute("M0_flops", f_tr, y_tr)
+    roof = RooflineBaseline().fit(f_tr, p_tr, y_tr)
+    layer = LayerwiseBaseline().fit(f_tr, p_tr, y_tr)
+    comps = [
+        ("M0_flops", ape_pct(y_te, m0_tr.predict(f_te))),
+        ("roofline", ape_pct(y_te, roof.predict(f_te, p_te))),
+        ("layerwise", ape_pct(y_te, layer.predict(f_te, p_te))),
+    ]
+    pvals = [wilcoxon_less(ape_win, a) for _, a in comps]
+    padj = holm_adjust(pvals)
+    out(f"  {winner.name:18s} MAPE {float(np.mean(ape_win)):7.2f}%  (TOML winner)")
+    baselines_json = {
+        "primary_set": "main_test_58_absolute", "alpha": ALPHA,
+        "winner_mape": float(np.mean(ape_win)), "comparisons": {}}
+    for (name, a), p, pa in zip(comps, pvals, padj):
+        beat = pa <= ALPHA
+        out(f"  {name:18s} MAPE {float(np.mean(a)):7.2f}%  p={p:.4g}  "
+            f"Holm p={pa:.4g}  [{'BEATEN' if beat else 'NOT beaten'}]")
+        baselines_json["comparisons"][name] = {
+            "mape": float(np.mean(a)), "p_one_sided": float(p),
+            "p_holm": float(pa), "beaten": bool(beat)}
+    out(f"  roofline fitted P_avg: {roof.p_avg_w_:.1f} W")
+    out("  layerwise coefficients: " + "  ".join(
+        f"{k}={v:.4g}" for k, v in layer.coef_dict().items()))
+    roof_meas = RooflineBaseline(
+        peak_by_precision=PEAK_BY_PRECISION_MEASURED).fit(f_tr, p_tr, y_tr)
+    mape_meas = float(np.mean(ape_pct(y_te, roof_meas.predict(f_te, p_te))))
+    out(f"  sensitivity: roofline at the measured 2325 MHz ceiling: MAPE "
+        f"{mape_meas:.2f}% (P_avg {roof_meas.p_avg_w_:.1f} W)")
+    baselines_json["roofline_p_avg_w"] = float(roof.p_avg_w_)
+    baselines_json["layerwise_coef"] = layer.coef_dict()
+    baselines_json["roofline_measured_clock_sensitivity_mape"] = mape_meas
+
+    out("  Secondary set: E2 predict (n=14), same protocol.")
+    etr2, epr2 = extrapolation_split(records, "E2")
+    fe2 = [feats[idx[r["spec"]["key"]]] for r in etr2]
+    ye2 = [ys[idx[r["spec"]["key"]]] for r in etr2]
+    pe2 = [precs[idx[r["spec"]["key"]]] for r in etr2]
+    fp2 = [feats[idx[r["spec"]["key"]]] for r in epr2]
+    yp2 = [ys[idx[r["spec"]["key"]]] for r in epr2]
+    pp2 = [precs[idx[r["spec"]["key"]]] for r in epr2]
+    win2 = fit_absolute(winner.name, fe2, ye2)
+    ape_w2 = ape_pct(yp2, win2.predict(fp2))
+    comps2 = [
+        ("M0_flops", ape_pct(yp2, fit_absolute("M0_flops", fe2, ye2).predict(fp2))),
+        ("roofline", ape_pct(yp2, RooflineBaseline().fit(
+            fe2, pe2, ye2).predict(fp2, pp2))),
+        ("layerwise", ape_pct(yp2, LayerwiseBaseline().fit(
+            fe2, pe2, ye2).predict(fp2, pp2))),
+    ]
+    pv2 = [wilcoxon_less(ape_w2, a) for _, a in comps2]
+    pa2 = holm_adjust(pv2)
+    out(f"    {winner.name:18s} MAPE {float(np.mean(ape_w2)):7.2f}%")
+    baselines_json["secondary_E2"] = {
+        "winner_mape": float(np.mean(ape_w2)), "comparisons": {}}
+    for (name, a), p, pa in zip(comps2, pv2, pa2):
+        out(f"    {name:18s} MAPE {float(np.mean(a)):7.2f}%  p={p:.4g}  "
+            f"Holm p={pa:.4g}")
+        baselines_json["secondary_E2"]["comparisons"][name] = {
+            "mape": float(np.mean(a)), "p_one_sided": float(p),
+            "p_holm": float(pa)}
+
+    out("  EXPLORATORY R1 companion (main test set, MAPE only; same label "
+        "and caveats as the exploratory section below):")
+    ape_w_r1 = ape_pct(y_te, m_r1.predict(f_te))
+    r1_comps = [
+        ("M0_flops_R1", ape_pct(y_te, fit_relative(
+            "M0_flops", f_tr, y_tr).predict(f_te))),
+        ("roofline_R1", ape_pct(y_te, RooflineBaseline().fit(
+            f_tr, p_tr, y_tr, relative=True).predict(f_te, p_te))),
+        ("layerwise_R1", ape_pct(y_te, LayerwiseBaseline().fit(
+            f_tr, p_tr, y_tr, relative=True).predict(f_te, p_te))),
+    ]
+    out(f"    {winner.name + '_R1':18s} MAPE {float(np.mean(ape_w_r1)):7.2f}%")
+    baselines_json["exploratory_r1"] = {
+        "winner_mape": float(np.mean(ape_w_r1)), "baseline_mape": {}}
+    for name, a in r1_comps:
+        out(f"    {name:18s} MAPE {float(np.mean(a)):7.2f}%")
+        baselines_json["exploratory_r1"]["baseline_mape"][name] = float(np.mean(a))
+
+    # ------------------------------------------------------------------
+    out()
     out("== EXPLORATORY: R1 relative-error estimator (post-hoc; NOT pre-registered) ==")
     out("  Approved 2026-07-24 after the confirmatory run surfaced strong")
     out("  heteroscedasticity (high R2 with high MAPE under absolute NNLS).")
@@ -482,6 +586,8 @@ def main() -> int:
         "n_records": len(records),
         "target": "per_execution_median_j[B] / inner_iters (J per composite "
                   "execution; units corrected 2026-07-23)",
+        "device_registry_note": "rtx4090 = Laptop GPU GDDR6 tier (corrected "
+                                "2026-07-24; verdict-invariant)",
         "pooled_ab_median": float(pooled),
         "pooled_ab_target_met": bool(ab_pass),
         "main_table": [{
@@ -499,6 +605,7 @@ def main() -> int:
         "mcer_source": mcer_note,
         "mcer_summary": mcer_summary,
         "decode_per_token": per_token_rows,
+        "baselines": baselines_json,
         "exploratory": {
             "label": "post-hoc, approved 2026-07-24; NOT pre-registered; "
                      "the confirmatory sections are the pre-registered record",
