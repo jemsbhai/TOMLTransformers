@@ -35,9 +35,10 @@ def test_onchip_cheaper_than_all_offchip():
 
 
 def test_offchip_to_sram_ratio_matches_literature():
-    # ~30-50x for A100 (HBM2E) and 4090 (GDDR6X) vs on-chip SRAM.
+    # ~30-50x for A100 (HBM2E) and 4090-class (GDDR6/GDDR6X) vs on-chip SRAM.
     assert 30 < tc.mem_word("hbm2e") / tc.mem_word("sram") < 60
     assert 30 < tc.mem_word("gddr6x") / tc.mem_word("sram") < 60
+    assert 30 < tc.mem_word("gddr6") / tc.mem_word("sram") < 60
 
 
 # --- Physical consistency with cited pJ/bit figures --------------------------
@@ -57,7 +58,11 @@ def test_gddr6x_is_less_efficient_than_hbm2e():
 
 # --- Device registry ----------------------------------------------------------
 def test_device_offchip_mapping():
-    assert tc.offchip_tier("rtx4090") == "gddr6x"
+    # "rtx4090" denotes the RTX 4090 Laptop GPU throughout this project
+    # (GDDR6 at 18 Gbps; registry corrected 2026-07-24). The desktop part is
+    # registered separately.
+    assert tc.offchip_tier("rtx4090") == "gddr6"
+    assert tc.offchip_tier("rtx4090_desktop") == "gddr6x"
     assert tc.offchip_tier("a100") == "hbm2e"
     assert tc.offchip_tier("h100") == "hbm3e"
 

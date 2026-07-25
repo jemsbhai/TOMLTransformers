@@ -2,6 +2,9 @@
 
 Expected values are computed from to_costs (not hard-coded), so these tests
 verify the blocks compose the cost model correctly and stay in sync with it.
+The off-chip tier is derived through the device registry rather than named
+literally, so registry corrections (2026-07-24: rtx4090 = Laptop GPU GDDR6)
+can never strand these expectations again.
 """
 
 import pytest
@@ -10,7 +13,8 @@ from tomltransformers import energy_model as em
 from tomltransformers import to_costs as tc
 from tomltransformers.architectures import common as cm
 
-DEV = "rtx4090"  # -> GDDR6X off-chip
+DEV = "rtx4090"                      # RTX 4090 Laptop GPU
+OFFCHIP = tc.offchip_tier(DEV)       # -> "gddr6" (registry-derived)
 
 
 # --- Precision presets --------------------------------------------------------
@@ -53,7 +57,7 @@ def test_linear_components():
     n, i, o = 10, 64, 128
     b = cm.linear(i, o, n, device=DEV, prec=cm.FP16)
     assert b.to_mac == pytest.approx(n * i * o * tc.mac("fp16"))
-    assert b.to_hbm == pytest.approx(tc.mem_cost(i * o, "gddr6x", "fp16"))
+    assert b.to_hbm == pytest.approx(tc.mem_cost(i * o, OFFCHIP, "fp16"))
     assert b.to_sram == pytest.approx(tc.mem_cost(n * (i + o), "sram", "fp16"))
     assert b.n_launches == 1
 
@@ -66,7 +70,7 @@ def test_linear_int4_weights_eighth_of_fp32_hbm():
 
 
 def test_linear_uses_device_offchip_tier():
-    # A100 (HBM2E) weights are cheaper per word than 4090 (GDDR6X).
+    # A100 (HBM2E) weights are cheaper per word than the 4090 Laptop (GDDR6).
     a = cm.linear(64, 128, 10, device="a100")
     g = cm.linear(64, 128, 10, device="rtx4090")
     assert a.to_hbm < g.to_hbm
@@ -112,4 +116,4 @@ def test_embedding_lookup_is_memory_only():
     n, d = 12, 64
     b = cm.embedding_lookup(n, d, device=DEV)
     assert b.to_mac == 0.0
-    assert b.to_hbm == pytest.approx(tc.mem_cost(n * d, "gddr6x", "fp16"))
+    assert b.to_hbm == pytest.approx(tc.mem_cost(n * d, OFFCHIP, "fp16"))

@@ -1,4 +1,8 @@
-"""Tests for attention TO accounting (tomltransformers.architectures.attention)."""
+"""Tests for attention TO accounting (tomltransformers.architectures.attention).
+
+The off-chip tier is derived through the device registry (2026-07-24
+correction: rtx4090 = Laptop GPU GDDR6), never named literally.
+"""
 
 import pytest
 
@@ -7,6 +11,7 @@ from tomltransformers.architectures import attention as at
 from tomltransformers.architectures import configs as cf
 
 DEV = "rtx4090"
+OFFCHIP = tc.offchip_tier(DEV)   # -> "gddr6" (registry-derived)
 LLAMA = cf.LLAMA_7B      # MHA (kv_heads = 32)
 MISTRAL = cf.MISTRAL_7B  # GQA (kv_heads = 8)
 GPT2 = cf.GPT2
@@ -71,7 +76,7 @@ def test_gqa_reduces_qkv_projection_cost():
 
 def test_kv_cache_read_matches_formula_and_gqa_is_smaller():
     b = at.kv_cache_read(100, LLAMA, device=DEV)
-    assert b.to_hbm == pytest.approx(tc.mem_cost(2 * 100 * 32 * 128, "gddr6x", "fp16"))
+    assert b.to_hbm == pytest.approx(tc.mem_cost(2 * 100 * 32 * 128, OFFCHIP, "fp16"))
     mi = at.kv_cache_read(100, MISTRAL, device=DEV)
     assert mi.to_hbm < b.to_hbm    # GQA: 8 KV heads vs 32
 
@@ -79,7 +84,7 @@ def test_kv_cache_read_matches_formula_and_gqa_is_smaller():
 def test_kv_cache_read_uses_device_tier():
     g = at.kv_cache_read(100, LLAMA, device="rtx4090")
     a = at.kv_cache_read(100, LLAMA, device="a100")
-    assert a.to_hbm < g.to_hbm     # HBM2E cheaper per word than GDDR6X
+    assert a.to_hbm < g.to_hbm     # HBM2E cheaper per word than GDDR6
 
 
 # --- output projection --------------------------------------------------------
