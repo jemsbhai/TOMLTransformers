@@ -39,8 +39,8 @@ We seed each memory technology from its published pJ/bit and convert to fJ per
     HBM4           ~2.40 pJ/bit   (~40% below HBM3E)              ->  76,800 fJ/word
     HBM3E          ~4.05 pJ/bit   (Samsung/SK hynix)              -> 129,600 fJ/word
     HBM2E          ~6.00 pJ/bit   (HBM2 6.25; A100 memory)        -> 192,000 fJ/word
-    GDDR6X         ~7.25 pJ/bit   (Micron; RTX 4090 memory)       -> 232,000 fJ/word
-    GDDR6          ~7.50 pJ/bit   (Micron)                        -> 240,000 fJ/word
+    GDDR6X         ~7.25 pJ/bit   (Micron; desktop RTX 4090)      -> 232,000 fJ/word
+    GDDR6          ~7.50 pJ/bit   (Micron; RTX 4090 Laptop GPU)   -> 240,000 fJ/word
 
 These vendor pJ/bit values are the *ideal data-transfer* energy. The effective
 per-word cost on a real GPU also includes memory-controller, activation, refresh,
@@ -56,11 +56,17 @@ calibration outcome.
 ================================================================================
 Device registry
 ================================================================================
-Off-chip memory cost is device-specific: the RTX 4090 uses GDDR6X (~7.25 pJ/bit),
-the A100 uses HBM2E (~6.0 pJ/bit). The 4090's memory is therefore *less* efficient
-per bit than the A100's. DEVICES maps each GPU to its off-chip technology and
-process node; the architecture front-ends resolve the off-chip tier via
-offchip_tier(device).
+Off-chip memory cost is device-specific: the desktop RTX 4090 uses GDDR6X
+(~7.25 pJ/bit), while the RTX 4090 Laptop GPU (this project's measurement
+device, GN21-X11) uses GDDR6 at 18 Gbps (~7.50 pJ/bit); the A100 uses HBM2E
+(~6.0 pJ/bit). DEVICES maps each GPU to its off-chip technology and process
+node; the architecture front-ends resolve the off-chip tier via
+offchip_tier(device). (Registry corrected 2026-07-24: the "rtx4090" entry,
+which denotes the Laptop GPU throughout this project, previously carried the
+desktop GDDR6X tier. The correction is a uniform 240/232 rescale of the
+to_hbm feature column, absorbed exactly by the fitted coefficient;
+predictions, fit quality, MCER, and every pre-registered verdict are
+invariant. See fit_plan.md section 12 and LOGBOOK 2026-07-24.)
 
 ================================================================================
 Calibration targets
@@ -177,9 +183,9 @@ MEM_TIER: Dict[str, TOCost] = {
     "hbm2e": TOCost(192_000, Provenance.MEASURED, "hbm_roadmap",
                     "~6.00 pJ/bit; HBM2/2E; A100 memory"),
     "gddr6x": TOCost(232_000, Provenance.MEASURED, "micron_gddr6x",
-                     "~7.25 pJ/bit; GDDR6X; RTX 4090 memory"),
+                     "~7.25 pJ/bit; GDDR6X; desktop RTX 4090 memory"),
     "gddr6": TOCost(240_000, Provenance.MEASURED, "micron_gddr6x",
-                    "~7.50 pJ/bit; GDDR6"),
+                    "~7.50 pJ/bit; GDDR6; RTX 4090 Laptop GPU memory"),
 }
 
 # Cheapest -> most expensive (used for sanity checks).
@@ -201,8 +207,12 @@ class Device:
 
 
 DEVICES: Dict[str, Device] = {
-    "rtx4090": Device("rtx4090", "gddr6x", "TSMC 4N",
-                      "Ada Lovelace; local calibration primary"),
+    "rtx4090": Device("rtx4090", "gddr6", "TSMC 4N",
+                      "Ada Lovelace RTX 4090 Laptop GPU (GN21-X11), GDDR6 18 Gbps; "
+                      "local calibration primary. Registry corrected 2026-07-24 "
+                      "(was desktop GDDR6X tier)."),
+    "rtx4090_desktop": Device("rtx4090_desktop", "gddr6x", "TSMC 4N",
+                              "Ada Lovelace desktop RTX 4090 (AD102), GDDR6X"),
     "a100": Device("a100", "hbm2e", "TSMC N7",
                    "Ampere A100 40GB SXM4; cross-platform validation"),
     "h100": Device("h100", "hbm3e", "TSMC 4N",
@@ -322,10 +332,12 @@ def _selftest() -> None:
     assert abs(pj_per_bit("hbm2e") - 6.00) < 1e-6
     assert abs(pj_per_bit("hbm3e") - 4.05) < 1e-6
     assert abs(pj_per_bit("gddr6x") - 7.25) < 1e-6
+    assert abs(pj_per_bit("gddr6") - 7.50) < 1e-6
     assert abs(pj_per_bit("sram") - 0.15625) < 1e-6
 
-    # Device mapping.
-    assert offchip_tier("rtx4090") == "gddr6x"
+    # Device mapping (Laptop GPU = GDDR6, corrected 2026-07-24).
+    assert offchip_tier("rtx4090") == "gddr6"
+    assert offchip_tier("rtx4090_desktop") == "gddr6x"
     assert offchip_tier("a100") == "hbm2e"
 
     # Precision monotone, word occupancy.
@@ -335,6 +347,7 @@ def _selftest() -> None:
     # Off-chip dominates on-chip SRAM by ~30-50x (A100/4090).
     assert 30 < mem_word("hbm2e") / mem_word("sram") < 60
     assert 30 < mem_word("gddr6x") / mem_word("sram") < 60
+    assert 30 < mem_word("gddr6") / mem_word("sram") < 60
 
     # Headline framing: softmax is 5 MACs in TOs (5000x vs a FLOP).
     assert op("softmax") / op("mac") == 5.0
@@ -373,7 +386,7 @@ def _dump() -> None:
               f"[{c.provenance.value:9s}] {c.note}")
     print("\nDevices:")
     for d in DEVICES.values():
-        print(f"     {d.name:9s} off-chip={d.offchip_tier:7s} ({pj_per_bit(d.offchip_tier):.2f} pJ/bit)  "
+        print(f"     {d.name:15s} off-chip={d.offchip_tier:7s} ({pj_per_bit(d.offchip_tier):.2f} pJ/bit)  "
               f"node={d.process_node}")
     print(f"\n* = calibration target ({len(CALIBRATION_TARGETS)} total)")
 
