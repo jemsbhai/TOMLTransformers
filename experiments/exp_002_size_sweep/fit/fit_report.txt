@@ -1,9 +1,10 @@
-EXP-002 fit report (plan sections 5-7; baselines are the next step)
-generated: 2026-07-24T16:00:52-04:00
-git commit: aac684f2746efbe7f784dbe18be34601c331b96a
+EXP-002 fit report (plan sections 5-8)
+generated: 2026-07-24T21:19:23-04:00
+git commit: db1f984bfb933d13277583c705ff311faf03ca0f
 data: E:\data\code\claudecode\TOMLTransformers\experiments\exp_002_size_sweep\energy.jsonl
 records: 296 (all ok)
 target: per_execution_median_j['B'] / inner_iters = J per composite execution (units corrected 2026-07-23; per_unit consistency gate passed on all 296)
+device registry: rtx4090 = Laptop GPU GDDR6 tier (corrected 2026-07-24; verdict-invariant, see module docstring)
 
 == Pooled A-B agreement (pre-registered target: median <= 5%) ==
   pooled median A-B over 296 points: 4.80%  (forward 5.53%, decode-like 4.03%)
@@ -19,29 +20,29 @@ M5_mem_split         4    0.9687    0.9847    92.91     1067.8     1085.2
 M7_full_split        5    0.9687    0.9847    92.71     1069.8     1090.6
 M3_dispatch          4    0.9665    0.9851    63.53     1084.1     1101.4
 M4_fused             5    0.9665    0.9851    63.53     1086.1     1106.9
-M6_compute_split     4    0.9603    0.9827   187.41     1124.2     1141.6
-M2_overhead          3    0.9560    0.9741   233.55     1146.6     1160.5
-M0_flops             1    0.9548    0.9715    49.44     1149.0     1156.0
+M6_compute_split     4    0.9603    0.9827   187.42     1124.3     1141.6
+M2_overhead          3    0.9560    0.9741   233.57     1146.6     1160.5
 M1_comp_mem          2    0.9551    0.9714    52.66     1149.8     1160.2
+M0_flops             1    0.9545    0.9715    47.93     1150.5     1157.5
   winner by AIC: M8_split_dispatch  (R2_test 0.9873, MAPE_test 88.26%)
-  final coefficients (winner refit on all 296): to_mac=2.704e-15  to_nonlinear=0  to_sram=1.968e-12  to_hbm=5.555e-15  n_launches=0.0009265  intercept=0
+  final coefficients (winner refit on all 296): to_mac=2.704e-15  to_nonlinear=0  to_sram=1.968e-12  to_hbm=5.37e-15  n_launches=0.0009265  intercept=0
   full-data fit quality: R2 0.9754, MAPE 93.25%
 
 == Robustness (pre-specified; never used for selection) ==
   R1 relative-error NNLS:   test MAPE 20.10%  (primary 88.26%)
-     coefficients: to_mac=3.387e-15  to_nonlinear=0  to_sram=2.465e-14  to_hbm=7.549e-15  n_launches=0.0008163  intercept=0
+     coefficients: to_mac=3.387e-15  to_nonlinear=0  to_sram=2.465e-14  to_hbm=7.298e-15  n_launches=0.0008163  intercept=0
   R2_cv_flagged: excluded 5 points; test MAPE 90.57%
-     coefficients: to_mac=2.488e-15  to_nonlinear=0  to_sram=2.054e-12  to_hbm=5.462e-15  n_launches=0.0009487  intercept=0
+     coefficients: to_mac=2.488e-15  to_nonlinear=0  to_sram=2.054e-12  to_hbm=5.28e-15  n_launches=0.0009487  intercept=0
   R3_low_inner_iters: excluded 3 points; test MAPE 69.55%
-     coefficients: to_mac=0  to_nonlinear=0  to_sram=2.028e-12  to_hbm=4.496e-15  n_launches=0.001607  intercept=0
+     coefficients: to_mac=0  to_nonlinear=0  to_sram=2.028e-12  to_hbm=4.346e-15  n_launches=0.001607  intercept=0
 
 == Pre-registered extrapolation (target: held-out MAPE <= 25%) ==
   E2 broad (PRIMARY): train 164, predict 14
     M8_split_dispatch  pooled MAPE  50.37%  [FAIL vs 25%]  decoder_only=33.1%  encoder_decoder=61.0%  encoder_only=42.5%
-    M0_flops           pooled MAPE  59.18%  [FAIL vs 25%]  decoder_only=62.3%  encoder_decoder=57.7%  encoder_only=59.1%
+    M0_flops           pooled MAPE  56.52%  [FAIL vs 25%]  decoder_only=59.2%  encoder_decoder=55.3%  encoder_only=56.0%
   E1 strict-literal: train 86, predict 6
     M8_split_dispatch  pooled MAPE  14.34%  [PASS vs 25%]  decoder_only=16.3%  encoder_decoder=18.7%  encoder_only=8.0%
-    M0_flops           pooled MAPE  16.18%  [PASS vs 25%]  decoder_only=17.2%  encoder_decoder=18.7%  encoder_only=12.6%
+    M0_flops           pooled MAPE  15.97%  [PASS vs 25%]  decoder_only=17.1%  encoder_decoder=18.6%  encoder_only=12.2%
 
 == Calibrated MCER by phase (fitted memory / fitted compute) ==
   source: winner M8_split_dispatch (refit on all 296)
@@ -62,13 +63,34 @@ M1_comp_mem          2    0.9551    0.9714    52.66     1149.8     1160.2
     GPT-2-medium   ctx128=294.9  ctx512=460.8  ctx1024=723.3  ctx2048=795.1  ctx4096=476.2*
     (* = model-subtracted; full rows incl. fp32 and enc-dec in JSON)
 
+== Baselines bake-off (plan section 8; PRE-REGISTERED) ==
+  Primary set: the 58-point main test split, absolute estimator.
+  One-sided Wilcoxon (winner APEs smaller), Holm across the three must-beats, alpha 0.05.
+  M8_split_dispatch  MAPE   88.26%  (TOML winner)
+  M0_flops           MAPE   47.93%  p=0.9998  Holm p=1  [NOT beaten]
+  roofline           MAPE   29.81%  p=1  Holm p=1  [NOT beaten]
+  layerwise          MAPE   96.50%  p=0.0001712  Holm p=0.0005137  [BEATEN]
+  roofline fitted P_avg: 378.4 W
+  layerwise coefficients: raw_macs=0  sram_words=1.415e-08  hbm_words=1.375e-09  n_launches=0.0007292  intercept=0
+  sensitivity: roofline at the measured 2325 MHz ceiling: MAPE 30.96% (P_avg 379.0 W)
+  Secondary set: E2 predict (n=14), same protocol.
+    M8_split_dispatch  MAPE   50.37%
+    M0_flops           MAPE   56.52%  p=0.1955  Holm p=0.5865
+    roofline           MAPE   30.42%  p=0.5242  Holm p=0.9032
+    layerwise          MAPE   49.53%  p=0.4516  Holm p=0.9032
+  EXPLORATORY R1 companion (main test set, MAPE only; same label and caveats as the exploratory section below):
+    M8_split_dispatch_R1 MAPE   20.10%
+    M0_flops_R1        MAPE   32.41%
+    roofline_R1        MAPE   30.21%
+    layerwise_R1       MAPE   24.61%
+
 == EXPLORATORY: R1 relative-error estimator (post-hoc; NOT pre-registered) ==
   Approved 2026-07-24 after the confirmatory run surfaced strong
   heteroscedasticity (high R2 with high MAPE under absolute NNLS).
   The confirmatory sections above are the pre-registered record and
   stand unchanged; this section informs the estimator discussion and
   the A100 pre-registration amendment only.
-  R1-final coefficients (winner form, all 296): to_mac=3.441e-15  to_nonlinear=0  to_sram=2.693e-14  to_hbm=7.664e-15  n_launches=0.0007571  intercept=0
+  R1-final coefficients (winner form, all 296): to_mac=3.441e-15  to_nonlinear=0  to_sram=2.693e-14  to_hbm=7.408e-15  n_launches=0.0007571  intercept=0
   R1 full-data quality: R2 0.9235, MAPE 18.24%
   E2 under R1: pooled MAPE  15.24%  (25% band as exploratory reference only)  decoder_only=10.0%  encoder_decoder=18.1%  encoder_only=14.2%
   E1 under R1: pooled MAPE  13.25%  (25% band as exploratory reference only)  decoder_only=15.5%  encoder_decoder=16.7%  encoder_only=7.6%
