@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-10T11:48:18-04:00",
+  "generated_at": "2026-08-10T13:42:28-04:00",
   "band": 0.33,
   "init_seeds": [
     42,
@@ -7,9 +7,9 @@
     2025
   ],
   "pretrained_input_seed": 42,
-  "rows": [
+  "primary_rows": [
     {
-      "point": "GPT-2/prefill/s512",
+      "point": "GPT-2/prefill/s512/fp16",
       "seed": 42,
       "e_pretrained_j": 0.5802688386427387,
       "e_random_j": 0.439516379978833,
@@ -18,7 +18,7 @@
       "within_band": true
     },
     {
-      "point": "GPT-2/prefill/s512",
+      "point": "GPT-2/prefill/s512/fp16",
       "seed": 1234,
       "e_pretrained_j": 0.5802688386427387,
       "e_random_j": 0.3885827768984898,
@@ -27,7 +27,7 @@
       "within_band": false
     },
     {
-      "point": "GPT-2/prefill/s512",
+      "point": "GPT-2/prefill/s512/fp16",
       "seed": 2025,
       "e_pretrained_j": 0.5802688386427387,
       "e_random_j": 0.39406180490655796,
@@ -36,7 +36,7 @@
       "within_band": true
     },
     {
-      "point": "GPT-2/decode/s512",
+      "point": "GPT-2/decode/s512/fp16",
       "seed": 42,
       "e_pretrained_j": 13.46113420495711,
       "e_random_j": 13.383617999337373,
@@ -45,7 +45,7 @@
       "within_band": true
     },
     {
-      "point": "GPT-2/decode/s512",
+      "point": "GPT-2/decode/s512/fp16",
       "seed": 1234,
       "e_pretrained_j": 13.46113420495711,
       "e_random_j": 13.605801090684144,
@@ -54,7 +54,7 @@
       "within_band": true
     },
     {
-      "point": "GPT-2/decode/s512",
+      "point": "GPT-2/decode/s512/fp16",
       "seed": 2025,
       "e_pretrained_j": 13.46113420495711,
       "e_random_j": 13.422383730466011,
@@ -63,7 +63,7 @@
       "within_band": true
     },
     {
-      "point": "BERT-base/encode/s512",
+      "point": "BERT-base/encode/s512/fp16",
       "seed": 42,
       "e_pretrained_j": 0.43796184175750225,
       "e_random_j": 0.37824700832090774,
@@ -72,7 +72,7 @@
       "within_band": true
     },
     {
-      "point": "BERT-base/encode/s512",
+      "point": "BERT-base/encode/s512/fp16",
       "seed": 1234,
       "e_pretrained_j": 0.43796184175750225,
       "e_random_j": 0.36811320854126384,
@@ -81,7 +81,7 @@
       "within_band": true
     },
     {
-      "point": "BERT-base/encode/s512",
+      "point": "BERT-base/encode/s512/fp16",
       "seed": 2025,
       "e_pretrained_j": 0.43796184175750225,
       "e_random_j": 0.3795201960510459,
@@ -90,6 +90,39 @@
       "within_band": true
     }
   ],
-  "max_ratio": 0.33034009234858575,
-  "verdict": "FAIL"
+  "primary_max_ratio": 0.33034009234858575,
+  "verdict": "FAIL",
+  "followup_fp32": {
+    "rows": [
+      {
+        "point": "GPT-2/prefill/s512/fp32",
+        "seed": 42,
+        "e_pretrained_j": 1.3912324799057103,
+        "e_random_j": 1.2171278092514388,
+        "ratio": 0.12514419636470195,
+        "ratio_per_unit": 0.1227437389889781,
+        "within_band": true
+      },
+      {
+        "point": "GPT-2/prefill/s512/fp32",
+        "seed": 1234,
+        "e_pretrained_j": 1.3912324799057103,
+        "e_random_j": 1.2168162337194781,
+        "ratio": 0.12536815284678599,
+        "ratio_per_unit": 0.12353866356509387,
+        "within_band": true
+      },
+      {
+        "point": "GPT-2/prefill/s512/fp32",
+        "seed": 2025,
+        "e_pretrained_j": 1.3912324799057103,
+        "e_random_j": 1.2225934083965941,
+        "ratio": 0.1212155940469026,
+        "ratio_per_unit": 0.11832016983284716,
+        "within_band": true
+      }
+    ],
+    "max_ratio": 0.12536815284678599,
+    "label": "post-verdict mechanism probe; not part of the pre-registered verdict"
+  }
 }
