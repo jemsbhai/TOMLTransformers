@@ -417,3 +417,18 @@ fp32-follow-up trigger FIRED (band exceeded). Decision pending (Muntaser):
 scope of follow-ups (fp32 prefill cells; pretrained-weights-into-our-stack
 control) and the A100 weights policy, all to be settled in or before the
 Step 5 amendment.
+
+### Addendum 2026-08-10 - Follow-ups approved: A (fp32 cells) now, B (weights-porting control) next
+A: four fp32 cells (GPT-2 prefill s512 x {pretrained, random 42/1234/2025})
+added to the representativeness harness under the fired 2026-07-24 trigger,
+in a separate, labeled FOLLOW-UP section; the pre-registered verdict remains
+computed over the frozen 12 fp16 primary cells only and re-prints
+identically. Follow-up A MUST run on the RTX 4090 Laptop GPU: the flag being
+scoped belongs to that device's frozen dataset. Prediction stated before
+measuring (mechanism probe): if fp32 prefill ratios collapse toward the BERT
+fp16 level (~0.16), the fp16-saturation mechanism is supported and the flag
+scopes to compute-bound fp16 cells. B (pretrained GPT-2 weights ported into
+our own stack; the implementation-free isolation) is designed and built
+after A's result. Lambda Cloud noted as the platform for the A100 phase
+(Steps 6-7); instance type and GPU-hour budget still to be supplied for the
+Step 5 amendment.
