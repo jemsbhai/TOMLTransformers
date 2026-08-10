@@ -474,3 +474,18 @@ random_v, predicted 0.10-0.20), structure delta (random_v vs plain random
 s42, predicted ~0), implementation floor (HF vs ported at identical values,
 predicted 0.12-0.16), and fp32 value effect (predicted 0.00-0.03). Primary
 verdict and Follow-up A sections re-print from frozen records.
+
+### Addendum 2026-08-10 - Follow-up B complete; Step 4 closed end to end
+Ported cells logit-verified on-GPU against real gpt2 before measurement.
+Scorecard vs pre-stated predictions: structure delta 0.0051 [~0] CONFIRMED;
+fp32 value effect 0.002-0.007 [0.00-0.03] CONFIRMED; pure fp16 value effect
+0.0648 [0.10-0.20] SMALLER than predicted, ported inside the random spread;
+implementation floor fp16 0.4046 [0.12-0.16] FAR LARGER (fp32 floor 0.1357
+in band). Revised reading: the pre-registered FAIL is ~entirely a
+cross-implementation artifact (E_HF/E_ported = 1.405 at identical weights
+reconstructs the 0.24-0.33 primary gap); implementation-free, random-init
+represents trained weights within ~6.5% worst-case. Verdict FAIL retained
+as registered; flag narrowed; full record findings.md 2026-08-10 (third
+entry). Step 4 is CLOSED. Next: Step 5 A100/Lambda pre-registration
+amendment (R1 primary estimator; random-init full grid citing B; needs
+Lambda instance type and GPU-hour budget from Muntaser).

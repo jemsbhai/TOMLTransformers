@@ -754,3 +754,56 @@ pure value effect) and fp32 ported-vs-random ratio ~0.00-0.03; and
 HF-vs-our-stack at IDENTICAL pretrained weights should reproduce the
 ~0.12-0.16 implementation floor. B is the decisive implementation-free
 isolation and directly informs the Step 5 A100 weights policy.
+
+
+### 2026-08-10 - Follow-up B (implementation-free isolation): the FAIL was implementation, not values; flag narrows to ~6.5%
+
+**Status:** Follow-up B complete on the RTX 4090 Laptop GPU; ported cells
+logit-verified against real gpt2 (fp32 gate) before measurement; reports
+beside the data. The pre-registered FAIL verdict (0.3303 vs 0.33) stands
+unchanged and re-printed from frozen records. Prediction scorecard against
+the pre-stated bands (findings.md 2026-08-10, written before any B code):
+TWO CONFIRMED, TWO REVISED BY THE DATA, recorded plainly:
+- structure delta 0.0051 [predicted ~0]: CONFIRMED (bias+wpe cost nothing).
+- fp32 value effect 0.0020-0.0067 [predicted 0.00-0.03]: CONFIRMED.
+- pure fp16 value effect 0.0648 [predicted 0.10-0.20]: SMALLER than
+  predicted, and ported (0.4131 J) sits INSIDE the random-init spread
+  (0.3886-0.4418 J incl. random_v).
+- implementation floor fp16 0.4046 [predicted 0.12-0.16]: FAR LARGER than
+  predicted; fp32 floor 0.1357 (in the predicted band).
+
+**Revised decomposition (all measured, GPT-2 prefill s512):**
+- The fp16 primary gap (0.24-0.33) is reconstructed almost entirely by the
+  HF-fp16 implementation overhead: E_HF/E_ported = 1.405 at IDENTICAL
+  weights, and 1 - E_random/E_HF over the random spread reproduces
+  0.24-0.33 exactly.
+- The implementation-free fp16 value effect is ~5-6.5% (ported vs random_v
+  0.065; ported vs plain random 0.048-0.063; init-seed CV 5.60%), i.e. the
+  trained-value energy sits within the random-init family's own spread
+  scale.
+- fp32: implementation overhead 13.6%, value effect <= 0.7%, init CV 0.22%.
+- Coherence check: the HF fp32 floor (0.136) matches the BERT fp16 floor
+  (0.13-0.16), while the HF-GPT2 fp16 floor is an outlier at 0.40,
+  indicating GPT2-specific fp16 handling in the HF stack (e.g. internal
+  upcasts) rather than generic framework overhead. The fp16-saturation
+  hypothesis survives only as a candidate driver of the ~5.6% init spread,
+  NOT of the headline gap; Follow-up A's collapse is now read as HF's
+  fp16-specific overhead vanishing at fp32, plus the genuine init-CV
+  collapse (5.60% -> 0.22%), which remains implementation-free evidence of
+  fp16 value-dependence at the few-percent scale.
+
+**Scientific conclusion for the paper (verdict untouched):** the
+pre-registered check compared ACROSS implementations, so its FAIL measures
+the HF-vs-our-stack delta more than weight values. Measured
+implementation-free, random-init energies represent trained-weight energies
+within ~6.5% in the worst regime studied, comfortably inside the 33% band.
+The frozen dataset's flag NARROWS accordingly: Fork-1 stands at the ~6%
+level for the measurement stack the sweep actually used; the reported FAIL
+is retained, explained, and decomposed. Honest limits: one model (GPT-2),
+one shape (prefill s512), three seeds; the ported path exists for GPT-2
+only.
+
+**A100 consequence (recorded before the Step 5 amendment):** the amendment
+will specify random-init for the full A100 grid, citing this decomposition;
+optional ported/HF spot cells on the A100 replicate the floor and value
+effect cross-platform if budget allows.
