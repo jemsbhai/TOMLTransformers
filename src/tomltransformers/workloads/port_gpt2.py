@@ -30,6 +30,9 @@ CORRECTNESS GATE: verify_port() asserts full logit agreement between the
 ported stack and the HF model on a probe input, in fp32, before any energy
 is measured. The unit tests exercise the same gate on a tiny in-memory
 GPT2Config model (no download, CPU-only).
+
+(2026-08-10 fix: the derived TransformerConfig uses the actual constructor
+fields n_kv_heads / head_dim; kv_heads and d_head are resolved properties.)
 """
 
 from __future__ import annotations
@@ -62,10 +65,19 @@ def port_gpt2_into_decoder(hf_model, cfg=None, *, device: str = "cpu",
     if cfg is None:
         cfg = TransformerConfig(
             name=f"ported:{getattr(hc, 'name_or_path', 'gpt2')}",
-            arch="decoder_only", n_layers=hc.n_layer, d_model=hc.n_embd,
-            n_heads=hc.n_head, kv_heads=hc.n_head,
-            d_head=hc.n_embd // hc.n_head, d_ff=4 * hc.n_embd,
-            vocab_size=hc.vocab_size, activation="gelu", ffn_type="standard",
+            arch="decoder_only",
+            d_model=hc.n_embd,
+            d_ff=4 * hc.n_embd,
+            n_heads=hc.n_head,
+            vocab_size=hc.vocab_size,
+            n_layers=hc.n_layer,
+            n_kv_heads=hc.n_head,
+            head_dim=hc.n_embd // hc.n_head,
+            activation="gelu",
+            norm_type="layernorm",
+            ffn_type="standard",
+            tie_embeddings=True,
+            max_position=hc.n_positions,
         )
     assert cfg.n_layers == hc.n_layer and cfg.d_model == hc.n_embd, \
         f"config mismatch: ours {cfg.n_layers}x{cfg.d_model} vs HF {hc.n_layer}x{hc.n_embd}"
