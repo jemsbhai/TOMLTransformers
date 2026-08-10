@@ -14,6 +14,21 @@ not values). A pretrained path is provided for spot checks.
 Attention kind maps to the SDPA backend: 'flash' selects the flash/efficient
 kernels (no materialized score matrix); 'eager' forces the math kernel (which
 materializes the s x s scores), matching the standard-attention TO accounting.
+
+PARITY FIX 2026-07-24 (pre-representativeness-run; approved; these pretrained
+paths were never exercised by the frozen sweep, which is random-init only):
+the pretrained builders now hold the COUNTED structure fixed so the
+representativeness comparison isolates weight VALUES:
+  - prefill runs the bare transformer stack (model.base_model) and applies the
+    lm_head (get_output_embeddings) to the LAST token only, matching the
+    random-init path and the TO accounting (HF's LMHeadModel forward computes
+    all-position logits, ~2e10 extra MACs at s=512 on GPT-2, which would
+    confound the weight comparison);
+  - the decode cache build likewise runs the bare stack with use_cache=True and
+    NO head, matching prefill_into_cache; per-step calls keep the 1-token head,
+    matching decode_step;
+  - attn_implementation="sdpa" is requested at load (with a graceful fallback
+    recorded on the model config) so both arms run the same kernel family.
 """
 
 from __future__ import annotations
@@ -305,6 +320,20 @@ def measure_until_floor(
     return last_res, inner
 
 
+def _load_pretrained_causal(hf_id: str, dtype, device: str):
+    """Load a pretrained causal LM with the SDPA attention implementation
+    requested (parity with the random-init SDPA path); falls back gracefully
+    on transformers versions that reject the kwarg. The implementation that
+    actually loaded is readable at model.config._attn_implementation."""
+    from transformers import AutoModelForCausalLM
+    try:
+        m = AutoModelForCausalLM.from_pretrained(
+            hf_id, torch_dtype=dtype, attn_implementation="sdpa")
+    except (TypeError, ValueError):
+        m = AutoModelForCausalLM.from_pretrained(hf_id, torch_dtype=dtype)
+    return m.to(device).eval()
+
+
 def build_decoder_workload(
     model: str | TransformerConfig,
     *,
@@ -378,17 +407,20 @@ def build_decoder_workload(
 
     # ---- prefill ----
     if weights == "pretrained":
-        model_obj, input_ids = _build_pretrained_prefill(
+        model_obj, stack, head, input_ids = _build_pretrained_prefill(
             cfg, seq_len, precision, device, batch_size, pretrained_id)
 
         @torch.no_grad()
         def run():
             for _ in range(inner_iters):
-                model_obj(input_ids)
+                # PARITY (2026-07-24): bare stack + last-token head, matching the
+                # random-init path and the TO accounting (see module docstring).
+                hs = stack(input_ids).last_hidden_state
+                head(hs[:, -1:, :])
 
         def free():
-            nonlocal model_obj
-            del model_obj
+            nonlocal model_obj, stack, head
+            del model_obj, stack, head
             _empty_cache()
 
         return CallableWorkload(spec=spec, _run=run, _free=free)
@@ -448,18 +480,24 @@ def _build_random_decode(cfg, spec, seq_len, precision, device, batch_size,
 
 def _build_pretrained_decode(cfg, spec, seq_len, precision, device, batch_size,
                              decode_tokens, decode_mode, inner_iters, pretrained_id):
-    """Pretrained decode via transformers past_key_values (downloads weights)."""
+    """Pretrained decode via transformers past_key_values (downloads weights).
+
+    PARITY (2026-07-24): the cache is established through the BARE stack
+    (model.base_model, no head), matching prefill_into_cache on the random-init
+    side; per-step calls keep the full model (1-token head), matching
+    decode_step.
+    """
     torch = _torch()
-    from transformers import AutoModelForCausalLM
     hf_id = pretrained_id or _default_hf_id(cfg.name)
     dtype = getattr(torch, _DTYPE[precision])
-    model_obj = AutoModelForCausalLM.from_pretrained(hf_id, torch_dtype=dtype).to(device).eval()
+    model_obj = _load_pretrained_causal(hf_id, dtype, device)
+    stack = model_obj.base_model
     vocab = model_obj.config.vocab_size
     ctx_ids = torch.randint(0, vocab, (batch_size, seq_len), device=device)
     next_tok = torch.randint(0, vocab, (batch_size, 1), device=device)
 
     def _prefill_cache():
-        out = model_obj(ctx_ids, use_cache=True)
+        out = stack(ctx_ids, use_cache=True)   # no head: parity with random path
         return out.past_key_values
 
     if decode_mode == "growing":
@@ -479,24 +517,28 @@ def _build_pretrained_decode(cfg, spec, seq_len, precision, device, batch_size,
                 model_obj(next_tok, past_key_values=pkv, use_cache=True)
 
     def free():
-        nonlocal model_obj
-        del model_obj
+        nonlocal model_obj, stack
+        del model_obj, stack
         _empty_cache()
 
     return CallableWorkload(spec=spec, _run=run, _free=free)
 
 
 def _build_pretrained_prefill(cfg, seq_len, precision, device, batch_size, pretrained_id):
-    """Load a real pretrained decoder for prefill spot checks (downloads weights)."""
+    """Load a real pretrained decoder for prefill spot checks (downloads weights).
+
+    Returns (model_obj, stack, head, ids): the bare stack and the lm_head are
+    applied separately by the caller for structural parity (see module docstring).
+    """
     torch = _torch()
-    from transformers import AutoModelForCausalLM
     hf_id = pretrained_id or _default_hf_id(cfg.name)
     dtype = getattr(torch, _DTYPE[precision])
-    model_obj = AutoModelForCausalLM.from_pretrained(hf_id, torch_dtype=dtype)
-    model_obj = model_obj.to(device).eval()
+    model_obj = _load_pretrained_causal(hf_id, dtype, device)
+    stack = model_obj.base_model
+    head = model_obj.get_output_embeddings()
     vocab = model_obj.config.vocab_size
     ids = torch.randint(0, vocab, (batch_size, seq_len), device=device)
-    return model_obj, ids
+    return model_obj, stack, head, ids
 
 
 def _default_hf_id(name: str) -> str:

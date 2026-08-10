@@ -24,6 +24,15 @@ Embedding depends on modality (encoder.py._embedding):
 
 Weights are random-init by default (energy depends on op shapes / data movement,
 not values). A pretrained path is provided for spot checks (BERT/ViT via HF).
+
+PARITY NOTE 2026-07-24 (pre-representativeness-run): the pretrained path loads
+with attn_implementation="sdpa" requested (graceful fallback), matching the
+random-init SDPA path's kernel family. AutoModel (bare encoder, no MLM head) is
+already near structural parity with the random path: BERT's pooler (dense d->d
++ tanh on [CLS]) is the same magnitude as our pooled head (d->d on one token),
+both negligible against the layer stack; the small embedding differences
+(position/type embeddings, embedding LayerNorm) are adds, not GEMMs. Recorded
+in the representativeness operationalization note.
 """
 
 from __future__ import annotations
@@ -268,6 +277,20 @@ def build_encoder_workload(
     return CallableWorkload(spec=spec, _run=run, _free=free)
 
 
+def _load_pretrained_encoder(hf_id: str, dtype, device: str):
+    """Load a pretrained bare encoder with SDPA requested (parity with the
+    random-init SDPA path); graceful fallback on older transformers. The
+    implementation that actually loaded is readable at
+    model.config._attn_implementation."""
+    from transformers import AutoModel
+    try:
+        m = AutoModel.from_pretrained(hf_id, torch_dtype=dtype,
+                                      attn_implementation="sdpa")
+    except (TypeError, ValueError):
+        m = AutoModel.from_pretrained(hf_id, torch_dtype=dtype)
+    return m.to(device).eval()
+
+
 def _build_pretrained_encode(cfg, spec, s, precision, device, batch_size,
                              inner_iters, pretrained_id):
     """Load a real pretrained encoder for spot checks (downloads weights).
@@ -276,10 +299,9 @@ def _build_pretrained_encode(cfg, spec, s, precision, device, batch_size,
     pixel values (B, 3, 224, 224).
     """
     torch = _torch()
-    from transformers import AutoModel
     hf_id = pretrained_id or _default_hf_id(cfg.name)
     dtype = getattr(torch, _DTYPE[precision])
-    model_obj = AutoModel.from_pretrained(hf_id, torch_dtype=dtype).to(device).eval()
+    model_obj = _load_pretrained_encoder(hf_id, dtype, device)
 
     if cfg.is_vision:
         inp = torch.randn(batch_size, 3, 224, 224, device=device, dtype=dtype)

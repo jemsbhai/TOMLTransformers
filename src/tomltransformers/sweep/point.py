@@ -21,6 +21,13 @@ derived at fit time from this point and the matching prefill point, where the
 uncertainty can be propagated. Do not cite the naive per-token as the decode cost.
 
 Instrument B (hardware energy counter) is primary; A and C are recorded alongside.
+
+SEED FIELD (added 2026-07-24 for the representativeness check; default None
+leaves every frozen-sweep key and behavior byte-identical): when PointSpec.seed
+is set, torch RNGs are seeded INSIDE the builder dispatch, so every rebuild by
+measure_until_floor draws the same random init and inputs, making the seed the
+complete determinant of the workload's random state. The seed joins the key and
+the record.
 """
 
 from __future__ import annotations
@@ -65,6 +72,7 @@ class PointSpec:
     batch_size: int = 1
     device_index: int = 0
     pretrained_id: Optional[str] = None
+    seed: Optional[int] = None     # when set, seeds torch in the builder dispatch
 
     def key(self) -> str:
         """Stable identity string for resumability / dedup (grid driver uses it)."""
@@ -74,11 +82,22 @@ class PointSpec:
             parts.append(f"tgt{self.tgt_len}")
         if self.phase == "decode":
             parts += [f"ctx{self.tgt_ctx}", f"k{self.decode_tokens}", self.decode_mode]
+        if self.seed is not None:
+            parts.append(f"seed{self.seed}")
         return "|".join(parts)
 
 
 def _build_workload(ps: PointSpec, inner_iters: int):
-    """Dispatch a PointSpec to the correct workload builder."""
+    """Dispatch a PointSpec to the correct workload builder.
+
+    If ps.seed is set, torch RNGs are (re)seeded here, BEFORE construction, so
+    every rebuild by measure_until_floor draws identical random weights/inputs.
+    """
+    if ps.seed is not None:
+        import torch
+        torch.manual_seed(ps.seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(ps.seed)
     if ps.arch == "decoder_only":
         if ps.phase not in ("prefill", "decode"):
             raise ValueError(f"decoder_only phase must be prefill|decode, got {ps.phase}")
@@ -172,7 +191,7 @@ def measure_single_point(
         "precision": ps.precision, "attn_kind": ps.attn_kind, "weights": ps.weights,
         "seq_len": ps.seq_len, "tgt_len": ps.tgt_len, "tgt_ctx": ps.tgt_ctx,
         "decode_tokens": ps.decode_tokens, "decode_mode": ps.decode_mode,
-        "batch_size": ps.batch_size, "key": ps.key(),
+        "batch_size": ps.batch_size, "seed": ps.seed, "key": ps.key(),
     }
 
     def builder(inner):
