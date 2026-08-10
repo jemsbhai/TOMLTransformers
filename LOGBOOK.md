@@ -398,3 +398,22 @@ and frozen before any Step-4 measurement; approvals recorded in-session:
   tree), resumable JSONL experiments/exp_002_size_sweep/representativeness.jsonl,
   regime repeats (5 forward / 10 decode), 4 s floor, 100 Hz; report artifacts
   representativeness_report.{txt,json}; verdict logged as a finding either way.
+
+### Addendum 2026-08-10 - Step 4 verdict: FAIL 0.3303 vs 0.33; sweep flagged as pre-registered
+Two harness defects were found and fixed before the verdict (recorded here
+for the run's honesty): an analysis KeyError from hand-duplicated key
+construction (analysis now derives every key from the cell objects) and the
+provenance gate blocking its own resume (gate now permits untracked copies
+of the harness's own three outputs only). All 12 cells measured ok on the
+first pass; the fixes changed analysis and gating only, no re-measurement.
+Verdict: FAIL by the narrowest margin (one GPT-2 prefill fp16 cell at
+0.3303; eight of nine ratios in-band), with strong regime structure: decode
+0.003-0.011 (immune), BERT encode 0.13-0.16, GPT-2 prefill 0.24-0.33 with
+pretrained consistently higher and slower. Implementation-free signal:
+random-arm init-seed CV 5.60% (prefill) vs 0.72% (decode). Attribution
+between HF-implementation overhead and genuine DDEV is entangled and
+recorded as such; full analysis in findings.md 2026-08-10. The 2026-07-24
+fp32-follow-up trigger FIRED (band exceeded). Decision pending (Muntaser):
+scope of follow-ups (fp32 prefill cells; pretrained-weights-into-our-stack
+control) and the A100 weights policy, all to be settled in or before the
+Step 5 amendment.

@@ -654,3 +654,59 @@ on the 4090; remaining for EXP-002: Step 4 representativeness spot checks
 (requires explicit go-ahead for HF downloads and brief GPU time), Step 5
 amendment, Steps 6-7 A100 runs and transfer analysis, Step 8 figures and
 manuscript.
+
+
+### 2026-08-10 - Step 4 representativeness check: FAIL at 0.3303 vs the 0.33 band, with strong regime structure
+
+**Status:** pre-registered verdict, recorded as it fell (configs/exp_002.yaml
+`representativeness`; operationalization LOGBOOK 2026-07-24; data
+representativeness.jsonl, 12/12 cells ok; reports beside the data). The
+sweep is FLAGGED per the pre-registration. The margin is the narrowest
+possible: one cell (GPT-2 prefill fp16, init seed 1234) at 0.3303 against
+0.33; the other eight ratios lie within the band.
+
+**The structure is more informative than the binary verdict:**
+- GPT-2 decode (memory-bound): ratios 0.003-0.011, init-seed CV 0.72%.
+  Weight values are irrelevant where traffic dominates; also arithmetically
+  consistent, since the ~0.5 J weight-sensitive prefill inside the 13.5 J
+  composite caps its influence at ~1%.
+- BERT-base encode: ratios 0.133-0.160, init CV 1.36%. Mild.
+- GPT-2 prefill (compute-bound fp16): ratios 0.243, 0.330, 0.321; pretrained
+  HIGHER than random in every cell and SLOWER per forward (~6.0 ms vs
+  3.0-4.0 ms at identical shape).
+
+**Implementation-free DDEV evidence:** the random-arm init-seed CV (same
+code, same shapes, only weight values differ) is 5.60% on compute-bound
+prefill vs 0.72% on decode. Value-dependent energy is real in our own stack
+and concentrates exactly where physics predicts: in the arithmetic, not the
+traffic.
+
+**Attribution caveat, recorded with equal weight:** the pretrained arm runs
+the HF implementation (Conv1D with bias, HF norms, framework overhead; SDPA
+was pinned), and its ~70% per-forward wall-time overhead at identical shape
+means the pretrained-vs-random ratio entangles implementation cost with
+genuine data-dependent variation. BERT's 0.13-0.16 with the same HF overhead
+present suggests implementation alone plausibly contributes O(0.1); the
+GPT-2 prefill excess above that is consistent with real DDEV. A candidate
+mechanism for the direction and the fp16 specificity: random-init
+activations through a deep stack saturate/overflow in fp16, collapsing bit
+entropy and hence switching activity, so random-init draws LESS energy;
+LayerNorm-bounded BERT is milder; decode is immune. Mechanism is a
+hypothesis, not a claim.
+
+**Pre-committed trigger fired:** the 2026-07-24 note reserved an fp32
+follow-up "only if the band is approached"; it was exceeded. fp32 does not
+saturate, so if fp32 prefill ratios collapse toward the BERT level, the
+fp16-numerics mechanism is confirmed and the flag can be scoped to
+compute-bound fp16 cells. The decisive implementation-free experiment is
+porting pretrained GPT-2 weights INTO our own stack (transposing HF Conv1D
+weights), isolating values from implementation entirely.
+
+**Consequences:** (1) the frozen 4090 dataset carries the pre-registered
+flag, scoped by this structure: decode calibration is representativeness-
+robust, compute-bound fp16 cells may under-represent pretrained energy by
+up to ~25-33%; (2) the Step 5 A100 amendment must state the weights policy
+in light of this verdict (random-init with the scoped flag, pretrained
+arms on a subset, or the weights-porting control) BEFORE any A100 data;
+(3) the paper reports the FAIL as registered, with this structure and the
+attribution caveat.
