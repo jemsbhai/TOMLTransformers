@@ -363,3 +363,38 @@ Verdicts stand as registered; full record in findings.md (second
 primary for the A100, citing this evidence, before any A100 data exists.
 Next: Step 4 representativeness (gated on explicit go-ahead for HF
 downloads), then Step 5.
+
+### Addendum 2026-07-24 - Step 4 representativeness: operationalization frozen BEFORE the run
+Pre-registered spec (configs/exp_002.yaml `representativeness`) operationalized
+and frozen before any Step-4 measurement; approvals recorded in-session:
+- Cells: 12 = {GPT-2 prefill s512, GPT-2 decode ctx512 K64 growing, BERT-base
+  encode s512} x {pretrained, random seed 42/1234/2025}; fp16, flash, batch 1.
+  Recorded interpretation: BERT-base has no decode phase, so it contributes the
+  compute-bound point only; the decode point is decoder-only by construction.
+  fp16 only (deployment-relevant precision; ~50 min GPU); fp32 available as a
+  follow-up only if the band is approached.
+- Metric: y = per_execution_median_j[B]/inner_iters per cell; per (point, seed)
+  ratio |y_rand - y_pre|/y_pre; VERDICT = max over the 9 ratios <= 0.33
+  (pre-registered band); mean-based per_unit ratios reported as a secondary
+  column. Pretrained arm input-seeded at 42; matching seeds yield identical
+  input ids across arms (gpt2 vocab == config vocab), so weights are the only
+  varied factor.
+- APPROVED parity fix (pre-run; the pretrained builder paths were NEVER
+  exercised by the frozen sweep): pretrained prefill now runs the bare
+  transformer stack + lm_head on the LAST token only (HF's LMHeadModel
+  all-position logits are ~2e10 extra MACs at s512 on GPT-2, a ~45% compute
+  confound); the decode cache build runs the bare stack with no head (parity
+  with prefill_into_cache); attn_implementation="sdpa" requested at load with
+  graceful fallback, both decoder and encoder loaders. BERT parity note: the
+  HF pooler (d->d + tanh on [CLS]) matches our pooled head's magnitude;
+  embedding adds are negligible.
+- Machinery: PointSpec gains an optional `seed` field (default None: every
+  frozen-sweep key and behavior byte-identical); when set, torch RNGs are
+  seeded inside the builder dispatch so measure_until_floor rebuilds draw
+  identical weights/inputs; seed joins the key and the record. HF cache
+  handling promoted to measure/hf_cache.py (ephemeral_hf_repos: delete only
+  what this run fetched, keep pre-existing; cleanup on crash).
+- Harness: scripts/run_exp002_representativeness.py; provenance gate (clean
+  tree), resumable JSONL experiments/exp_002_size_sweep/representativeness.jsonl,
+  regime repeats (5 forward / 10 decode), 4 s floor, 100 Hz; report artifacts
+  representativeness_report.{txt,json}; verdict logged as a finding either way.
