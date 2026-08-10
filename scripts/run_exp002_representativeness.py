@@ -3,35 +3,38 @@
 pretrained weights), per configs/exp_002.yaml `representativeness` and the
 2026-07-24 operationalization note in LOGBOOK.md.
 
-Cells (12): fp16, flash, batch 1
+PRIMARY cells (12): fp16, flash, batch 1
   GPT-2      prefill s=512   x {pretrained, random seed 42, 1234, 2025}
   GPT-2      decode  ctx=512 K=64 growing x {same four arms}
   BERT-base  encode  s=512   x {same four arms}
+VERDICT (pre-registered, FROZEN): PASS iff max over the 9 primary fp16
+ratios <= 0.33. Recorded 2026-08-10: FAIL at 0.3303. The verdict is computed
+from the primary cells ONLY and re-prints identically on every run.
 
-The pretrained arm is input-seeded at 42 (weights fixed); random arms are
-init+input seeded per init_seed. Since gpt2's vocab matches the config, the
-same seed yields IDENTICAL input ids across arms, so the comparison isolates
-weight values under the 2026-07-24 structural-parity fix.
+FOLLOW-UP A cells (4; added 2026-08-10 under the pre-committed 2026-07-24
+trigger, which fired when the band was exceeded; NOT part of the verdict):
+  GPT-2 prefill s=512 fp32 x {pretrained, random seed 42, 1234, 2025}
+Purpose: fp32 does not saturate, so if the fp32 prefill ratios collapse
+toward the BERT level, the fp16-numerics (saturation/entropy) mechanism is
+supported and the dataset flag scopes to compute-bound fp16 cells. These
+rows are reported in a separate, labeled section. MUST run on the same
+RTX 4090 Laptop GPU as the frozen dataset: the flag being scoped belongs to
+that device.
 
-Metric (primary): y = per_execution_median_j[B] / inner_iters per cell;
+Metric: y = per_execution_median_j[B] / inner_iters per cell;
 ratio = |y_random(seed) - y_pretrained| / y_pretrained per (point, seed).
-VERDICT: PASS iff max over all 9 ratios <= 0.33 (pre-registered band).
-Secondary: the same ratios on mean-based per_unit_j, reported for
-transparency. Logged as a finding either way.
+Secondary: the same ratios on mean-based per_unit_j.
 
 Resumable (last-write-wins on spec.key; identical command). Downloads gpt2
-and bert-base-uncased (~0.5 GB each); repos this run fetches are deleted from
-the HF cache on exit, pre-existing ones are kept (measure/hf_cache.py).
+and bert-base-uncased (~0.5 GB each) as needed; repos this run fetches are
+deleted from the HF cache on exit, pre-existing ones are kept.
 
 KEY NOTE (2026-08-10): for decoder-only decode the physical context is
 spec.seq_len; the key's ctx{tgt_ctx} segment shows the unused tgt_ctx default
-(128). Keys are identity strings; all analysis derives keys from the cell
-objects themselves (fix for the 2026-08-10 KeyError: never duplicate key
-construction).
+(128). All analysis derives keys from the cell objects (never hand-built).
 
 GATE NOTE (2026-08-10): the provenance gate ignores untracked copies of this
-harness's OWN output files (and only those), so a crash mid-run can be
-resumed without committing partial data. Any other dirt still refuses.
+harness's OWN output files (and only those). Any other dirt still refuses.
 
 Run from the repo root:
     python scripts/run_exp002_representativeness.py
@@ -59,8 +62,6 @@ OUT = RUN_DIR / "representativeness.jsonl"
 REPORT_TXT = RUN_DIR / "representativeness_report.txt"
 REPORT_JSON = RUN_DIR / "representativeness_report.json"
 
-# The harness's own outputs: permitted as UNTRACKED dirt so resume is never
-# self-blocked. Everything else still refuses (provenance gate).
 OWN_OUTPUTS = {
     "experiments/exp_002_size_sweep/representativeness.jsonl",
     "experiments/exp_002_size_sweep/representativeness_report.txt",
@@ -81,8 +82,6 @@ def out(s: str = "") -> None:
 
 
 def git_clean_or_die() -> str:
-    """Provenance gate: refuse any dirt except untracked copies of this
-    harness's own output files."""
     st = subprocess.run(["git", "status", "--porcelain"], cwd=REPO,
                         capture_output=True, text=True)
     if st.returncode != 0:
@@ -107,23 +106,30 @@ def git_clean_or_die() -> str:
     return sha
 
 
-def build_cells() -> list[PointSpec]:
+def _arms(cells: list[PointSpec], base_kwargs: dict) -> None:
+    cells.append(PointSpec(**base_kwargs, weights="pretrained",
+                           pretrained_id=HF_IDS[base_kwargs["model"]],
+                           seed=PRETRAINED_INPUT_SEED))
+    for sd in INIT_SEEDS:
+        cells.append(PointSpec(**base_kwargs, weights="random", seed=sd))
+
+
+def build_primary_cells() -> list[PointSpec]:
     cells: list[PointSpec] = []
+    _arms(cells, dict(model="GPT-2", arch="decoder_only", phase="prefill",
+                      seq_len=512, precision="fp16", attn_kind="flash"))
+    _arms(cells, dict(model="GPT-2", arch="decoder_only", phase="decode",
+                      seq_len=512, precision="fp16", attn_kind="flash",
+                      decode_tokens=64, decode_mode="growing"))
+    _arms(cells, dict(model="BERT-base", arch="encoder_only", phase="encode",
+                      seq_len=512, precision="fp16", attn_kind="flash"))
+    return cells
 
-    def arms(base_kwargs):
-        cells.append(PointSpec(**base_kwargs, weights="pretrained",
-                               pretrained_id=HF_IDS[base_kwargs["model"]],
-                               seed=PRETRAINED_INPUT_SEED))
-        for sd in INIT_SEEDS:
-            cells.append(PointSpec(**base_kwargs, weights="random", seed=sd))
 
-    arms(dict(model="GPT-2", arch="decoder_only", phase="prefill",
-              seq_len=512, precision="fp16", attn_kind="flash"))
-    arms(dict(model="GPT-2", arch="decoder_only", phase="decode",
-              seq_len=512, precision="fp16", attn_kind="flash",
-              decode_tokens=64, decode_mode="growing"))
-    arms(dict(model="BERT-base", arch="encoder_only", phase="encode",
-              seq_len=512, precision="fp16", attn_kind="flash"))
+def build_followup_fp32_cells() -> list[PointSpec]:
+    cells: list[PointSpec] = []
+    _arms(cells, dict(model="GPT-2", arch="decoder_only", phase="prefill",
+                      seq_len=512, precision="fp32", attn_kind="flash"))
     return cells
 
 
@@ -185,26 +191,11 @@ def measure_all(cells: list[PointSpec]) -> dict[str, dict]:
     return latest
 
 
-def analyze(cells: list[PointSpec], latest: dict[str, dict]) -> int:
-    out("EXP-002 representativeness report (pre-registered; band 0.33)")
-    out(f"generated: {datetime.now().astimezone().isoformat(timespec='seconds')}")
-    out(f"data: {OUT}")
-    out("note: decoder-only decode context is spec.seq_len (=512); the key's")
-    out("ctx128 segment is the unused tgt_ctx default (see module docstring).")
-    missing = [c.key() for c in cells if not _done(latest, c.key())]
-    if missing:
-        out(f"INCOMPLETE: {len(missing)} cells not resume-complete; re-run to finish:")
-        for k in missing:
-            out(f"  - {k}")
-        REPORT_TXT.write_text("\n".join(LINES) + "\n", encoding="utf-8")
-        return 1
-
-    # Group cells (model, phase) -> pretrained cell + random cells by seed.
-    # Keys always come from the cell objects (never hand-built).
+def _group(cells: list[PointSpec]):
     groups: dict[tuple, dict] = {}
     order: list[tuple] = []
     for c in cells:
-        gk = (c.model, c.phase)
+        gk = (c.model, c.phase, c.precision)
         if gk not in groups:
             groups[gk] = {"pre": None, "rand": {}}
             order.append(gk)
@@ -212,14 +203,15 @@ def analyze(cells: list[PointSpec], latest: dict[str, dict]) -> int:
             groups[gk]["pre"] = c
         else:
             groups[gk]["rand"][c.seed] = c
+    return order, groups
 
-    rows = []
-    worst = 0.0
-    out()
-    out("point                      seed   E_pre(J)    E_rand(J)   ratio     ratio(per_unit)")
+
+def _ratio_table(cells, latest, rows_out):
+    order, groups = _group(cells)
+    section_max = 0.0
     for gk in order:
-        model, phase = gk
-        label = f"{model}/{phase}/s512"
+        model, phase, precision = gk
+        label = f"{model}/{phase}/s512/{precision}"
         g = groups[gk]
         pre = latest[g["pre"].key()]
         e_pre, u_pre = y_of(pre), y_mean_unit(pre)
@@ -230,19 +222,42 @@ def analyze(cells: list[PointSpec], latest: dict[str, dict]) -> int:
             rnd_ys.append(e_rnd)
             ratio = abs(e_rnd - e_pre) / e_pre
             ratio_u = abs(y_mean_unit(rnd) - u_pre) / u_pre
-            worst = max(worst, ratio)
-            rows.append({"point": label, "seed": sd, "e_pretrained_j": e_pre,
-                         "e_random_j": e_rnd, "ratio": ratio,
-                         "ratio_per_unit": ratio_u,
-                         "within_band": bool(ratio <= BAND)})
-            out(f"{label:26s} {sd:5d}  {e_pre:9.4g}  {e_rnd:9.4g}  "
+            section_max = max(section_max, ratio)
+            rows_out.append({"point": label, "seed": sd,
+                             "e_pretrained_j": e_pre, "e_random_j": e_rnd,
+                             "ratio": ratio, "ratio_per_unit": ratio_u,
+                             "within_band": bool(ratio <= BAND)})
+            out(f"{label:31s} {sd:5d}  {e_pre:9.4g}  {e_rnd:9.4g}  "
                 f"{ratio:7.4f}  {ratio_u:7.4f}")
         m = statistics.mean(rnd_ys)
         cv = (statistics.pstdev(rnd_ys) / m) if m else 0.0
-        out(f"{label:26s} random-arm init-seed CV: {100 * cv:.2f}%")
+        out(f"{label:31s} random-arm init-seed CV: {100 * cv:.2f}%")
+    return section_max
+
+
+def analyze(primary: list[PointSpec], followup: list[PointSpec],
+            latest: dict[str, dict]) -> int:
+    out("EXP-002 representativeness report (pre-registered; band 0.33)")
+    out(f"generated: {datetime.now().astimezone().isoformat(timespec='seconds')}")
+    out(f"data: {OUT}")
+    out("note: decoder-only decode context is spec.seq_len (=512); the key's")
+    out("ctx128 segment is the unused tgt_ctx default (see module docstring).")
+    missing = [c.key() for c in primary + followup if not _done(latest, c.key())]
+    if missing:
+        out(f"INCOMPLETE: {len(missing)} cells not resume-complete; re-run to finish:")
+        for k in missing:
+            out(f"  - {k}")
+        REPORT_TXT.write_text("\n".join(LINES) + "\n", encoding="utf-8")
+        return 1
+
+    out()
+    out("== PRIMARY (pre-registered verdict; fp16; FROZEN cells) ==")
+    out("point                           seed   E_pre(J)    E_rand(J)   ratio     ratio(per_unit)")
+    primary_rows: list[dict] = []
+    worst = _ratio_table(primary, latest, primary_rows)
     verdict = "PASS" if worst <= BAND else "FAIL"
     out()
-    out(f"VERDICT: max ratio {worst:.4f} vs band {BAND} -> {verdict}")
+    out(f"VERDICT: max primary ratio {worst:.4f} vs band {BAND} -> {verdict}")
     if verdict == "FAIL":
         out("  Representativeness NOT established for random-init energies; the")
         out("  sweep is flagged per the pre-registration. Logged as a finding.")
@@ -250,14 +265,28 @@ def analyze(cells: list[PointSpec], latest: dict[str, dict]) -> int:
         out("  Random-init energies are representative within the pre-registered")
         out("  band; the sweep's Fork-1 premise stands. Logged as a finding.")
 
+    out()
+    out("== FOLLOW-UP A (fp32; post-verdict, trigger 2026-07-24; NOT part of")
+    out("   the pre-registered verdict; mechanism probe) ==")
+    out("point                           seed   E_pre(J)    E_rand(J)   ratio     ratio(per_unit)")
+    followup_rows: list[dict] = []
+    fmax = _ratio_table(followup, latest, followup_rows)
+    out(f"  max fp32 ratio {fmax:.4f} (band {BAND} as reference only).")
+    out("  Reading: fp32 ratios collapsing toward the BERT fp16 level (~0.16)")
+    out("  supports the fp16-saturation mechanism and scopes the dataset flag")
+    out("  to compute-bound fp16 cells; interpretation lands in findings.md.")
+
     payload = {
         "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "band": BAND,
         "init_seeds": list(INIT_SEEDS),
         "pretrained_input_seed": PRETRAINED_INPUT_SEED,
-        "rows": rows,
-        "max_ratio": worst,
+        "primary_rows": primary_rows,
+        "primary_max_ratio": worst,
         "verdict": verdict,
+        "followup_fp32": {"rows": followup_rows, "max_ratio": fmax,
+                          "label": "post-verdict mechanism probe; not part of "
+                                   "the pre-registered verdict"},
     }
     REPORT_JSON.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     REPORT_TXT.write_text("\n".join(LINES) + "\n", encoding="utf-8")
@@ -268,10 +297,11 @@ def analyze(cells: list[PointSpec], latest: dict[str, dict]) -> int:
 
 def main() -> int:
     git_clean_or_die()
-    cells = build_cells()
+    primary = build_primary_cells()
+    followup = build_followup_fp32_cells()
     with ephemeral_hf_repos(sorted(set(HF_IDS.values()))):
-        latest = measure_all(cells)
-    return analyze(cells, latest)
+        latest = measure_all(primary + followup)
+    return analyze(primary, followup, latest)
 
 
 if __name__ == "__main__":
