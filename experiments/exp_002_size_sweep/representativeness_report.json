@@ -1,0 +1,95 @@
+{
+  "generated_at": "2026-08-10T11:48:18-04:00",
+  "band": 0.33,
+  "init_seeds": [
+    42,
+    1234,
+    2025
+  ],
+  "pretrained_input_seed": 42,
+  "rows": [
+    {
+      "point": "GPT-2/prefill/s512",
+      "seed": 42,
+      "e_pretrained_j": 0.5802688386427387,
+      "e_random_j": 0.439516379978833,
+      "ratio": 0.242564220737975,
+      "ratio_per_unit": 0.2473535795364794,
+      "within_band": true
+    },
+    {
+      "point": "GPT-2/prefill/s512",
+      "seed": 1234,
+      "e_pretrained_j": 0.5802688386427387,
+      "e_random_j": 0.3885827768984898,
+      "ratio": 0.33034009234858575,
+      "ratio_per_unit": 0.3366014728123001,
+      "within_band": false
+    },
+    {
+      "point": "GPT-2/prefill/s512",
+      "seed": 2025,
+      "e_pretrained_j": 0.5802688386427387,
+      "e_random_j": 0.39406180490655796,
+      "ratio": 0.3208978689459234,
+      "ratio_per_unit": 0.31293040368500336,
+      "within_band": true
+    },
+    {
+      "point": "GPT-2/decode/s512",
+      "seed": 42,
+      "e_pretrained_j": 13.46113420495711,
+      "e_random_j": 13.383617999337373,
+      "ratio": 0.005758519634340453,
+      "ratio_per_unit": 0.011617130431593823,
+      "within_band": true
+    },
+    {
+      "point": "GPT-2/decode/s512",
+      "seed": 1234,
+      "e_pretrained_j": 13.46113420495711,
+      "e_random_j": 13.605801090684144,
+      "ratio": 0.010747005677557231,
+      "ratio_per_unit": 0.0012113184965556597,
+      "within_band": true
+    },
+    {
+      "point": "GPT-2/decode/s512",
+      "seed": 2025,
+      "e_pretrained_j": 13.46113420495711,
+      "e_random_j": 13.422383730466011,
+      "ratio": 0.0028786931250435895,
+      "ratio_per_unit": 0.0026850287281047452,
+      "within_band": true
+    },
+    {
+      "point": "BERT-base/encode/s512",
+      "seed": 42,
+      "e_pretrained_j": 0.43796184175750225,
+      "e_random_j": 0.37824700832090774,
+      "ratio": 0.1363471146183972,
+      "ratio_per_unit": 0.13818372785983601,
+      "within_band": true
+    },
+    {
+      "point": "BERT-base/encode/s512",
+      "seed": 1234,
+      "e_pretrained_j": 0.43796184175750225,
+      "e_random_j": 0.36811320854126384,
+      "ratio": 0.15948565960893307,
+      "ratio_per_unit": 0.16688175656696128,
+      "within_band": true
+    },
+    {
+      "point": "BERT-base/encode/s512",
+      "seed": 2025,
+      "e_pretrained_j": 0.43796184175750225,
+      "e_random_j": 0.3795201960510459,
+      "ratio": 0.13344004005448318,
+      "ratio_per_unit": 0.1346402014464166,
+      "within_band": true
+    }
+  ],
+  "max_ratio": 0.33034009234858575,
+  "verdict": "FAIL"
+}
