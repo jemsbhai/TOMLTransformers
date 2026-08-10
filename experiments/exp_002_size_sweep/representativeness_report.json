@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-10T13:42:28-04:00",
+  "generated_at": "2026-08-10T17:26:08-04:00",
   "band": 0.33,
   "init_seeds": [
     42,
@@ -124,5 +124,27 @@
     ],
     "max_ratio": 0.12536815284678599,
     "label": "post-verdict mechanism probe; not part of the pre-registered verdict"
+  },
+  "followup_b": {
+    "label": "implementation-free isolation; predictions pre-stated findings.md 2026-08-10",
+    "e_ported_fp16_j": 0.4131333940618883,
+    "e_ported_fp32_j": 1.2250033390269552,
+    "e_random_v_fp16_j": 0.4417716900558929,
+    "e_hf_fp16_j": 0.5802688386427387,
+    "e_hf_fp32_j": 1.3912324799057103,
+    "pure_value_effect_fp16": 0.06482600999258524,
+    "structure_delta_fp16": 0.005131344768466841,
+    "implementation_floor_fp16": 0.4045556398566346,
+    "implementation_floor_fp32": 0.1356968879862762,
+    "ported_vs_random_fp16": {
+      "42": 0.06002730983135443,
+      "1234": 0.0631798901622753,
+      "2025": 0.048397456738677624
+    },
+    "ported_vs_random_fp32": {
+      "42": 0.0064705856818439225,
+      "1234": 0.006728300527723369,
+      "2025": 0.001971162787080355
+    }
   }
 }

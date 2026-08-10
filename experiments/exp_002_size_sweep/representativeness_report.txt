@@ -1,5 +1,5 @@
 EXP-002 representativeness report (pre-registered; band 0.33)
-generated: 2026-08-10T13:42:28-04:00
+generated: 2026-08-10T17:26:08-04:00
 data: E:\data\code\claudecode\TOMLTransformers\experiments\exp_002_size_sweep\representativeness.jsonl
 note: decoder-only decode context is spec.seq_len (=512); the key's
 ctx128 segment is the unused tgt_ctx default (see module docstring).
@@ -31,6 +31,14 @@ GPT-2/prefill/s512/fp32          1234      1.391      1.217   0.1254   0.1235
 GPT-2/prefill/s512/fp32          2025      1.391      1.223   0.1212   0.1183
 GPT-2/prefill/s512/fp32         random-arm init-seed CV: 0.22%
   max fp32 ratio 0.1254 (band 0.33 as reference only).
-  Reading: fp32 ratios collapsing toward the BERT fp16 level (~0.16)
-  supports the fp16-saturation mechanism and scopes the dataset flag
-  to compute-bound fp16 cells; interpretation lands in findings.md.
+
+== FOLLOW-UP B (values ported into OUR stack; implementation-free;
+   post-verdict; predictions pre-stated findings.md 2026-08-10) ==
+  E(ported fp16)=0.4131 J  E(random_v fp16 s42)=0.4418 J  E(HF fp16)=0.5803 J
+  pure value effect    |ported-random_v|/random_v (fp16): 0.0648   [predicted 0.10-0.20]
+  structure delta      |random_v-random_s42|/random_s42 (fp16): 0.0051   [predicted ~0]
+  implementation floor |HF-ported|/ported (fp16, identical values): 0.4046   [predicted 0.12-0.16]
+  ported vs plain random (fp16, per seed): s42=0.0600  s1234=0.0632  s2025=0.0484
+  E(ported fp32)=1.225 J; fp32 value effect vs random: s42=0.0065  s1234=0.0067  s2025=0.0020   [predicted 0.00-0.03]
+  implementation floor (fp32): |HF-ported|/ported = 0.1357
+  (ok ported records imply the fp32 logit-equivalence gate passed.)
