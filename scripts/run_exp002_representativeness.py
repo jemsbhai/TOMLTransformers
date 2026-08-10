@@ -23,7 +23,17 @@ Resumable (last-write-wins on spec.key; identical command). Downloads gpt2
 and bert-base-uncased (~0.5 GB each); repos this run fetches are deleted from
 the HF cache on exit, pre-existing ones are kept (measure/hf_cache.py).
 
-Run from the repo root (tree must be clean):
+KEY NOTE (2026-08-10): for decoder-only decode the physical context is
+spec.seq_len; the key's ctx{tgt_ctx} segment shows the unused tgt_ctx default
+(128). Keys are identity strings; all analysis derives keys from the cell
+objects themselves (fix for the 2026-08-10 KeyError: never duplicate key
+construction).
+
+GATE NOTE (2026-08-10): the provenance gate ignores untracked copies of this
+harness's OWN output files (and only those), so a crash mid-run can be
+resumed without committing partial data. Any other dirt still refuses.
+
+Run from the repo root:
     python scripts/run_exp002_representativeness.py
 """
 
@@ -49,6 +59,14 @@ OUT = RUN_DIR / "representativeness.jsonl"
 REPORT_TXT = RUN_DIR / "representativeness_report.txt"
 REPORT_JSON = RUN_DIR / "representativeness_report.json"
 
+# The harness's own outputs: permitted as UNTRACKED dirt so resume is never
+# self-blocked. Everything else still refuses (provenance gate).
+OWN_OUTPUTS = {
+    "experiments/exp_002_size_sweep/representativeness.jsonl",
+    "experiments/exp_002_size_sweep/representativeness_report.txt",
+    "experiments/exp_002_size_sweep/representativeness_report.json",
+}
+
 BAND = 0.33
 INIT_SEEDS = (42, 1234, 2025)
 PRETRAINED_INPUT_SEED = 42
@@ -63,18 +81,29 @@ def out(s: str = "") -> None:
 
 
 def git_clean_or_die() -> str:
-    """Mirror the sweep preflight's provenance gate: refuse a dirty tree."""
+    """Provenance gate: refuse any dirt except untracked copies of this
+    harness's own output files."""
     st = subprocess.run(["git", "status", "--porcelain"], cwd=REPO,
                         capture_output=True, text=True)
     if st.returncode != 0:
         print("[gate] git status failed; refusing to run"); sys.exit(2)
-    if st.stdout.strip():
-        print("[gate] working tree is DIRTY; commit first (provenance gate):")
-        print(st.stdout.rstrip())
+    offending = []
+    for line in st.stdout.splitlines():
+        if not line.strip():
+            continue
+        status, path = line[:2], line[3:].strip().strip('"')
+        if status == "??" and path.replace("\\", "/") in OWN_OUTPUTS:
+            continue
+        offending.append(line)
+    if offending:
+        print("[gate] working tree is DIRTY beyond this harness's own outputs; "
+              "commit first (provenance gate):")
+        for line in offending:
+            print(line)
         sys.exit(2)
     sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO,
                          capture_output=True, text=True).stdout.strip()
-    print(f"[gate] tree clean at {sha[:9]}")
+    print(f"[gate] tree clean at {sha[:9]} (own outputs permitted)")
     return sha
 
 
@@ -129,11 +158,14 @@ def y_mean_unit(rec: dict) -> float:
     return float(rec["per_unit_j"]["B"])
 
 
+def _done(latest: dict[str, dict], key: str) -> bool:
+    rec = latest.get(key, {})
+    return bool(rec.get("ok")) and not rec.get("short_window")
+
+
 def measure_all(cells: list[PointSpec]) -> dict[str, dict]:
     latest = load_latest(OUT)
-    todo = [c for c in cells
-            if not (latest.get(c.key(), {}).get("ok")
-                    and not latest.get(c.key(), {}).get("short_window"))]
+    todo = [c for c in cells if not _done(latest, c.key())]
     print(f"[plan] {len(cells)} cells; {len(cells) - len(todo)} resume-complete; "
           f"{len(todo)} to measure")
     t0 = time.perf_counter()
@@ -157,9 +189,9 @@ def analyze(cells: list[PointSpec], latest: dict[str, dict]) -> int:
     out("EXP-002 representativeness report (pre-registered; band 0.33)")
     out(f"generated: {datetime.now().astimezone().isoformat(timespec='seconds')}")
     out(f"data: {OUT}")
-    missing = [c.key() for c in cells
-               if not (latest.get(c.key(), {}).get("ok")
-                       and not latest.get(c.key(), {}).get("short_window"))]
+    out("note: decoder-only decode context is spec.seq_len (=512); the key's")
+    out("ctx128 segment is the unused tgt_ctx default (see module docstring).")
+    missing = [c.key() for c in cells if not _done(latest, c.key())]
     if missing:
         out(f"INCOMPLETE: {len(missing)} cells not resume-complete; re-run to finish:")
         for k in missing:
@@ -167,21 +199,35 @@ def analyze(cells: list[PointSpec], latest: dict[str, dict]) -> int:
         REPORT_TXT.write_text("\n".join(LINES) + "\n", encoding="utf-8")
         return 1
 
-    points = [
-        ("GPT-2/prefill/s512", "decoder_only|GPT-2|prefill|fp16|flash|{w}|s512|b1{sfx}"),
-        ("GPT-2/decode/ctx512", "decoder_only|GPT-2|decode|fp16|flash|{w}|s512|b1|ctx512|k64|growing{sfx}"),
-        ("BERT-base/encode/s512", "encoder_only|BERT-base|encode|fp16|flash|{w}|s512|b1{sfx}"),
-    ]
+    # Group cells (model, phase) -> pretrained cell + random cells by seed.
+    # Keys always come from the cell objects (never hand-built).
+    groups: dict[tuple, dict] = {}
+    order: list[tuple] = []
+    for c in cells:
+        gk = (c.model, c.phase)
+        if gk not in groups:
+            groups[gk] = {"pre": None, "rand": {}}
+            order.append(gk)
+        if c.weights == "pretrained":
+            groups[gk]["pre"] = c
+        else:
+            groups[gk]["rand"][c.seed] = c
+
     rows = []
     worst = 0.0
     out()
     out("point                      seed   E_pre(J)    E_rand(J)   ratio     ratio(per_unit)")
-    for label, tpl in points:
-        pre = latest[tpl.format(w="pretrained", sfx=f"|seed{PRETRAINED_INPUT_SEED}")]
+    for gk in order:
+        model, phase = gk
+        label = f"{model}/{phase}/s512"
+        g = groups[gk]
+        pre = latest[g["pre"].key()]
         e_pre, u_pre = y_of(pre), y_mean_unit(pre)
+        rnd_ys = []
         for sd in INIT_SEEDS:
-            rnd = latest[tpl.format(w="random", sfx=f"|seed{sd}")]
+            rnd = latest[g["rand"][sd].key()]
             e_rnd = y_of(rnd)
+            rnd_ys.append(e_rnd)
             ratio = abs(e_rnd - e_pre) / e_pre
             ratio_u = abs(y_mean_unit(rnd) - u_pre) / u_pre
             worst = max(worst, ratio)
@@ -191,10 +237,8 @@ def analyze(cells: list[PointSpec], latest: dict[str, dict]) -> int:
                          "within_band": bool(ratio <= BAND)})
             out(f"{label:26s} {sd:5d}  {e_pre:9.4g}  {e_rnd:9.4g}  "
                 f"{ratio:7.4f}  {ratio_u:7.4f}")
-        rnds = [y_of(latest[tpl.format(w='random', sfx=f'|seed{s}')])
-                for s in INIT_SEEDS]
-        m = statistics.mean(rnds)
-        cv = (statistics.pstdev(rnds) / m) if m else 0.0
+        m = statistics.mean(rnd_ys)
+        cv = (statistics.pstdev(rnd_ys) / m) if m else 0.0
         out(f"{label:26s} random-arm init-seed CV: {100 * cv:.2f}%")
     verdict = "PASS" if worst <= BAND else "FAIL"
     out()
