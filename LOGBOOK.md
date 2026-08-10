@@ -462,3 +462,15 @@ decode-position/wpe flow check. New builder arms: weights="ported"
 control). Next: three B cells in the harness (ported fp16, ported fp32,
 random_v fp16) with a labeled FOLLOW-UP B section evaluated against the
 pre-stated predictions, then the run.
+
+### Addendum 2026-08-10 - Follow-up B cells added; porter gate green (238 passed)
+The exact logit-equivalence gate passed on the tiny in-memory model (all five
+porter tests green; full suite 238). Three B cells added to the harness in a
+labeled FOLLOW-UP B section evaluated directly against the pre-stated
+predictions: ported fp16, ported fp32 (both logit-verified against real gpt2
+at load, on-GPU, before any energy is measured), and random_v fp16 (bias+wpe
+structure control). Comparisons computed: pure value effect (ported vs
+random_v, predicted 0.10-0.20), structure delta (random_v vs plain random
+s42, predicted ~0), implementation floor (HF vs ported at identical values,
+predicted 0.12-0.16), and fp32 value effect (predicted 0.00-0.03). Primary
+verdict and Follow-up A sections re-print from frozen records.

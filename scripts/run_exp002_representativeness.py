@@ -11,23 +11,29 @@ VERDICT (pre-registered, FROZEN): PASS iff max over the 9 primary fp16
 ratios <= 0.33. Recorded 2026-08-10: FAIL at 0.3303. The verdict is computed
 from the primary cells ONLY and re-prints identically on every run.
 
-FOLLOW-UP A cells (4; added 2026-08-10 under the pre-committed 2026-07-24
-trigger, which fired when the band was exceeded; NOT part of the verdict):
+FOLLOW-UP A cells (4; fired 2026-07-24 trigger; NOT part of the verdict):
   GPT-2 prefill s=512 fp32 x {pretrained, random seed 42, 1234, 2025}
-Purpose: fp32 does not saturate, so if the fp32 prefill ratios collapse
-toward the BERT level, the fp16-numerics (saturation/entropy) mechanism is
-supported and the dataset flag scopes to compute-bound fp16 cells. These
-rows are reported in a separate, labeled section. MUST run on the same
-RTX 4090 Laptop GPU as the frozen dataset: the flag being scoped belongs to
-that device.
+Result 2026-08-10: ratios 0.121-0.125, init CV 0.22%; fp16-saturation
+mechanism supported; flag scoped to compute-bound fp16.
 
-Metric: y = per_execution_median_j[B] / inner_iters per cell;
-ratio = |y_random(seed) - y_pretrained| / y_pretrained per (point, seed).
-Secondary: the same ratios on mean-based per_unit_j.
+FOLLOW-UP B cells (3; implementation-free isolation; predictions pre-stated
+in findings.md 2026-08-10 BEFORE any B code existed):
+  GPT-2 prefill s=512 fp16 weights=ported     (HF values in OUR stack,
+                                               logit-verified before measuring)
+  GPT-2 prefill s=512 fp32 weights=ported
+  GPT-2 prefill s=512 fp16 weights=random_v   (bias+wpe random: structure
+                                               control for the ported arm)
+B comparisons (all |x - y| / y, y named per line):
+  pure value effect   = ported fp16 vs random_v fp16      [predicted 0.10-0.20]
+  structure delta     = random_v fp16 vs random fp16 s42  [predicted ~0]
+  implementation floor= HF-pretrained fp16 vs ported fp16 [predicted 0.12-0.16]
+  fp32 value effect   = ported fp32 vs random fp32 (x3)   [predicted 0.00-0.03]
+An ok ported record implies the fp32 logit-equivalence gate passed (the
+loader refuses unverified ports). MUST run on the RTX 4090 Laptop GPU.
 
-Resumable (last-write-wins on spec.key; identical command). Downloads gpt2
-and bert-base-uncased (~0.5 GB each) as needed; repos this run fetches are
-deleted from the HF cache on exit, pre-existing ones are kept.
+Metric: y = per_execution_median_j[B] / inner_iters per cell.
+Resumable (last-write-wins on spec.key; identical command). Repos this run
+fetches are deleted from the HF cache on exit; pre-existing ones kept.
 
 KEY NOTE (2026-08-10): for decoder-only decode the physical context is
 spec.seq_len; the key's ctx{tgt_ctx} segment shows the unused tgt_ctx default
@@ -133,6 +139,19 @@ def build_followup_fp32_cells() -> list[PointSpec]:
     return cells
 
 
+def build_followup_b_cells() -> list[PointSpec]:
+    base = dict(model="GPT-2", arch="decoder_only", phase="prefill",
+                seq_len=512, attn_kind="flash")
+    return [
+        PointSpec(**base, precision="fp16", weights="ported",
+                  pretrained_id="gpt2", seed=PRETRAINED_INPUT_SEED),
+        PointSpec(**base, precision="fp32", weights="ported",
+                  pretrained_id="gpt2", seed=PRETRAINED_INPUT_SEED),
+        PointSpec(**base, precision="fp16", weights="random_v",
+                  seed=PRETRAINED_INPUT_SEED),
+    ]
+
+
 def load_latest(path: Path) -> dict[str, dict]:
     latest: dict[str, dict] = {}
     if not path.exists():
@@ -235,14 +254,18 @@ def _ratio_table(cells, latest, rows_out):
     return section_max
 
 
-def analyze(primary: list[PointSpec], followup: list[PointSpec],
-            latest: dict[str, dict]) -> int:
+def _r(x: float, y: float) -> float:
+    return abs(x - y) / y
+
+
+def analyze(primary, followup_a, followup_b, latest) -> int:
     out("EXP-002 representativeness report (pre-registered; band 0.33)")
     out(f"generated: {datetime.now().astimezone().isoformat(timespec='seconds')}")
     out(f"data: {OUT}")
     out("note: decoder-only decode context is spec.seq_len (=512); the key's")
     out("ctx128 segment is the unused tgt_ctx default (see module docstring).")
-    missing = [c.key() for c in primary + followup if not _done(latest, c.key())]
+    everything = primary + followup_a + followup_b
+    missing = [c.key() for c in everything if not _done(latest, c.key())]
     if missing:
         out(f"INCOMPLETE: {len(missing)} cells not resume-complete; re-run to finish:")
         for k in missing:
@@ -270,11 +293,53 @@ def analyze(primary: list[PointSpec], followup: list[PointSpec],
     out("   the pre-registered verdict; mechanism probe) ==")
     out("point                           seed   E_pre(J)    E_rand(J)   ratio     ratio(per_unit)")
     followup_rows: list[dict] = []
-    fmax = _ratio_table(followup, latest, followup_rows)
+    fmax = _ratio_table(followup_a, latest, followup_rows)
     out(f"  max fp32 ratio {fmax:.4f} (band {BAND} as reference only).")
-    out("  Reading: fp32 ratios collapsing toward the BERT fp16 level (~0.16)")
-    out("  supports the fp16-saturation mechanism and scopes the dataset flag")
-    out("  to compute-bound fp16 cells; interpretation lands in findings.md.")
+
+    out()
+    out("== FOLLOW-UP B (values ported into OUR stack; implementation-free;")
+    out("   post-verdict; predictions pre-stated findings.md 2026-08-10) ==")
+    b = {(c.precision, c.weights): latest[c.key()] for c in followup_b}
+    e_ported16 = y_of(b[("fp16", "ported")])
+    e_ported32 = y_of(b[("fp32", "ported")])
+    e_rv16 = y_of(b[("fp16", "random_v")])
+
+    def cell(cells_list, precision, weights, seed):
+        for c in cells_list:
+            if (c.precision, c.weights, c.seed) == (precision, weights, seed):
+                return latest[c.key()]
+        raise KeyError((precision, weights, seed))
+
+    prim_prefill = [c for c in primary
+                    if c.model == "GPT-2" and c.phase == "prefill"]
+    e_hf16 = y_of(cell(prim_prefill, "fp16", "pretrained", PRETRAINED_INPUT_SEED))
+    e_r16 = {sd: y_of(cell(prim_prefill, "fp16", "random", sd))
+             for sd in INIT_SEEDS}
+    e_hf32 = y_of(cell(followup_a, "fp32", "pretrained", PRETRAINED_INPUT_SEED))
+    e_r32 = {sd: y_of(cell(followup_a, "fp32", "random", sd))
+             for sd in INIT_SEEDS}
+
+    out(f"  E(ported fp16)={e_ported16:.4g} J  E(random_v fp16 s42)={e_rv16:.4g} J  "
+        f"E(HF fp16)={e_hf16:.4g} J")
+    pure16 = _r(e_ported16, e_rv16)
+    out(f"  pure value effect    |ported-random_v|/random_v (fp16): "
+        f"{pure16:.4f}   [predicted 0.10-0.20]")
+    sd_delta = _r(e_rv16, e_r16[42])
+    out(f"  structure delta      |random_v-random_s42|/random_s42 (fp16): "
+        f"{sd_delta:.4f}   [predicted ~0]")
+    floor16 = _r(e_hf16, e_ported16)
+    out(f"  implementation floor |HF-ported|/ported (fp16, identical values): "
+        f"{floor16:.4f}   [predicted 0.12-0.16]")
+    pv16 = {sd: _r(e_ported16, e_r16[sd]) for sd in INIT_SEEDS}
+    out("  ported vs plain random (fp16, per seed): "
+        + "  ".join(f"s{sd}={v:.4f}" for sd, v in pv16.items()))
+    pv32 = {sd: _r(e_ported32, e_r32[sd]) for sd in INIT_SEEDS}
+    out(f"  E(ported fp32)={e_ported32:.4g} J; fp32 value effect vs random: "
+        + "  ".join(f"s{sd}={v:.4f}" for sd, v in pv32.items())
+        + "   [predicted 0.00-0.03]")
+    floor32 = _r(e_hf32, e_ported32)
+    out(f"  implementation floor (fp32): |HF-ported|/ported = {floor32:.4f}")
+    out("  (ok ported records imply the fp32 logit-equivalence gate passed.)")
 
     payload = {
         "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -287,6 +352,19 @@ def analyze(primary: list[PointSpec], followup: list[PointSpec],
         "followup_fp32": {"rows": followup_rows, "max_ratio": fmax,
                           "label": "post-verdict mechanism probe; not part of "
                                    "the pre-registered verdict"},
+        "followup_b": {
+            "label": "implementation-free isolation; predictions pre-stated "
+                     "findings.md 2026-08-10",
+            "e_ported_fp16_j": e_ported16, "e_ported_fp32_j": e_ported32,
+            "e_random_v_fp16_j": e_rv16, "e_hf_fp16_j": e_hf16,
+            "e_hf_fp32_j": e_hf32,
+            "pure_value_effect_fp16": pure16,
+            "structure_delta_fp16": sd_delta,
+            "implementation_floor_fp16": floor16,
+            "implementation_floor_fp32": floor32,
+            "ported_vs_random_fp16": {str(k): v for k, v in pv16.items()},
+            "ported_vs_random_fp32": {str(k): v for k, v in pv32.items()},
+        },
     }
     REPORT_JSON.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     REPORT_TXT.write_text("\n".join(LINES) + "\n", encoding="utf-8")
@@ -298,10 +376,11 @@ def analyze(primary: list[PointSpec], followup: list[PointSpec],
 def main() -> int:
     git_clean_or_die()
     primary = build_primary_cells()
-    followup = build_followup_fp32_cells()
+    followup_a = build_followup_fp32_cells()
+    followup_b = build_followup_b_cells()
     with ephemeral_hf_repos(sorted(set(HF_IDS.values()))):
-        latest = measure_all(primary + followup)
-    return analyze(primary, followup, latest)
+        latest = measure_all(primary + followup_a + followup_b)
+    return analyze(primary, followup_a, followup_b, latest)
 
 
 if __name__ == "__main__":
