@@ -29,6 +29,14 @@ representativeness comparison isolates weight VALUES:
     matching decode_step;
   - attn_implementation="sdpa" is requested at load (with a graceful fallback
     recorded on the model config) so both arms run the same kernel family.
+
+VARIANT FLAGS 2026-08-10 (Follow-up B; defaults preserve every prior behavior
+and key byte-identically): _DecoderModel accepts use_bias and use_wpe so that
+pretrained GPT-2 weights can be PORTED into our stack exactly (biases and
+learned position embeddings included), enabling the exact logit-equivalence
+gate in workloads/port_gpt2.py. Bias adds are O(d) against O(d^2) GEMMs and
+the wpe gather is one embedding lookup: negligible energy, and the Follow-up B
+random-variant arm measures that delta explicitly rather than assuming it.
 """
 
 from __future__ import annotations
@@ -55,7 +63,9 @@ class _DecoderModel:
     machines without torch).
     """
 
-    def __init__(self, cfg: TransformerConfig, dtype_str: str, device: str):
+    def __init__(self, cfg: TransformerConfig, dtype_str: str, device: str,
+                 *, use_bias: bool = False, use_wpe: bool = False,
+                 max_positions: int = 1024):
         torch = _torch()
         import torch.nn as nn
 
@@ -76,14 +86,17 @@ class _DecoderModel:
         self.n_kv_heads = cfg.kv_heads
         self.head_dim = cfg.d_head
         self.is_gated = cfg.is_gated
+        self.use_bias = use_bias
+        self.use_wpe = use_wpe
 
         Norm = nn.LayerNorm  # RMSNorm vs LayerNorm differ negligibly in energy;
         # both are counted via op(norm_type). LayerNorm is the available primitive.
 
         def lin(i, o):
-            return nn.Linear(i, o, bias=False)
+            return nn.Linear(i, o, bias=use_bias)
 
         self.embed = nn.Embedding(cfg.vocab_size, d)
+        self.wpe = nn.Embedding(max_positions, d) if use_wpe else None
         self.layers = nn.ModuleList()
         for _ in range(cfg.n_layers):
             layer = nn.ModuleDict()
@@ -103,10 +116,15 @@ class _DecoderModel:
                 layer["down"] = lin(cfg.d_ff, d)
             self.layers.append(layer)
         self.final_norm = Norm(d)
-        self.lm_head = lin(d, cfg.vocab_size)
+        self.lm_head = lin(d, cfg.vocab_size) if not use_bias else \
+            _torch().nn.Linear(d, cfg.vocab_size, bias=False)
+        # (GPT-2's lm_head has no bias even though other linears do; keep it
+        # bias-free in every variant so porting maps 1:1.)
 
         self.module = nn.Module()
         self.module.embed = self.embed
+        if self.wpe is not None:
+            self.module.wpe = self.wpe
         self.module.layers = self.layers
         self.module.final_norm = self.final_norm
         self.module.lm_head = self.lm_head
@@ -123,6 +141,16 @@ class _DecoderModel:
             "silu": F.silu,
             "relu": F.relu,
         }.get(kind, F.gelu)
+
+    def _embed(self, ids, pos_offset: int = 0):
+        """Token embedding, plus learned position embedding when use_wpe."""
+        x = self.embed(ids)
+        if self.wpe is not None:
+            torch = _torch()
+            S = ids.shape[1]
+            pos = torch.arange(pos_offset, pos_offset + S, device=ids.device)
+            x = x + self.wpe(pos)
+        return x
 
     def _layer_attn_block(self, layer, x, *, attn_kind, kv_cache=None, layer_idx=None):
         """One transformer layer: pre-norm, attention, post-norm, FFN, residuals.
@@ -203,23 +231,24 @@ class _DecoderModel:
         prefill pass (so the cache holds true K/V for `ids.shape[1]` positions),
         after which decode steps append one token at a time.
         """
-        torch = _torch()
-        x = self.embed(ids)
+        x = self._embed(ids)
         cache = self.new_kv_cache()
         for li, layer in enumerate(self.layers):
             x = self._layer_attn_block(layer, x, attn_kind=attn_kind,
                                        kv_cache=cache, layer_idx=li)
         return cache
 
-    def decode_step(self, token_ids, kv_cache, *, attn_kind: str):
+    def decode_step(self, token_ids, kv_cache, *, attn_kind: str,
+                    pos_offset: int = 0):
         """One decode step: a single token, attending over the full cached context.
 
         token_ids: (B, 1) int. Computes 1-token QKV, appends K/V to kv_cache,
         attends over the grown cache, and returns the lm_head logits. Mirrors
         architectures/decoder.py decode_step: 1-token compute, cache read scales
-        with context.
+        with context. pos_offset is the token's absolute position (used only
+        when use_wpe).
         """
-        x = self.embed(token_ids)   # (B, 1, d)
+        x = self._embed(token_ids, pos_offset=pos_offset)
         for li, layer in enumerate(self.layers):
             x = self._layer_attn_block(layer, x, attn_kind=attn_kind,
                                        kv_cache=kv_cache, layer_idx=li)
@@ -340,7 +369,7 @@ def build_decoder_workload(
     phase: str,                       # "prefill" | "decode"
     seq_len: int,
     precision: str = "fp16",
-    weights: str = "random",          # "random" | "pretrained"
+    weights: str = "random",          # "random" | "pretrained" | "ported" | "random_v"
     attn_kind: str = "flash",
     inner_iters: int = 1,
     batch_size: int = 1,
@@ -369,6 +398,14 @@ def build_decoder_workload(
              Both realize a real incremental KV cache: random-init uses our own
              module's cache; pretrained uses transformers' past_key_values.
 
+    Weights arms (Follow-up B, 2026-08-10):
+      - "random": our stack, random init, no bias/wpe (the sweep's arm).
+      - "pretrained": the HF implementation with the 2026-07-24 parity fix.
+      - "ported": pretrained GPT-2 values PORTED into our stack (bias+wpe
+        variant), logit-verified against HF before any measurement.
+      - "random_v": our stack, random init, bias+wpe variant (structure
+        control for the ported arm).
+
     The window-length floor is met by looping: `inner_iters` repeats of the whole
     decode execution (use measure_until_floor to size it).
     """
@@ -378,6 +415,8 @@ def build_decoder_workload(
         raise ValueError(f"phase must be 'prefill' or 'decode', got {phase}")
     if phase == "decode" and decode_mode not in ("growing", "fixed_step"):
         raise ValueError(f"decode_mode must be 'growing' or 'fixed_step', got {decode_mode}")
+    if weights not in ("random", "pretrained", "ported", "random_v"):
+        raise ValueError(f"unknown weights arm '{weights}'")
 
     cfg = model if isinstance(model, TransformerConfig) else get_config(model)
     if cfg.arch != "decoder_only":
@@ -401,9 +440,10 @@ def build_decoder_workload(
             return _build_pretrained_decode(
                 cfg, spec, seq_len, precision, device, batch_size,
                 decode_tokens, decode_mode, inner_iters, pretrained_id)
-        return _build_random_decode(
+        return _build_our_stack_decode(
             cfg, spec, seq_len, precision, device, batch_size,
-            decode_tokens, decode_mode, attn_kind, inner_iters)
+            decode_tokens, decode_mode, attn_kind, inner_iters,
+            weights, pretrained_id)
 
     # ---- prefill ----
     if weights == "pretrained":
@@ -425,14 +465,14 @@ def build_decoder_workload(
 
         return CallableWorkload(spec=spec, _run=run, _free=free)
 
-    # random-init, shape-faithful
-    dm = _DecoderModel(cfg, precision, device)
+    # our stack: random | random_v | ported
+    dm = _make_our_stack(cfg, precision, device, weights, pretrained_id)
     ids = torch.randint(0, max(cfg.vocab_size, 1), (batch_size, seq_len), device=device)
 
     @torch.no_grad()
     def run():
         for _ in range(inner_iters):
-            x = dm.embed(ids)
+            x = dm._embed(ids)
             dm._attn(x, attn_kind=attn_kind, last_token_only=True)
 
     def free():
@@ -443,11 +483,27 @@ def build_decoder_workload(
     return CallableWorkload(spec=spec, _run=run, _free=free)
 
 
-def _build_random_decode(cfg, spec, seq_len, precision, device, batch_size,
-                         decode_tokens, decode_mode, attn_kind, inner_iters):
-    """Random-init decode via our own incremental KV cache."""
+def _make_our_stack(cfg, precision, device, weights, pretrained_id):
+    """Instantiate OUR _DecoderModel for the three our-stack arms."""
+    if weights == "random":
+        return _DecoderModel(cfg, precision, device)
+    if weights == "random_v":
+        return _DecoderModel(cfg, precision, device, use_bias=True, use_wpe=True)
+    if weights == "ported":
+        from .port_gpt2 import load_and_port_gpt2
+        hf_id = pretrained_id or _default_hf_id(cfg.name)
+        dm, diff = load_and_port_gpt2(hf_id, precision=precision, device=device)
+        print(f"[ported] {hf_id}: logit-verified vs HF, max|diff|={diff:.2e} (fp32)")
+        return dm
+    raise ValueError(weights)
+
+
+def _build_our_stack_decode(cfg, spec, seq_len, precision, device, batch_size,
+                            decode_tokens, decode_mode, attn_kind, inner_iters,
+                            weights, pretrained_id):
+    """Decode via our own incremental KV cache (random / random_v / ported)."""
     torch = _torch()
-    dm = _DecoderModel(cfg, precision, device)
+    dm = _make_our_stack(cfg, precision, device, weights, pretrained_id)
     vocab = max(cfg.vocab_size, 1)
     ctx_ids = torch.randint(0, vocab, (batch_size, seq_len), device=device)
     next_tok = torch.randint(0, vocab, (batch_size, 1), device=device)
@@ -460,7 +516,8 @@ def _build_random_decode(cfg, spec, seq_len, precision, device, batch_size,
                 # generate K tokens; context (and cache read) grows each step.
                 cache = dm.prefill_into_cache(ctx_ids, attn_kind=attn_kind)
                 for _t in range(decode_tokens):
-                    dm.decode_step(next_tok, cache, attn_kind=attn_kind)
+                    dm.decode_step(next_tok, cache, attn_kind=attn_kind,
+                                   pos_offset=seq_len + _t)
     else:  # fixed_step
         @torch.no_grad()
         def run():
@@ -468,7 +525,8 @@ def _build_random_decode(cfg, spec, seq_len, precision, device, batch_size,
                 # Rebuild the cache to exactly seq_len, then run ONE step at that
                 # fixed context. Repeated inner_iters times (context never grows).
                 cache = dm.prefill_into_cache(ctx_ids, attn_kind=attn_kind)
-                dm.decode_step(next_tok, cache, attn_kind=attn_kind)
+                dm.decode_step(next_tok, cache, attn_kind=attn_kind,
+                               pos_offset=seq_len)
 
     def free():
         nonlocal dm

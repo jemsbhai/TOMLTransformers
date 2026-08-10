@@ -445,3 +445,20 @@ findings.md (fp16 ported-vs-random ~0.1-0.2; fp32 ~0.00-0.03; HF-vs-ours at
 identical weights reproduces the ~0.12-0.16 floor). Next: build B
 (weight-porting module + tests + harness cells), then the Step 5 A100/Lambda
 amendment with the full evidence.
+
+### Addendum 2026-08-10 - Follow-up B machinery built (gate before measurement)
+Weight-porting core landed ahead of any B measurement: (1) _DecoderModel
+gains use_bias/use_wpe variant flags (defaults False: the sweep stack, its
+parameter set, and every key remain byte-identical; a unit test locks this);
+(2) workloads/port_gpt2.py maps GPT2LMHeadModel tensors into our stack
+(Conv1D transposes, fused-QKV order, biases, wpe, tied lm_head) with
+activation alignment (HF gelu_new -> tanh-approx GELU; numerics only,
+identical op count); (3) verify_port() asserts full-position fp32 logit
+agreement vs HF and the loader refuses to hand over an unverified port;
+(4) five CPU-only tests build a tiny in-memory GPT2Config model (no
+download) and exercise the gate, including a corrupted-weight canary and a
+decode-position/wpe flow check. New builder arms: weights="ported"
+(logit-verified port) and weights="random_v" (bias+wpe random structure
+control). Next: three B cells in the harness (ported fp16, ported fp32,
+random_v fp16) with a labeled FOLLOW-UP B section evaluated against the
+pre-stated predictions, then the run.
