@@ -432,3 +432,16 @@ our own stack; the implementation-free isolation) is designed and built
 after A's result. Lambda Cloud noted as the platform for the A100 phase
 (Steps 6-7); instance type and GPU-hour budget still to be supplied for the
 Step 5 amendment.
+
+### Addendum 2026-08-10 - Follow-up A complete: both pre-stated predictions confirmed
+fp32 prefill ratios 0.121-0.125 (from 0.243-0.330 at fp16); init-seed CV
+5.60% -> 0.22% (25x collapse, to noise level). fp16-saturation mechanism
+SUPPORTED; the dataset flag scopes to compute-bound fp16 cells (decode and
+fp32 measured-immune; encoder fp16 at the ~0.13-0.16 implementation floor).
+Pre-registered FAIL verdict unchanged and re-printed from frozen records.
+Internal consistency: fp32/fp16 random-arm ratio 2.8-3.1 sits inside the
+sweep's forward precision band. Follow-up B predictions pre-stated in
+findings.md (fp16 ported-vs-random ~0.1-0.2; fp32 ~0.00-0.03; HF-vs-ours at
+identical weights reproduces the ~0.12-0.16 floor). Next: build B
+(weight-porting module + tests + harness cells), then the Step 5 A100/Lambda
+amendment with the full evidence.

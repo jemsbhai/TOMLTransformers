@@ -710,3 +710,47 @@ in light of this verdict (random-init with the scoped flag, pretrained
 arms on a subset, or the weights-porting control) BEFORE any A100 data;
 (3) the paper reports the FAIL as registered, with this structure and the
 attribution caveat.
+
+
+### 2026-08-10 - Follow-up A (fp32 mechanism probe): fp16-saturation SUPPORTED; dataset flag scopes to compute-bound fp16
+
+**Status:** post-verdict mechanism probe under the fired 2026-07-24 trigger,
+run on the RTX 4090 Laptop GPU; NOT part of the pre-registered verdict,
+which remains FAIL 0.3303 and re-printed identically from the frozen
+records. Both predictions stated in the LOGBOOK BEFORE measurement came
+true.
+
+**Result:** GPT-2 prefill s512 fp32 ratios 0.1251 / 0.1254 / 0.1212 (from
+0.243-0.330 at fp16), below even the BERT fp16 level; random-arm init-seed
+CV collapsed 25x, 5.60% (fp16) -> 0.22% (fp32), i.e. to measurement-noise
+level, matching decode's 0.72%.
+
+**Decomposition this supports:** the pretrained-vs-random ratio is
+(implementation floor) + (fp16-specific value dependence). The floor is
+~0.12-0.16, value-independent (fp32 ratios are seed-flat at 0.22% CV; BERT
+fp16 sits at 0.13-0.16 with the same HF overhead), attributable to the HF
+stack (Conv1D biases, HF norms, extra launches). The fp16-specific
+value-dependent component on compute-bound GPT-2 prefill is the excess
+above the floor, ~0.12-0.21, and is the part that varies with init seed.
+Mechanism (supported, not proven; n=1 model, 3 seeds): random-init fp16
+activations saturate through the deep stack, collapsing bit entropy and
+switching energy; fp32 does not saturate; LayerNorm-bounded BERT is mild;
+traffic-dominated decode is immune.
+
+**Internal consistency:** the fp32/fp16 random-arm energy ratio here is
+2.8-3.1, inside the frozen sweep's forward-phase precision band
+(2.04-4.11, median 3.24), from fully independent measurements.
+
+**Flag scoping (supersedes the blanket reading of the FAIL):** the frozen
+4090 dataset's representativeness flag applies to COMPUTE-BOUND fp16 cells;
+decode is measured-immune, fp32 is measured-immune, encoder fp16 is mild
+(0.13-0.16, at the implementation floor). The pre-registered FAIL verdict
+itself is unchanged.
+
+**Predictions for Follow-up B, stated NOW before any B code or data:**
+porting pretrained GPT-2 weights into OUR stack (implementation held fixed)
+should yield, at prefill s512: fp16 ported-vs-random ratio ~0.1-0.2 (the
+pure value effect) and fp32 ported-vs-random ratio ~0.00-0.03; and
+HF-vs-our-stack at IDENTICAL pretrained weights should reproduce the
+~0.12-0.16 implementation floor. B is the decisive implementation-free
+isolation and directly informs the Step 5 A100 weights policy.
