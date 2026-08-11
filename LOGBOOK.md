@@ -511,3 +511,51 @@ Step 6 work. Next: Step 6 = configs/exp_002_a100.yaml via the grid builder
 extensions to the a100 output path, then the Lambda smoke checklist
 (amendment section 13). No A100 measurement before the grid file is
 committed.
+
+### 2026-08-11 - Step 6 complete: A100 grid frozen, driver dispatch, gate allowlist, launch script
+configs/exp_002_a100.yaml is FROZEN (98 points, expected_points integrity
+guard) and expands only through the new multi-pass expander
+(sweep/grid_passes.py): passes are run through the same frozen expand_grid
+the 4090 sweep used, deduplicated globally on the seed-less key, and every
+point receives an explicit init seed derived as sha256(master|seedless_key)
+mod 2^31 with master 42 from seed.json. tests/test_grid_passes.py locks the
+exact enumeration (strata 48 decoder + 12 encoder + 12 enc-dec fp16 both
+arms + 6 fp32 anchors + 6 eager + 10 extension + 4 spot cells).
+Driver: build_points_from_config dispatches passes-configs to expand_passes;
+classic single-pass configs take the unchanged expand_grid path (frozen-4090
+behavior byte-identical, tested). Preflight gains allow_untracked_paths: an
+UNTRACKED-only exemption for a run's own outputs (crash-resume before the
+first harvest commit), mirroring the representativeness harness's gate note;
+tracked modifications still refuse, so the between-chunk harvest-commit
+ritual is unchanged; the environment snapshot records the RAW git state and
+every exemption is logged as a warning. scripts/run_exp002_a100.py launches
+the frozen grid into experiments/exp_002_size_sweep/a100/ with the allowlist
+prefix and documents the chunk ritual and the exact validator invocation.
+Decision recorded: scripts/validate_exp002.py is UNMODIFIED. It is already
+path-parametrized (--data/--summary/--json/--txt) and takes its expected
+total from sweep_summary.json, so it extends to the a100 path by invocation
+alone. Its WARN-only attention bands (idle power, A-B by phase, CV) are 4090
+observed priors; A100 bands will be set from observed smoke values in a
+dated commit BEFORE the measured chunks, and idle-power warnings on the A100
+until then are expected and benign. Full pytest suite green with the 30 new
+CPU-only tests across test_grid_passes, test_preflight_allowlist, and
+test_driver_multipass. Local Step 6 prep is CLOSED at this commit. Next:
+provision Lambda, run the smoke checklist (a100_amendment.md section 13),
+then chunked measurement via run_exp002_a100.py.
+
+### 2026-08-11 - Venue strategy: UEMCON replaces MLSys/ISCA; journal consolidation endgame
+Decision by Muntaser: the TOMLTransformers paper targets IEEE UEMCON,
+replacing the MLSys/ISCA target recorded in this file's header (this entry
+supersedes that line; the header is append-only history). The endgame is a
+comprehensive journal consolidation of the ENTIRE TOML package (FLAIRS TOML,
+containerized cloud, signals, vision, transformers), preference JAIR or
+JMLR; an honest venue scope-fit scan is scheduled at Step 8, with
+TOMPECS/TACO/TSUSC/TC recorded as natural-fit alternatives (JMLR carries
+real scope risk for hardware energy measurement; JAIR is defensible under
+the ML-evaluation framing of the vision paper). Conference-to-journal
+extension is the sanctioned path and the extension threshold is comfortably
+met by the consolidation itself plus the A100 material. Consequence for the
+experimental plan: NONE before Step 8. The A100 phase runs in full exactly
+as frozen (amendment T0-T3); cross-platform transfer is the consolidation's
+central new material, and the UEMCON paper carries the full transformers
+story including the A100 results.
