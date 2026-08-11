@@ -559,3 +559,29 @@ experimental plan: NONE before Step 8. The A100 phase runs in full exactly
 as frozen (amendment T0-T3); cross-platform transfer is the consolidation's
 central new material, and the UEMCON paper carries the full transformers
 story including the A100 results.
+
+### 2026-08-11 - A100 smoke complete (amendment section 13); point 1/98 measured
+Platform: Lambda gpu_1x_a100_sxm4, A100-SXM4-40GB, driver 580.105.08, CUDA
+13.0 (identical driver/CUDA to the containerized-cloud paper's instance),
+ECC on, MIG off. Stack: clean pip-resolved venv, torch 2.13.0+cu130; an
+initial system-site-packages venv was abandoned after a numpy-2 vs system
+torch ABI collision (recorded; no measurement touched it). Full suite 270
+passed on the A100. to_costs self-test OK, a100 -> hbm2e. Instruments A, B,
+C all live. Smoke record (DistilGPT2 prefill s256 fp16): A-B 2.02 percent,
+B-C 2.4e-14 (bit-identical), SM clocks flat 1095 MHz across repeats (boost
+governor at light load, no lock, identical runner path as the 4090), idle
+70.7 W warmed vs 42 W at cold boot. Resume verified (second smoke run
+skipped 3/3); throwaway _smoke removed. 7B feasibility probes: LLaMA-7B
+prefill s8192 13.6 GiB, Mistral-7B prefill s8192 14.7 GiB, LLaMA-7B decode
+ctx4096 16.0 GiB, Mistral-7B decode ctx4096 15.5 GiB; zero OOM risk in the
+frozen grid. Point 1/98 measured through run_exp002_a100.py (max-hours
+0.001 single-point stop): DistilGPT2 prefill s128 fp16 seed1617754261, ok,
+B/exec 82.14 J, B/unit 40.34 mJ per forward, inner_iters 2036, wall 4.66 s,
+A-B 0.07 percent, B-C 2.13 percent, CV(B) 7.27 percent (above the 5 percent
+flag; lightest cell in the grid on a cold GPU; WATCH across chunk 1), temps
+31-32 C, idle 70.75 W. Validator on the a100 path: single WARN, idle
+outside the 4090 band, expected and benign as pre-recorded. Timing note,
+recorded openly: the A100 attention bands will be set from chunk-1
+observations (n about 40 idle readings) in a dated commit, rather than from
+the two smoke values as the Step 6 entry anticipated; the bands are
+WARN-only and gate nothing.
