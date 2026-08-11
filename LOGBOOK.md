@@ -585,3 +585,28 @@ recorded openly: the A100 attention bands will be set from chunk-1
 observations (n about 40 idle readings) in a dated commit, rather than from
 the two smoke values as the Step 6 entry anticipated; the bands are
 WARN-only and gate nothing.
+
+### 2026-08-11 - A100 chunk 1 closed: 24/98 resume-complete, zero failures
+Points 2-24 measured (DistilGPT2 and GPT-2 across all prefill/decode x
+fp16/fp32 strata, flash), 24/98 resume-complete, zero failed/OOM/short-window,
+repeats per protocol (5 forward, 10 decode). Instrument agreement on Ampere is
+far tighter than the 4090: A-B forward median 0.62 percent (max 1.36), decode
+median 0.67 percent (max 4.25), B-C median 0.000 percent (max 2.88); the
+pre-registered T0 (pooled A-B median <= 5 percent) is on track with wide
+margin, itself a cross-platform methods datum. Repeat noise: CV(B) forward
+median 2.48 percent; decode median 5.58 percent with three WARN cells above
+7.5 percent (max 9.89, GPT-2 decode fp16 s128); this reproduces the 4090's
+known light-cell decode noise pattern, is why the 10-repeat protocol exists,
+and the fit target remains the median across repeats. Clocks bimodal
+1095/1410 MHz by load (boost governor, no lock, identical runner path); max
+temp 58 C, no throttling. Idle n=24 in [70.51, 72.19] W, median 71.03
+(cold-boot reference 42 W); all 24 idle WARNs are the recorded 4090-band
+artifact. Physics checks: 4 seq-len series, 0 monotonicity violations;
+per-unit contamination flags exactly per design. Pace median 497 s/point;
+validator projects ~10.2 h for the remaining 74 points, so the 12 h chunk 2
+should complete the grid (7B cells rebuild ~14 GiB weights per sizing attempt
+and may run slower; a small mop-up chunk is the worst case). Band plan
+refined: the idle attention band becomes a validator CLI option (--idle-band,
+default preserving the 4090 values) in a dated commit prepared locally during
+chunk 2 from these n=24 observations, proposed [40, 90] W to span cold-start
+and warmed states; WARN-only, gates nothing.
