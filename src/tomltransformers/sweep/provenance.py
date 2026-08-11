@@ -11,6 +11,18 @@ preflight():
   3. freezes a verbatim copy of the experiment config into the run directory, so
      the exact parameters that produced the data are stored beside it.
 
+Untracked-output allowlist (2026-08-10, Step 6 of the A100 amendment): a run
+that crashes before its first harvest commit leaves its own freshly created
+output files UNTRACKED, which would block the resume launch. Callers may pass
+`allow_untracked_paths` (exact repo-relative paths, or directory prefixes
+ending in "/"): porcelain entries that are UNTRACKED ("??") and fall under the
+allowlist are excluded from the dirty verdict and recorded as a warning. This
+mirrors the representativeness harness's own-outputs exemption
+(scripts/run_exp002_representativeness.py, GATE NOTE 2026-08-10). Tracked
+modifications are NEVER exempted: appended-but-uncommitted data still refuses,
+which is exactly the between-chunk harvest-commit ritual. The environment
+snapshot's git_dirty field remains the RAW (unfiltered) state.
+
 This module deliberately does no measurement and imports no torch: it is cheap,
 testable, and safe to call repeatedly.
 """
@@ -25,7 +37,7 @@ import subprocess
 import sys
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Iterable, List, Optional, Tuple
 
 
 class PreflightError(RuntimeError):
@@ -59,6 +71,43 @@ def git_status_porcelain(cwd: Optional[str] = None) -> Optional[str]:
         ).strip()
     except Exception:
         return None
+
+
+def _split_allowed_untracked(
+    status: str,
+    allow_untracked_paths: Iterable[str],
+) -> Tuple[List[str], List[str]]:
+    """Split porcelain lines into (offending_lines, ignored_untracked_paths).
+
+    A line is ignored iff it is an UNTRACKED entry ("??") whose normalized
+    path (backslashes -> slashes, surrounding quotes stripped) either equals
+    an allowlisted path exactly or falls under an allowlisted directory prefix
+    (an entry ending in "/"). Git also reports a wholly untracked directory as
+    a single "dir/" entry; the prefix match covers that form. Every other
+    line, including any tracked modification under the allowlist, is
+    offending.
+    """
+    exact: set = set()
+    prefixes: List[str] = []
+    for entry in allow_untracked_paths:
+        norm = str(entry).replace("\\", "/")
+        if norm.endswith("/"):
+            prefixes.append(norm)
+        else:
+            exact.add(norm)
+
+    offending: List[str] = []
+    ignored: List[str] = []
+    for line in status.splitlines():
+        if not line.strip():
+            continue
+        if line.startswith("??"):
+            path = line[2:].strip().strip('"').replace("\\", "/")
+            if path in exact or any(path.startswith(p) for p in prefixes):
+                ignored.append(path)
+                continue
+        offending.append(line)
+    return offending, ignored
 
 
 def environment_snapshot() -> dict:
@@ -100,6 +149,7 @@ def preflight(
     config_path: Optional[str] = None,
     allow_dirty: bool = False,
     env_filename: str = "environment.json",
+    allow_untracked_paths: Optional[Iterable[str]] = None,
 ) -> PreflightResult:
     """Run the pre-flight gate and write provenance into `run_dir`.
 
@@ -111,6 +161,12 @@ def preflight(
         uncommitted changes. If True, proceed but record overridden=True and a
         warning -- the explicit escape hatch.
       env_filename: name of the snapshot file written into run_dir.
+      allow_untracked_paths: repo-relative paths (or "dir/" prefixes) whose
+        UNTRACKED porcelain entries are excluded from the dirty verdict; used
+        for a run's own not-yet-committed outputs (crash-resume before the
+        first harvest commit). Tracked modifications are never excluded. The
+        exclusions are recorded as a warning; the environment snapshot keeps
+        the raw git state.
 
     Returns a PreflightResult. Raises PreflightError on a dirty tree (unless
     allow_dirty), or if git state cannot be determined and allow_dirty is False
@@ -129,13 +185,21 @@ def preflight(
         warnings.append("git state unknown; proceeding under allow_dirty override")
         dirty = None
     else:
-        dirty = bool(status)
+        offending_text = status
+        if status and allow_untracked_paths:
+            offending, ignored = _split_allowed_untracked(status, allow_untracked_paths)
+            offending_text = "\n".join(offending)
+            if ignored:
+                warnings.append(
+                    "ignored {} untracked run-output path(s) under the allowlist: {}".format(
+                        len(ignored), ignored))
+        dirty = bool(offending_text)
         if dirty and not allow_dirty:
             raise PreflightError(
                 "git tree is dirty (uncommitted changes); refusing to measure so "
                 "every datapoint traces to a commit. Commit your work, or pass "
                 "allow_dirty=True to override.\n--- git status --porcelain ---\n"
-                + status
+                + offending_text
             )
         if dirty and allow_dirty:
             warnings.append("git tree dirty; proceeding under allow_dirty override")

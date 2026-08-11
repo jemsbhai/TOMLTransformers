@@ -16,6 +16,14 @@ Regime-aware repeats (your choice): decode and decoder_prefill were measured
 noisier than the steady forward phases (findings 2026-05-29), so they get more
 physical replicates.
 
+Multi-pass configs (2026-08-10, Step 6 of the A100 amendment): a config that
+carries a `passes` list (see sweep/grid_passes.py) is expanded by
+expand_passes(), which owns weights, anchors, and attention-compare PER PASS
+and derives every point's explicit init seed; the per-call expander kwargs
+(enc_dec_anchor, include_attention_compare, weights) apply only to classic
+single-pass configs. Dispatch lives in build_points_from_config() so it is
+unit-testable without any measurement.
+
 This module performs measurement only through measure_single_point; it adds no
 new energy logic, just orchestration, provenance, and resumability.
 """
@@ -31,6 +39,7 @@ from typing import Dict, List, Optional
 from .provenance import preflight, PreflightError
 from .point import PointSpec, measure_single_point
 from .grid import expand_grid, load_config
+from .grid_passes import expand_passes
 
 
 # Regime-aware physical replicates per point.
@@ -41,6 +50,30 @@ _NOISY_PHASES = {"decode", "decoder_prefill"}
 
 def _repeats_for(phase: str) -> int:
     return _REPEATS_NOISY if phase in _NOISY_PHASES else _REPEATS_STEADY
+
+
+def build_points_from_config(
+    cfg: dict,
+    *,
+    enc_dec_anchor: int = 1024,
+    include_attention_compare: bool = True,
+    weights: str = "random",
+) -> List[PointSpec]:
+    """Dispatch a loaded config dict to the right grid expander.
+
+    Multi-pass configs (a `passes` list; see sweep/grid_passes.py) are expanded
+    by expand_passes(), which reads weights, anchors, attention-compare, and
+    pretrained_id PER PASS from the config itself and assigns every point its
+    derived init seed; the kwargs here are ignored for them. Classic
+    single-pass configs go through expand_grid() with the kwargs, exactly as
+    before (frozen-4090 behavior unchanged).
+    """
+    if "passes" in cfg:
+        return expand_passes(cfg)
+    return expand_grid(
+        cfg, enc_dec_anchor=enc_dec_anchor,
+        include_attention_compare=include_attention_compare, weights=weights,
+    )
 
 
 def read_done_keys(results_path: str) -> set:
@@ -111,6 +144,7 @@ def run_sweep(
     run_dir: str,
     results_filename: str = "energy.jsonl",
     allow_dirty: bool = False,
+    allow_untracked_paths: Optional[List[str]] = None,
     enc_dec_anchor: int = 1024,
     include_attention_compare: bool = True,
     weights: str = "random",
@@ -124,12 +158,17 @@ def run_sweep(
     """Run the EXP-002 sweep (or any explicit PointSpec list) with resumable output.
 
     Exactly one of config_path or points must be given:
-      - config_path: load + expand_grid the frozen config into the grid.
+      - config_path: load the config and build the grid via
+        build_points_from_config (multi-pass configs dispatch to
+        expand_passes; classic configs to expand_grid).
       - points: an explicit list of PointSpecs (the expander's output, or custom).
 
     Pre-flight runs first and HARD-REFUSES a dirty git tree unless allow_dirty
-    (records the override). environment.json and the frozen config copy are written
-    into run_dir. Results are appended to run_dir/results_filename as JSONL.
+    (records the override). allow_untracked_paths exempts ONLY untracked copies
+    of this run's own outputs (see provenance.preflight); tracked modifications
+    still refuse, preserving the between-chunk harvest-commit ritual.
+    environment.json and the frozen config copy are written into run_dir.
+    Results are appended to run_dir/results_filename as JSONL.
 
     max_hours: if set, the sweep stops cleanly BEFORE starting a point once this
     wall-clock budget is exceeded (the in-progress point always finishes and is
@@ -146,7 +185,8 @@ def run_sweep(
     results_path = os.path.join(run_dir, results_filename)
 
     # ---- pre-flight: provenance + hard git gate (before any measurement) ----
-    pf = preflight(run_dir, config_path=config_path, allow_dirty=allow_dirty)
+    pf = preflight(run_dir, config_path=config_path, allow_dirty=allow_dirty,
+                   allow_untracked_paths=allow_untracked_paths)
     if log:
         print(f"[preflight] run_dir={run_dir} git_commit={pf.git_commit} "
               f"dirty={pf.git_dirty} overridden={pf.overridden}")
@@ -156,10 +196,13 @@ def run_sweep(
     # ---- build the grid ----
     if points is None:
         cfg = load_config(config_path)
-        points = expand_grid(
+        points = build_points_from_config(
             cfg, enc_dec_anchor=enc_dec_anchor,
             include_attention_compare=include_attention_compare, weights=weights,
         )
+        if log and "passes" in cfg:
+            print(f"[sweep] multi-pass config: {len(points)} seeded points via "
+                  f"expand_passes (per-pass weights/anchors; expander kwargs ignored)")
 
     prog = SweepProgress(total=len(points))
     done = read_done_keys(results_path)
