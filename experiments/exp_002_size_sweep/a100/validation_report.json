@@ -1,101 +1,130 @@
 {
   "dists": {
-    "ab_forward_pct": {
-      "n": 1,
-      "min": 0.07272659695643485,
-      "p25": 0.07272659695643485,
-      "med": 0.07272659695643485,
-      "p75": 0.07272659695643485,
-      "max": 0.07272659695643485
+    "pace_s": {
+      "n": 23,
+      "min": 230.101955,
+      "p25": 259.0746285,
+      "med": 497.440436,
+      "p75": 533.0759015,
+      "max": 906.574539
     },
-    "ab_decode_pct": null,
+    "ab_forward_pct": {
+      "n": 12,
+      "min": 0.012040947884340068,
+      "p25": 0.19721144142261177,
+      "med": 0.6214326229187259,
+      "p75": 0.8015091850736189,
+      "max": 1.3639272769671522
+    },
+    "ab_decode_pct": {
+      "n": 12,
+      "min": 0.033012098944739686,
+      "p25": 0.3784683939731293,
+      "med": 0.669630062698348,
+      "p75": 1.3309538811030195,
+      "max": 4.247887809019467
+    },
     "bc_pct": {
-      "n": 1,
-      "min": 2.1315282801684945,
-      "p25": 2.1315282801684945,
-      "med": 2.1315282801684945,
-      "p75": 2.1315282801684945,
-      "max": 2.1315282801684945
+      "n": 24,
+      "min": 3.4771438146560853e-13,
+      "p25": 1.2261938638969403e-12,
+      "med": 5.6740774904647964e-12,
+      "p75": 0.0008333444403126392,
+      "max": 2.878862235912235
     },
     "cvb_forward_pct": {
-      "n": 1,
-      "min": 7.273319499245077,
-      "p25": 7.273319499245077,
-      "med": 7.273319499245077,
-      "p75": 7.273319499245077,
+      "n": 12,
+      "min": 0.4998949053092413,
+      "p25": 1.6864521132354242,
+      "med": 2.479775229268286,
+      "p75": 2.79500484534408,
       "max": 7.273319499245077
     },
-    "cvb_decode_pct": null,
-    "inner_iters_forward": {
-      "n": 1,
-      "min": 2036,
-      "p25": 2036,
-      "med": 2036,
-      "p75": 2036,
-      "max": 2036
+    "cvb_decode_pct": {
+      "n": 12,
+      "min": 1.302134634853783,
+      "p25": 2.99496226902409,
+      "med": 5.578646418050855,
+      "p75": 6.923852357928381,
+      "max": 9.892825992025521
     },
-    "inner_iters_decode_like": null,
+    "inner_iters_forward": {
+      "n": 12,
+      "min": 147,
+      "p25": 595.75,
+      "med": 939.0,
+      "p75": 1871.0,
+      "max": 2089
+    },
+    "inner_iters_decode_like": {
+      "n": 12,
+      "min": 14,
+      "p25": 14.75,
+      "med": 21.0,
+      "p75": 27.25,
+      "max": 30
+    },
     "wall_s": {
-      "n": 1,
-      "min": 4.66295060199991,
-      "p25": 4.66295060199991,
-      "med": 4.66295060199991,
-      "p75": 4.66295060199991,
-      "max": 4.66295060199991
+      "n": 24,
+      "min": 4.000148564000483,
+      "p25": 4.053166597125028,
+      "med": 4.531203104500037,
+      "p75": 4.609530389999122,
+      "max": 4.780413174999012
     },
     "settle_temp_c": {
-      "n": 1,
+      "n": 24,
       "min": 31.0,
       "p25": 31.0,
-      "med": 31.0,
-      "p75": 31.0,
-      "max": 31.0
+      "med": 32.5,
+      "p75": 34.5,
+      "max": 36.0
     },
     "max_temp_c": {
-      "n": 1,
+      "n": 24,
       "min": 32.0,
       "p25": 32.0,
-      "med": 32.0,
-      "p75": 32.0,
-      "max": 32.0
+      "med": 37.0,
+      "p75": 45.25,
+      "max": 58.0
     },
     "median_sm_clock_mhz": {
-      "n": 1,
+      "n": 24,
       "min": 1095.0,
       "p25": 1095.0,
-      "med": 1095.0,
-      "p75": 1095.0,
-      "max": 1095.0
+      "med": 1410.0,
+      "p75": 1410.0,
+      "max": 1410.0
     },
     "idle_w": {
-      "n": 1,
-      "min": 70.74816442952995,
-      "p25": 70.74816442952995,
-      "med": 70.74816442952995,
-      "p75": 70.74816442952995,
-      "max": 70.74816442952995
+      "n": 24,
+      "min": 70.5101375838925,
+      "p25": 70.73316359060404,
+      "med": 71.03440939597303,
+      "p75": 71.52348070469824,
+      "max": 72.19189189189179
     },
     "fp32_over_fp16_forward": null
   },
-  "generated_at": "2026-08-11T06:49:33+00:00",
+  "generated_at": "2026-08-11T12:10:44+00:00",
   "data_path": "experiments/exp_002_size_sweep/a100/energy.jsonl",
-  "lines": 1,
+  "lines": 24,
   "parse_errors": 0,
-  "unique_keys": 1,
+  "unique_keys": 24,
   "superseded": 0,
   "outcomes": {
-    "ok": 1,
+    "ok": 24,
     "failed": 0,
     "oom_skipped": 0,
     "short_window": 0,
-    "resume_complete": 1,
+    "resume_complete": 24,
     "cleared_short_window": 0,
     "cleared_failed": 0
   },
   "grid_total": 98,
-  "eta_hours_remaining": null,
+  "eta_hours_remaining": 10.225164517777777,
   "monotonicity": {
-    "series_checked": 0,
+    "series_checked": 4,
     "violations": 0
   },
   "fp_pairs": {
@@ -103,7 +132,35 @@
     "inversions": 0
   },
   "warnings": [
-    "idle power 70.75 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261)"
+    "CV(B) 7.6% above 7.5% (decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1962568705)",
+    "CV(B) 9.9% above 7.5% (decoder_only|GPT-2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1204348949)",
+    "CV(B) 7.6% above 7.5% (decoder_only|GPT-2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing|seed1829235014)",
+    "idle power 70.75 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261)",
+    "idle power 71.38 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp16|flash|random|s1024|b1|seed1025030193)",
+    "idle power 72.00 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp16|flash|random|s2048|b1|seed1480062700)",
+    "idle power 70.54 W outside [1, 15] (decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1962568705)",
+    "idle power 70.55 W outside [1, 15] (decoder_only|DistilGPT2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing|seed1725744718)",
+    "idle power 70.73 W outside [1, 15] (decoder_only|DistilGPT2|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing|seed815281781)",
+    "idle power 71.37 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp32|flash|random|s128|b1|seed457116837)",
+    "idle power 71.94 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp32|flash|random|s1024|b1|seed779960533)",
+    "idle power 72.19 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp32|flash|random|s2048|b1|seed1387242530)",
+    "idle power 70.51 W outside [1, 15] (decoder_only|DistilGPT2|decode|fp32|flash|random|s128|b1|ctx128|k64|growing|seed936787566)",
+    "idle power 70.74 W outside [1, 15] (decoder_only|DistilGPT2|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing|seed1029667142)",
+    "idle power 70.92 W outside [1, 15] (decoder_only|DistilGPT2|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing|seed1075530908)",
+    "idle power 70.61 W outside [1, 15] (decoder_only|GPT-2|prefill|fp16|flash|random|s128|b1|seed73562759)",
+    "idle power 71.34 W outside [1, 15] (decoder_only|GPT-2|prefill|fp16|flash|random|s1024|b1|seed1496790744)",
+    "idle power 71.97 W outside [1, 15] (decoder_only|GPT-2|prefill|fp16|flash|random|s2048|b1|seed1278122840)",
+    "idle power 70.76 W outside [1, 15] (decoder_only|GPT-2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1204348949)",
+    "idle power 70.99 W outside [1, 15] (decoder_only|GPT-2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing|seed1829235014)",
+    "idle power 70.77 W outside [1, 15] (decoder_only|GPT-2|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing|seed807839811)",
+    "idle power 71.34 W outside [1, 15] (decoder_only|GPT-2|prefill|fp32|flash|random|s128|b1|seed1280965158)",
+    "idle power 72.01 W outside [1, 15] (decoder_only|GPT-2|prefill|fp32|flash|random|s1024|b1|seed1737445392)",
+    "idle power 72.04 W outside [1, 15] (decoder_only|GPT-2|prefill|fp32|flash|random|s2048|b1|seed1779424984)",
+    "idle power 70.71 W outside [1, 15] (decoder_only|GPT-2|decode|fp32|flash|random|s128|b1|ctx128|k64|growing|seed578776353)",
+    "idle power 71.08 W outside [1, 15] (decoder_only|GPT-2|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing|seed768716645)",
+    "idle power 71.12 W outside [1, 15] (decoder_only|GPT-2|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing|seed792105182)"
   ],
-  "notes": []
+  "notes": [
+    "data spans multiple git commits: {'e91deaa5a': 1, 'c736c3662': 23} (expected across chunks if code changed between them)"
+  ]
 }

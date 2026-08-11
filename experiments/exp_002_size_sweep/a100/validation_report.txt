@@ -1,70 +1,118 @@
 EXP-002 sweep data-quality report
-generated: 2026-08-11T06:49:33+00:00
+generated: 2026-08-11T12:10:44+00:00
 data: experiments/exp_002_size_sweep/a100/energy.jsonl
 
 == 1. File integrity ==
-  records: 1 lines parsed, 0 parse errors, 0 without spec.key
-  schema versions: {'tomltransformers.sweep.point.v1': 1}
-  git commits: {'e91deaa5a': 1}
-  unique keys: 1  superseded records (last-write-wins): 0
+  records: 24 lines parsed, 0 parse errors, 0 without spec.key
+  schema versions: {'tomltransformers.sweep.point.v1': 24}
+  git commits: {'e91deaa5a': 1, 'c736c3662': 23}
+  unique keys: 24  superseded records (last-write-wins): 0
 
 == 2. Outcomes (latest record per key) ==
-  ok: 1   failed: 0   oom_skipped: 0   short_window: 0
-  resume-complete (ok and not short_window): 1
+  ok: 24   failed: 0   oom_skipped: 0   short_window: 0
+  resume-complete (ok and not short_window): 24
   earlier short-window records cleared by re-run: 0
   earlier failed records cleared by re-run: 0
   n_repeats by phase class (protocol: forward=5, decode-like=10):
-    forward      {5: 1}
-    decode-like  {}
+    forward      {5: 12}
+    decode-like  {10: 12}
 
 == 3. sweep_summary.json cross-check ==
-  summary: total=98 measured=1 skipped_done=0 ok=1 failed=0 oom=0 short_window=0 stopped_early=True
-  summary elapsed: 0.14 h   commit: e91deaa5a
-  consistent: summary ok+skipped_done == file resume-complete == 1
+  summary: total=98 measured=23 skipped_done=1 ok=23 failed=0 oom=0 short_window=0 stopped_early=True
+  summary elapsed: 2.64 h   commit: c736c3662
+  consistent: summary ok+skipped_done == file resume-complete == 24
 
 == 4. Coverage (ok points) ==
-  decoder_only       prefill               1
-  precision: {'fp16': 1}
-  attn_kind: {'flash': 1}
-  models: DistilGPT2 1
-  grid progress: 1/98 resume-complete (1.0%)
+  decoder_only       decode               12
+  decoder_only       prefill              12
+  precision: {'fp16': 12, 'fp32': 12}
+  attn_kind: {'flash': 24}
+  models: DistilGPT2 12, GPT-2 12
+  grid progress: 24/98 resume-complete (24.5%)
 
 == 5. Pace and projection ==
-  (not enough timestamps for pace)
+  seconds per point (chunk-internal gaps): n=23  min=230  p25=259  med=497  p75=533  max=907
+  remaining: 74 points -> ~10.2 h at median pace (~1.3 chunks of 8 h, ~1.7 chunks of 6 h)
 
 == 6. Instrument agreement (ok points) ==
-  A-B forward (prior obs ~5-10%): n=1  min=0.07%  p25=0.07%  med=0.07%  p75=0.07%  max=0.07%
-  A-B decode-like (prior obs ~5-15%): (no data)
-    highest A-B: 0.07%  [forward]  decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261
-  B-C: n=1  min=2.132%  p25=2.132%  med=2.132%  p75=2.132%  max=2.132%
+  A-B forward (prior obs ~5-10%): n=12  min=0.01%  p25=0.20%  med=0.62%  p75=0.80%  max=1.36%
+  A-B decode-like (prior obs ~5-15%): n=12  min=0.03%  p25=0.38%  med=0.67%  p75=1.33%  max=4.25%
+    highest A-B: 4.25%  [decode-like]  decoder_only|GPT-2|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing|seed807839811
+    highest A-B: 2.79%  [decode-like]  decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1962568705
+    highest A-B: 1.60%  [decode-like]  decoder_only|DistilGPT2|decode|fp32|flash|random|s128|b1|ctx128|k64|growing|seed936787566
+    highest A-B: 1.36%  [forward]  decoder_only|GPT-2|prefill|fp16|flash|random|s128|b1|seed73562759
+    highest A-B: 1.24%  [decode-like]  decoder_only|GPT-2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1204348949
+  B-C: n=24  min=0.000%  p25=0.000%  med=0.000%  p75=0.001%  max=2.879%
 
 == 7. Repeat noise ==
-  CV(B) forward: n=1  min=7.27%  p25=7.27%  med=7.27%  p75=7.27%  max=7.27%
-  CV(B) decode-like: (no data)
+  CV(B) forward: n=12  min=0.50%  p25=1.69%  med=2.48%  p75=2.80%  max=7.27%
+  CV(B) decode-like: n=12  min=1.30%  p25=2.99%  med=5.58%  p75=6.92%  max=9.89%
+    highest CV(B): 9.89%  decoder_only|GPT-2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1204348949
+    highest CV(B): 7.62%  decoder_only|GPT-2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing|seed1829235014
+    highest CV(B): 7.57%  decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1962568705
     highest CV(B): 7.27%  decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261
+    highest CV(B): 6.71%  decoder_only|DistilGPT2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing|seed1725744718
   cv_exceeded by phase (A-only on forward and A+B+C on decode are the known patterns):
-    prefill            {'B+C': 1}
+    decode             {'B+C': 6, 'none': 5, 'A+B+C': 1}
+    prefill            {'none': 11, 'B+C': 1}
 
 == 8. Window sizing ==
-  inner_iters forward: n=1  min=2036  p25=2036  med=2036  p75=2036  max=2036
-  inner_iters decode-like: (no data)
-  wall_time_s_median: n=1  min=4.66  p25=4.66  med=4.66  p75=4.66  max=4.66
+  inner_iters forward: n=12  min=147  p25=596  med=939  p75=1871  max=2089
+  inner_iters decode-like: n=12  min=14  p25=15  med=21  p75=27  max=30
+  wall_time_s_median: n=24  min=4.00  p25=4.05  med=4.53  p75=4.61  max=4.78
 
 == 9. Thermal and clocks ==
-  settle temp (C): n=1  min=31  p25=31  med=31  p75=31  max=31
-  max temp during repeats (C): n=1  min=32  p25=32  med=32  p75=32  max=32
-    hottest: 32 C  decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261
-  median SM clock, first sample dropped (MHz): n=1  min=1095  p25=1095  med=1095  p75=1095  max=1095
+  settle temp (C): n=24  min=31  p25=31  med=32  p75=34  max=36
+  max temp during repeats (C): n=24  min=32  p25=32  med=37  p75=45  max=58
+    hottest: 58 C  decoder_only|GPT-2|prefill|fp32|flash|random|s2048|b1|seed1779424984
+    hottest: 58 C  decoder_only|DistilGPT2|prefill|fp32|flash|random|s2048|b1|seed1387242530
+    hottest: 55 C  decoder_only|GPT-2|prefill|fp32|flash|random|s1024|b1|seed1737445392
+    hottest: 55 C  decoder_only|DistilGPT2|prefill|fp32|flash|random|s1024|b1|seed779960533
+    hottest: 52 C  decoder_only|GPT-2|prefill|fp16|flash|random|s2048|b1|seed1278122840
+  median SM clock, first sample dropped (MHz): n=24  min=1095  p25=1095  med=1410  p75=1410  max=1410
+    lowest clocks: 1095 MHz  decoder_only|DistilGPT2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing|seed1725744718
+    lowest clocks: 1095 MHz  decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1962568705
+    lowest clocks: 1095 MHz  decoder_only|DistilGPT2|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing|seed815281781
+    lowest clocks: 1095 MHz  decoder_only|DistilGPT2|decode|fp32|flash|random|s128|b1|ctx128|k64|growing|seed936787566
     lowest clocks: 1095 MHz  decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261
-  idle power (W): n=1  min=70.75  p25=70.75  med=70.75  p75=70.75  max=70.75
+  idle power (W): n=24  min=70.51  p25=70.73  med=71.03  p75=71.52  max=72.19
 
 == 10. Physics sanity ==
   per_unit_contaminated by phase:
-    prefill            True=0 False=1
-  seq_len monotonicity (prefill/encode, non-ViT): 0 series checked, 0 violations
+    decode             True=12 False=0
+    prefill            True=0 False=12
+  seq_len monotonicity (prefill/encode, non-ViT): 4 series checked, 0 violations
   fp32/fp16 matched-shape pairs: 0   inversions: 0
   fp32/fp16 per-unit energy ratio (forward phases): (no data)
 
 == Verdict ==
-  WARNINGS (1):
+  WARNINGS (27):
+    WARN: CV(B) 7.6% above 7.5% (decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1962568705)
+    WARN: CV(B) 9.9% above 7.5% (decoder_only|GPT-2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1204348949)
+    WARN: CV(B) 7.6% above 7.5% (decoder_only|GPT-2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing|seed1829235014)
     WARN: idle power 70.75 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261)
+    WARN: idle power 71.38 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp16|flash|random|s1024|b1|seed1025030193)
+    WARN: idle power 72.00 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp16|flash|random|s2048|b1|seed1480062700)
+    WARN: idle power 70.54 W outside [1, 15] (decoder_only|DistilGPT2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1962568705)
+    WARN: idle power 70.55 W outside [1, 15] (decoder_only|DistilGPT2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing|seed1725744718)
+    WARN: idle power 70.73 W outside [1, 15] (decoder_only|DistilGPT2|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing|seed815281781)
+    WARN: idle power 71.37 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp32|flash|random|s128|b1|seed457116837)
+    WARN: idle power 71.94 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp32|flash|random|s1024|b1|seed779960533)
+    WARN: idle power 72.19 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp32|flash|random|s2048|b1|seed1387242530)
+    WARN: idle power 70.51 W outside [1, 15] (decoder_only|DistilGPT2|decode|fp32|flash|random|s128|b1|ctx128|k64|growing|seed936787566)
+    WARN: idle power 70.74 W outside [1, 15] (decoder_only|DistilGPT2|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing|seed1029667142)
+    WARN: idle power 70.92 W outside [1, 15] (decoder_only|DistilGPT2|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing|seed1075530908)
+    WARN: idle power 70.61 W outside [1, 15] (decoder_only|GPT-2|prefill|fp16|flash|random|s128|b1|seed73562759)
+    WARN: idle power 71.34 W outside [1, 15] (decoder_only|GPT-2|prefill|fp16|flash|random|s1024|b1|seed1496790744)
+    WARN: idle power 71.97 W outside [1, 15] (decoder_only|GPT-2|prefill|fp16|flash|random|s2048|b1|seed1278122840)
+    WARN: idle power 70.76 W outside [1, 15] (decoder_only|GPT-2|decode|fp16|flash|random|s128|b1|ctx128|k64|growing|seed1204348949)
+    WARN: idle power 70.99 W outside [1, 15] (decoder_only|GPT-2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing|seed1829235014)
+    WARN: idle power 70.77 W outside [1, 15] (decoder_only|GPT-2|decode|fp16|flash|random|s2048|b1|ctx2048|k64|growing|seed807839811)
+    WARN: idle power 71.34 W outside [1, 15] (decoder_only|GPT-2|prefill|fp32|flash|random|s128|b1|seed1280965158)
+    WARN: idle power 72.01 W outside [1, 15] (decoder_only|GPT-2|prefill|fp32|flash|random|s1024|b1|seed1737445392)
+    WARN: idle power 72.04 W outside [1, 15] (decoder_only|GPT-2|prefill|fp32|flash|random|s2048|b1|seed1779424984)
+    WARN: idle power 70.71 W outside [1, 15] (decoder_only|GPT-2|decode|fp32|flash|random|s128|b1|ctx128|k64|growing|seed578776353)
+    WARN: idle power 71.08 W outside [1, 15] (decoder_only|GPT-2|decode|fp32|flash|random|s1024|b1|ctx1024|k64|growing|seed768716645)
+    WARN: idle power 71.12 W outside [1, 15] (decoder_only|GPT-2|decode|fp32|flash|random|s2048|b1|ctx2048|k64|growing|seed792105182)
+  notes (1):
+    note: data spans multiple git commits: {'e91deaa5a': 1, 'c736c3662': 23} (expected across chunks if code changed between them)
