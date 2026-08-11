@@ -1,0 +1,109 @@
+{
+  "dists": {
+    "ab_forward_pct": {
+      "n": 1,
+      "min": 0.07272659695643485,
+      "p25": 0.07272659695643485,
+      "med": 0.07272659695643485,
+      "p75": 0.07272659695643485,
+      "max": 0.07272659695643485
+    },
+    "ab_decode_pct": null,
+    "bc_pct": {
+      "n": 1,
+      "min": 2.1315282801684945,
+      "p25": 2.1315282801684945,
+      "med": 2.1315282801684945,
+      "p75": 2.1315282801684945,
+      "max": 2.1315282801684945
+    },
+    "cvb_forward_pct": {
+      "n": 1,
+      "min": 7.273319499245077,
+      "p25": 7.273319499245077,
+      "med": 7.273319499245077,
+      "p75": 7.273319499245077,
+      "max": 7.273319499245077
+    },
+    "cvb_decode_pct": null,
+    "inner_iters_forward": {
+      "n": 1,
+      "min": 2036,
+      "p25": 2036,
+      "med": 2036,
+      "p75": 2036,
+      "max": 2036
+    },
+    "inner_iters_decode_like": null,
+    "wall_s": {
+      "n": 1,
+      "min": 4.66295060199991,
+      "p25": 4.66295060199991,
+      "med": 4.66295060199991,
+      "p75": 4.66295060199991,
+      "max": 4.66295060199991
+    },
+    "settle_temp_c": {
+      "n": 1,
+      "min": 31.0,
+      "p25": 31.0,
+      "med": 31.0,
+      "p75": 31.0,
+      "max": 31.0
+    },
+    "max_temp_c": {
+      "n": 1,
+      "min": 32.0,
+      "p25": 32.0,
+      "med": 32.0,
+      "p75": 32.0,
+      "max": 32.0
+    },
+    "median_sm_clock_mhz": {
+      "n": 1,
+      "min": 1095.0,
+      "p25": 1095.0,
+      "med": 1095.0,
+      "p75": 1095.0,
+      "max": 1095.0
+    },
+    "idle_w": {
+      "n": 1,
+      "min": 70.74816442952995,
+      "p25": 70.74816442952995,
+      "med": 70.74816442952995,
+      "p75": 70.74816442952995,
+      "max": 70.74816442952995
+    },
+    "fp32_over_fp16_forward": null
+  },
+  "generated_at": "2026-08-11T06:49:33+00:00",
+  "data_path": "experiments/exp_002_size_sweep/a100/energy.jsonl",
+  "lines": 1,
+  "parse_errors": 0,
+  "unique_keys": 1,
+  "superseded": 0,
+  "outcomes": {
+    "ok": 1,
+    "failed": 0,
+    "oom_skipped": 0,
+    "short_window": 0,
+    "resume_complete": 1,
+    "cleared_short_window": 0,
+    "cleared_failed": 0
+  },
+  "grid_total": 98,
+  "eta_hours_remaining": null,
+  "monotonicity": {
+    "series_checked": 0,
+    "violations": 0
+  },
+  "fp_pairs": {
+    "n": 0,
+    "inversions": 0
+  },
+  "warnings": [
+    "idle power 70.75 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261)"
+  ],
+  "notes": []
+}

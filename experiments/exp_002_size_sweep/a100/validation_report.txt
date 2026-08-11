@@ -1,0 +1,70 @@
+EXP-002 sweep data-quality report
+generated: 2026-08-11T06:49:33+00:00
+data: experiments/exp_002_size_sweep/a100/energy.jsonl
+
+== 1. File integrity ==
+  records: 1 lines parsed, 0 parse errors, 0 without spec.key
+  schema versions: {'tomltransformers.sweep.point.v1': 1}
+  git commits: {'e91deaa5a': 1}
+  unique keys: 1  superseded records (last-write-wins): 0
+
+== 2. Outcomes (latest record per key) ==
+  ok: 1   failed: 0   oom_skipped: 0   short_window: 0
+  resume-complete (ok and not short_window): 1
+  earlier short-window records cleared by re-run: 0
+  earlier failed records cleared by re-run: 0
+  n_repeats by phase class (protocol: forward=5, decode-like=10):
+    forward      {5: 1}
+    decode-like  {}
+
+== 3. sweep_summary.json cross-check ==
+  summary: total=98 measured=1 skipped_done=0 ok=1 failed=0 oom=0 short_window=0 stopped_early=True
+  summary elapsed: 0.14 h   commit: e91deaa5a
+  consistent: summary ok+skipped_done == file resume-complete == 1
+
+== 4. Coverage (ok points) ==
+  decoder_only       prefill               1
+  precision: {'fp16': 1}
+  attn_kind: {'flash': 1}
+  models: DistilGPT2 1
+  grid progress: 1/98 resume-complete (1.0%)
+
+== 5. Pace and projection ==
+  (not enough timestamps for pace)
+
+== 6. Instrument agreement (ok points) ==
+  A-B forward (prior obs ~5-10%): n=1  min=0.07%  p25=0.07%  med=0.07%  p75=0.07%  max=0.07%
+  A-B decode-like (prior obs ~5-15%): (no data)
+    highest A-B: 0.07%  [forward]  decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261
+  B-C: n=1  min=2.132%  p25=2.132%  med=2.132%  p75=2.132%  max=2.132%
+
+== 7. Repeat noise ==
+  CV(B) forward: n=1  min=7.27%  p25=7.27%  med=7.27%  p75=7.27%  max=7.27%
+  CV(B) decode-like: (no data)
+    highest CV(B): 7.27%  decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261
+  cv_exceeded by phase (A-only on forward and A+B+C on decode are the known patterns):
+    prefill            {'B+C': 1}
+
+== 8. Window sizing ==
+  inner_iters forward: n=1  min=2036  p25=2036  med=2036  p75=2036  max=2036
+  inner_iters decode-like: (no data)
+  wall_time_s_median: n=1  min=4.66  p25=4.66  med=4.66  p75=4.66  max=4.66
+
+== 9. Thermal and clocks ==
+  settle temp (C): n=1  min=31  p25=31  med=31  p75=31  max=31
+  max temp during repeats (C): n=1  min=32  p25=32  med=32  p75=32  max=32
+    hottest: 32 C  decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261
+  median SM clock, first sample dropped (MHz): n=1  min=1095  p25=1095  med=1095  p75=1095  max=1095
+    lowest clocks: 1095 MHz  decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261
+  idle power (W): n=1  min=70.75  p25=70.75  med=70.75  p75=70.75  max=70.75
+
+== 10. Physics sanity ==
+  per_unit_contaminated by phase:
+    prefill            True=0 False=1
+  seq_len monotonicity (prefill/encode, non-ViT): 0 series checked, 0 violations
+  fp32/fp16 matched-shape pairs: 0   inversions: 0
+  fp32/fp16 per-unit energy ratio (forward phases): (no data)
+
+== Verdict ==
+  WARNINGS (1):
+    WARN: idle power 70.75 W outside [1, 15] (decoder_only|DistilGPT2|prefill|fp16|flash|random|s128|b1|seed1617754261)

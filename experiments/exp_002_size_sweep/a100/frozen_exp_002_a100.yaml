@@ -1,0 +1,190 @@
+# =============================================================================
+# EXP-002-A100: the frozen A100 cross-platform grid (Steps 6-7)
+# =============================================================================
+# Mechanical encoding of the APPROVED Step 5 amendment
+# (experiments/exp_002_size_sweep/a100_amendment.md, approved 2026-08-10,
+# commit c16694b). Expanded ONLY by tomltransformers.sweep.grid_passes
+# .expand_passes, which runs the same frozen expand_grid the 4090 sweep used,
+# once per pass, dedups globally, and derives every point's explicit init seed
+# from seed.master and the point's seed-less key. No hand-built cells.
+#
+# This file is FROZEN once committed; tests/test_grid_passes.py locks the
+# exact enumeration (98 points and every per-stratum count below). Any edit
+# that changes the expansion fails the expected_points guard and the tests.
+#
+# Recorded conventions (all established on the 4090 and carried over):
+# - Runnable stacks are position-free (no wpe, no RoPE), exactly as every
+#   frozen-4090-sweep cell ran; Follow-up B measured the positional+bias
+#   structure delta at ~0.005 (findings.md 2026-08-10). The 7B cells therefore
+#   also run position-free; RoPE is an O(S*d) elementwise cost of the same
+#   class as the norm substitution below.
+# - LayerNorm stands in for RMSNorm in the runnable stack (recorded in
+#   workloads/decoder.py: counted via op(norm_type), energy-negligible delta).
+# - Mistral-7B runs and is counted as FULL causal attention (no sliding
+#   window); the runnable and counted structures are consistent with each
+#   other, and the deviation from the deployed model is a recorded fidelity
+#   caveat, not a calibration inconsistency.
+# - decode = growing-window, K = 64; batch 1; flash/SDPA default attention.
+#
+# Strata (amendment sections 5-7):
+#   shared_main            48 decoder + 12 encoder + 6 eager        = 66
+#   shared_enc_dec_fp16    both sub-sweep arms at the 1024 anchor   = 12
+#   shared_enc_dec_fp32    anchor cells only                        =  6
+#   extension_7b           LLaMA-7B + Mistral-7B, fp16 only         = 10
+#   spot_*                 Follow-up B arms at GPT-2 prefill s512   =  4
+#                                                            total  = 98
+# =============================================================================
+
+experiment: EXP-002-A100
+title: "A100 cross-platform grid: shared transfer strata, 7B extension, spot cells"
+status: frozen
+platform: a100          # device registry: a100 -> hbm2e (to_costs.py)
+amendment: experiments/exp_002_size_sweep/a100_amendment.md
+expected_points: 98
+
+seed:
+  master: 42            # seed.json master_seed; embedded so this frozen file
+                        # is self-contained. Derivation (grid_passes.py):
+                        # sha256("{master}|{seedless_key}")[:4] mod 2^31.
+
+passes:
+  # --- Shared transfer grid, main pass (amendment 5a, 5b, 5d) --------------
+  # 4 decoders x {prefill, decode ctx=s} x s{128,1024,2048} x {fp16,fp32} = 48
+  # 2 encoders x encode x s{128,1024,2048} x {fp16,fp32}                  = 12
+  # eager subset {DistilGPT2, GPT-2} x prefill x s{512,1024,2048} fp16    =  6
+  # (kinds: [eager] only; the flash companions at 1024/2048 are main-grid
+  #  cells already, and s512 flash exists only as the spot_random cell.)
+  - name: shared_main
+    weights: random
+    include_attention_compare: true
+    config:
+      models:
+        decoder_only: [DistilGPT2, GPT-2, GPT-2-medium, GPT-2-XL]
+        encoder_only: [BERT-base, BERT-large]
+      precisions: [fp16, fp32]
+      batch_size: 1
+      workloads:
+        prefill:
+          seq_lens: [128, 1024, 2048]
+        decode:
+          context_lens: [128, 1024, 2048]
+          tokens_per_window: 64
+      attention_compare:
+        kinds: [eager]
+        models: [DistilGPT2, GPT-2]
+        seq_lens: [512, 1024, 2048]
+        precision: fp16
+
+  # --- Shared enc-dec, fp16, both arms at the anchor (amendment 5c) --------
+  # Per model: encode s1024; decoder_prefill s1024/tgt1024; decode source arm
+  # (s in {128,2048}, tgt_ctx 1024); decode target arm (s 1024, tgt_ctx in
+  # {128,2048}) -> 6 cells x 2 models = 12. The 1024/1024 decode cell is
+  # deliberately absent here (it is the fp32 anchor below).
+  - name: shared_enc_dec_fp16
+    weights: random
+    include_attention_compare: false
+    enc_dec_anchor: 1024
+    config:
+      models:
+        encoder_decoder: [T5-small, BART-base]
+      precisions: [fp16]
+      batch_size: 1
+      workloads:
+        prefill:
+          seq_lens: [1024]
+        decode:
+          context_lens: [128, 2048]
+          tokens_per_window: 64
+
+  # --- Shared enc-dec, fp32 anchor cells (amendment 5c) --------------------
+  # Per model: encode s1024; decoder_prefill s1024/tgt1024; decode 1024/1024
+  # (the source and target arms coincide at the anchor and dedup to one cell)
+  # -> 3 cells x 2 models = 6.
+  - name: shared_enc_dec_fp32_anchor
+    weights: random
+    include_attention_compare: false
+    enc_dec_anchor: 1024
+    config:
+      models:
+        encoder_decoder: [T5-small, BART-base]
+      precisions: [fp32]
+      batch_size: 1
+      workloads:
+        prefill:
+          seq_lens: [1024]
+        decode:
+          context_lens: [1024]
+          tokens_per_window: 64
+
+  # --- A100-only 7B extension (amendment 6) --------------------------------
+  # {LLaMA-7B, Mistral-7B} x fp16 x {prefill s{1024,4096,8192},
+  # decode ctx{1024,4096}} = 10. fp32 excluded (28 GB weights on a 40 GB
+  # part); 13B excluded. Random-init per the weights policy; T3 targets.
+  - name: extension_7b
+    weights: random
+    include_attention_compare: false
+    config:
+      models:
+        decoder_only: [LLaMA-7B, Mistral-7B]
+      precisions: [fp16]
+      batch_size: 1
+      workloads:
+        prefill:
+          seq_lens: [1024, 4096, 8192]
+        decode:
+          context_lens: [1024, 4096]
+          tokens_per_window: 64
+
+  # --- Spot cells (amendment 7): Follow-up B arms on Ampere ----------------
+  # GPT-2 prefill s512 fp16, one cell per weights arm. Descriptive only;
+  # EXCLUDED from every fit and confirmatory test. The pretrained and ported
+  # arms fetch HF gpt2 via ephemeral_hf_repos at run time.
+  - name: spot_random
+    weights: random
+    include_attention_compare: false
+    config:
+      models:
+        decoder_only: [GPT-2]
+      precisions: [fp16]
+      batch_size: 1
+      workloads:
+        prefill:
+          seq_lens: [512]
+
+  - name: spot_random_v
+    weights: random_v
+    include_attention_compare: false
+    config:
+      models:
+        decoder_only: [GPT-2]
+      precisions: [fp16]
+      batch_size: 1
+      workloads:
+        prefill:
+          seq_lens: [512]
+
+  - name: spot_ported
+    weights: ported
+    pretrained_id: gpt2
+    include_attention_compare: false
+    config:
+      models:
+        decoder_only: [GPT-2]
+      precisions: [fp16]
+      batch_size: 1
+      workloads:
+        prefill:
+          seq_lens: [512]
+
+  - name: spot_pretrained_hf
+    weights: pretrained
+    pretrained_id: gpt2
+    include_attention_compare: false
+    config:
+      models:
+        decoder_only: [GPT-2]
+      precisions: [fp16]
+      batch_size: 1
+      workloads:
+        prefill:
+          seq_lens: [512]
