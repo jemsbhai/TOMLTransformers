@@ -489,3 +489,25 @@ as registered; flag narrowed; full record findings.md 2026-08-10 (third
 entry). Step 4 is CLOSED. Next: Step 5 A100/Lambda pre-registration
 amendment (R1 primary estimator; random-init full grid citing B; needs
 Lambda instance type and GPU-hour budget from Muntaser).
+
+### 2026-08-10 - Step 5: A100/Lambda pre-registration amendment APPROVED
+experiments/exp_002_size_sweep/a100_amendment.md approved with all
+recommended options: D1 T1 refit band 25%; D2 T2 scale-calibrated transfer
+band 30% (frozen 8-cell calibration subset, evaluated on the remaining 76
+shared-grid points); D3 T3 7B extrapolation confirmatory at 30%; D4 minimal
+84-point shared grid; D5 include the 4 spot cells and the 6-point eager
+subset; D6 coefficient-plausibility report-only; D7 A100 baseline companion
+included with secondary Wilcoxon + Holm on the T1 split. Frozen before any
+A100 data exists: R1 relative-error NNLS as PRIMARY estimator (absolute NNLS
+secondary; evidence chain findings.md 2026-07-24), M8 form fixed with no
+re-selection on the new platform, random-init full grid citing Follow-up B
+(~6.5% implementation-free worst case), 10-point 7B extension (LLaMA-7B and
+Mistral-7B, fp16 only, 40 GB constraints recorded), T0 A-B pooled median
+<= 5%, protocol identical to the 4090 as operated (100 Hz, B primary, 4 s
+floor, regime repeats 10/5, per-point explicit seeds with no cross-platform
+weight-identity claim). Committed and pushed with this entry before any
+Step 6 work. Next: Step 6 = configs/exp_002_a100.yaml via the grid builder
+(enc-dec cells enumerated mechanically), validator and provenance-gate
+extensions to the a100 output path, then the Lambda smoke checklist
+(amendment section 13). No A100 measurement before the grid file is
+committed.
