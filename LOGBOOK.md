@@ -610,3 +610,38 @@ refined: the idle attention band becomes a validator CLI option (--idle-band,
 default preserving the 4090 values) in a dated commit prepared locally during
 chunk 2 from these n=24 observations, proposed [40, 90] W to span cold-start
 and warmed states; WARN-only, gates nothing.
+
+### 2026-08-12 - A100 GRID COMPLETE: 98/98 resume-complete, zero failures across the campaign
+Chunk 2 (12 h budget, 8.23 h used) measured points 25-98; the frozen grid is
+fully resume-complete with zero failed, zero OOM, zero short-window records
+across the whole campaign, matching the 4090's 296/296 record. Coverage
+reconciles exactly with the frozen enumeration: decoder prefill 40 (24 shared
++ 6 eager + 6 extension + 4 spot), decoder decode 28 (24 + 4 extension),
+encoder 12, enc-dec 18 (both arms + fp32 anchors), 7B extension 10; the spot
+cells including HF-pretrained and ported measured ok on Ampere (logit port
+gate passed on Lambda). Instrument agreement: A-B forward median 0.58 percent
+(n=56, max 2.59), decode median 0.63 percent (n=42, max 9.20, single
+GPT-2-medium decode cell), B-C median 0.000 percent (max 3.69, one WARN on
+T5-small decode s1024/ctx128); the pre-registered T0 pooled A-B median is on
+track to pass with roughly 8x margin. Repeat noise: CV(B) forward median 2.27
+percent; decode median 3.52 percent with 7 WARN cells, worst 16.07 percent on
+T5-small decode; the heavy tail concentrates in the light enc-dec decode
+family (inner_iters 3-6), the same known-noisy pattern the 10-repeat protocol
+covers; fit target remains the median across repeats; WATCH these cells in
+fit residuals. Thermal max 61 C (BERT-large s2048; 7B prefills 60 C), no
+throttling; clocks bimodal 1095/1410 MHz by load as in chunk 1. Idle n=98 in
+[70.45, 72.57] W, median 71.25; all 98 idle WARNs remain the recorded
+4090-band artifact. Physics: 16 seq-len series, 0 monotonicity violations;
+contamination flags exactly per design. Known validator limitation found: the
+fp32/fp16 matched-shape check reports 0 pairs on this dataset because it
+pairs on FULL keys and per-point derived seeds differ across precision; a
+data-independent matcher fix (pair on seed-stripped keys) will ride with the
+dated validator update (--idle-band [40, 90] W for a100 invocations, 4090
+default preserved; both WARN-only, gating nothing). Campaign totals:
+measurement 8.23 + 2.64 h chunk elapsed plus smoke on one continuous
+instance (~21 h wall), GPU-active well inside the 15-20 GPU-hour envelope.
+Termination gate: dataset verified on origin AND the local workstation
+(this entry is written locally from the pulled artifacts) before the
+instance is terminated. Next: verify Lambda tree clean and terminate; dated
+validator update; then Step 7, the pre-registered fit phase (T0-T3, R1
+primary, frozen M8 form), which runs locally with no GPU required.
