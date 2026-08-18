@@ -1,0 +1,174 @@
+EXP-002 A100 phase fit report (a100_amendment.md sections 3, 9, 10, 16)
+generated: 2026-08-17T21:40:36-04:00
+git commit: 176183dfe686ff7fe50cd6e2d2377c7cf6112855
+data: E:\data\code\claudecode\TOMLTransformers\experiments\exp_002_size_sweep\a100\energy.jsonl
+frozen 4090 vectors: E:\data\code\claudecode\TOMLTransformers\experiments\exp_002_size_sweep\fit\fit_results.json
+estimator: R1 relative-error NNLS (primary), absolute NNLS (secondary), imported by path from scripts/fit_exp002.py; form M8_split_dispatch frozen
+device registry: a100 -> hbm2e (192,000 fJ/word); 4090 -> gddr6 (240,000 fJ/word)
+records: 98 (all ok, none short-window); strata by pass name: shared 84, extension 10, spot 4
+target: per_execution_median_j['B'] / inner_iters = J per composite execution; per_unit consistency gate passed on all 98
+
+== T0. Instrument agreement (pre-registered: pooled A-B median <= 5%) ==
+  pooled A-B median over all 98 points: 0.60%  (forward 0.58%, decode-like 0.63%; shared-84 median 0.59%)
+  B-C (Zeus) median over 98 points: 0.000%  (descriptive)
+  T0 verdict: PASS (0.60% vs 5%)
+
+== Frozen 4090 vectors (winner form, all-296 fits) ==
+  artifact commit db1f984bf (db1f984 lineage)
+  R1:       to_mac=3.441e-15  to_nonlinear=0  to_sram=2.693e-14  to_hbm=7.408e-15  n_launches=0.0007571  intercept=0
+  absolute: to_mac=2.704e-15  to_nonlinear=0  to_sram=1.968e-12  to_hbm=5.37e-15  n_launches=0.0009265  intercept=0
+
+== T1. On-platform refit (pre-registered: held-out MAPE <= 25%, R1) ==
+  stratified 80/20, seed 42, strata (arch, phase-class, precision), same machinery as the 4090 fit: train 67 / test 17
+    decoder_only     decode_like  fp16  n= 12  test=2
+    decoder_only     decode_like  fp32  n= 12  test=2
+    decoder_only     forward      fp16  n= 18  test=4
+    decoder_only     forward      fp32  n= 12  test=2
+    encoder_decoder  decode_like  fp16  n= 10  test=2
+    encoder_decoder  decode_like  fp32  n=  4  test=1
+    encoder_decoder  forward      fp16  n=  2  test=1
+    encoder_decoder  forward      fp32  n=  2  test=1
+    encoder_only     forward      fp16  n=  6  test=1
+    encoder_only     forward      fp32  n=  6  test=1
+  R1 held-out MAPE 35.60%  ->  T1 verdict: FAIL (band 25%)
+     coefficients (R1, train): to_mac=3.264e-15  to_nonlinear=0  to_sram=0  to_hbm=3.664e-15  n_launches=0  intercept=0
+  absolute companion held-out MAPE 71.68% (secondary)
+     coefficients (absolute, train): to_mac=6.587e-15  to_nonlinear=0  to_sram=0  to_hbm=4.746e-15  n_launches=0  intercept=0
+  R1 in-sample MAPE on train: 36.67%
+  section 16.4 breakdown of the held-out R1 residuals (descriptive):
+    by precision:
+      fp16                       n= 10  MAPE   28.44%  mean signed   +19.90%
+      fp32                       n=  7  MAPE   45.82%  mean signed   -40.04%
+    by phase class:
+      decode_like                n=  7  MAPE   24.91%  mean signed   -15.64%
+      forward                    n= 10  MAPE   43.08%  mean signed    +2.82%
+    by precision x phase class:
+      fp16/decode_like           n=  4  MAPE   13.73%  mean signed    -7.62%
+      fp16/forward               n=  6  MAPE   38.25%  mean signed   +38.25%
+      fp32/decode_like           n=  3  MAPE   39.82%  mean signed   -26.34%
+      fp32/forward               n=  4  MAPE   50.32%  mean signed   -50.32%
+
+== T2. Cross-platform transfer, scale-calibrated (pre-registered: MAPE <= 30% on the remaining 76, R1) ==
+  frozen 4090 R1 vector x A100 features (hbm2e column); calibration = the 8 fp16 cells of amendment section 16.2; evaluation = the remaining 76
+  calibration cells (y measured J, yhat zero-shot J, y/yhat):
+    decoder_only|GPT-2|prefill|fp16|flash|random|s1024|b1                          y=   0.5236  yhat=    0.759  y/yhat= 0.690
+    decoder_only|GPT-2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing       y=    3.689  yhat=     12.7  y/yhat= 0.290
+    decoder_only|GPT-2-XL|prefill|fp16|flash|random|s1024|b1                       y=    6.261  yhat=    10.78  y/yhat= 0.581
+    decoder_only|GPT-2-XL|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing    y=    76.27  yhat=    110.7  y/yhat= 0.689
+    encoder_only|BERT-base|encode|fp16|flash|random|s1024|b1                       y=    0.533  yhat=   0.7783  y/yhat= 0.685
+    encoder_only|BERT-large|encode|fp16|flash|random|s1024|b1                      y=    1.698  yhat=    2.509  y/yhat= 0.677
+    encoder_decoder|T5-small|decode|fp16|flash|random|s2048|b1|ctx1024|k64|growing y=    1.652  yhat=    6.954  y/yhat= 0.238
+    encoder_decoder|BART-base|encode|fp16|flash|random|s1024|b1                    y=   0.2738  yhat=   0.3897  y/yhat= 0.703
+  s* = 0.3862 (relative loss, closed form)
+  scaled MAPE on the remaining 76: 52.93%  ->  T2 verdict: FAIL (band 30%)
+  zero-shot (s = 1) MAPE: 105.73% on the 76, 105.94% on all 84 (descriptive)
+  absolute companion (frozen 4090 absolute vector, absolute-loss scalar s = 0.6798): MAPE 106.67% on the 76 (secondary)
+  section 16.4 breakdown of the scaled T2 residuals on the 76 (descriptive):
+    by precision:
+      fp16                       n= 40  MAPE   41.14%  mean signed    -7.53%
+      fp32                       n= 36  MAPE   66.03%  mean signed   -60.29%
+    by phase class:
+      decode_like                n= 35  MAPE   41.88%  mean signed    -7.09%
+      forward                    n= 41  MAPE   62.37%  mean signed   -54.23%
+    by precision x phase class:
+      fp16/decode_like           n= 19  MAPE   31.69%  mean signed   +21.51%
+      fp16/forward               n= 21  MAPE   49.69%  mean signed   -33.80%
+      fp32/decode_like           n= 16  MAPE   53.97%  mean signed   -41.04%
+      fp32/forward               n= 20  MAPE   75.68%  mean signed   -75.68%
+    by arch:
+      decoder_only               n= 50  MAPE   51.68%  mean signed   -36.32%
+      encoder_decoder            n= 16  MAPE   50.69%  mean signed   -11.56%
+      encoder_only               n= 10  MAPE   62.78%  mean signed   -47.03%
+  section 16.3 sensitivity companion (descriptive): cell 7 replaced in turn
+    encoder_decoder|T5-small|decode|fp16|flash|random|s128|b1|ctx1024|k64|growing  s*=0.3691  MAPE  52.06%  [FAIL]
+    encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx128|k64|growing  s*=0.3651  MAPE  51.86%  [FAIL]
+    encoder_decoder|T5-small|decode|fp16|flash|random|s1024|b1|ctx2048|k64|growing s*=0.4114  MAPE  54.24%  [FAIL]
+
+== T3. Extrapolation to 7B-class (pre-registered: pooled MAPE <= 30% on the 10 extension points, R1) ==
+  R1 fit on all 84 shared points; predict the 10 extension points
+     coefficients (R1, all 84): to_mac=3.118e-15  to_nonlinear=0  to_sram=0  to_hbm=3.62e-15  n_launches=0  intercept=0
+  pooled MAPE 42.66%  ->  T3 verdict: FAIL (band 30%)
+  absolute companion pooled MAPE 192.51% (secondary)
+     coefficients (absolute, all 84): to_mac=7.2e-15  to_nonlinear=0  to_sram=0  to_hbm=4.97e-15  n_launches=0  intercept=0
+    per regime (descriptive):
+      decode                     n=  4  MAPE    5.77%  mean signed    -5.77%
+      prefill_s1024_4096         n=  4  MAPE   67.78%  mean signed   +67.78%
+      prefill_s8192              n=  2  MAPE   66.23%  mean signed   +66.23%
+    per model (descriptive):
+      LLaMA-7B                   n=  5  MAPE   41.72%  mean signed   +40.37%
+      Mistral-7B                 n=  5  MAPE   43.61%  mean signed   +35.73%
+  per point (y J, yhat J, signed %):
+    decoder_only|LLaMA-7B|prefill|fp16|flash|random|s1024|b1     y=     21.8  yhat=    37.21    +70.7%
+    decoder_only|LLaMA-7B|prefill|fp16|flash|random|s4096|b1     y=    89.61  yhat=    150.4    +67.9%
+    decoder_only|LLaMA-7B|prefill|fp16|flash|random|s8192|b1     y=    192.8  yhat=    321.2    +66.6%
+    decoder_only|LLaMA-7B|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing y=      197  yhat=    192.6     -2.2%
+    decoder_only|LLaMA-7B|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing y=    327.7  yhat=      324     -1.1%
+    decoder_only|Mistral-7B|prefill|fp16|flash|random|s1024|b1   y=    24.18  yhat=    39.97    +65.3%
+    decoder_only|Mistral-7B|prefill|fp16|flash|random|s4096|b1   y=    96.27  yhat=    160.9    +67.2%
+    decoder_only|Mistral-7B|prefill|fp16|flash|random|s8192|b1   y=    206.2  yhat=      342    +65.9%
+    decoder_only|Mistral-7B|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing y=    216.2  yhat=    202.1     -6.5%
+    decoder_only|Mistral-7B|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing y=    377.6  yhat=    327.8    -13.2%
+  in-sample residuals of the all-84 R1 fit (descriptive; MAPE 35.79%, R2 0.7663):
+    by precision:
+      fp16                       n= 48  MAPE   25.39%  mean signed    +1.64%
+      fp32                       n= 36  MAPE   49.66%  mean signed   -45.24%
+    by phase class:
+      decode_like                n= 38  MAPE   25.78%  mean signed   -16.12%
+      forward                    n= 46  MAPE   44.07%  mean signed   -20.37%
+    by precision x phase class:
+      fp16/decode_like           n= 22  MAPE   11.29%  mean signed    -1.86%
+      fp16/forward               n= 26  MAPE   37.32%  mean signed    +4.61%
+      fp32/decode_like           n= 16  MAPE   45.69%  mean signed   -35.73%
+      fp32/forward               n= 20  MAPE   52.84%  mean signed   -52.84%
+
+== Precision ratio check (descriptive; LOGBOOK 2026-08-17 predictions) ==
+  forward      pairs 20: measured fp32/fp16 median 7.52 [6.23, 10.18]; model-implied median 2.96 [2.51, 3.01]
+  decode_like  pairs 14: measured fp32/fp16 median 4.12 [1.46, 10.19]; model-implied median 2.18 [2.03, 2.93]
+  (the frozen form's implied ratio is bounded by the prior multipliers, MAC 0.33 and words 0.5 for fp16: at most 3.03 for any beta >= 0)
+
+== Coefficient-transfer table (amendment section 10; D6 report-only) ==
+  alpha_A100 (R1, all 84) / alpha_4090 (R1, all 296); expectation recorded 2026-08-10: hbm ratio ~1.0 if the registry priors are exact
+    to_mac       A100 3.118e-15   4090 3.441e-15   ratio 0.906
+    to_nonlinear A100 0   4090 0   ratio n/a (4090 coefficient is zero)
+    to_sram      A100 0   4090 2.693e-14   ratio 0.000
+    to_hbm       A100 3.62e-15   4090 7.408e-15   ratio 0.489
+    n_launches   A100 0   4090 0.0007571   ratio 0.000
+    intercept    A100 0   4090 0   ratio n/a (4090 coefficient is zero)
+  effective per-word off-chip energy ratio (alpha_hbm x prior word cost), A100/4090: 0.391  [695.1 pJ/word vs 1778 pJ/word; alpha in J/TO x prior TO/word]
+  note: the 40 GB SXM4 part carries HBM2 per the vendor datasheet; the registry tier is labeled hbm2e at 6.00 pJ/bit (HBM2 6.25 pJ/bit would rescale the to_hbm column by 200/192, absorbed by alpha_hbm; expectation 0.96 under that prior)
+
+== Calibrated MCER on the A100 (R1, all 84) vs the 4090 (R1, all 296) ==
+  decoder_only     decode           A100 median MCER     4.647  [1.569, 33.463]  n=24   4090 median 10.501
+  decoder_only     prefill          A100 median MCER     0.114  [0.025, 1.002]  n=30   4090 median 0.429
+  encoder_decoder  decode           A100 median MCER     5.241  [3.252, 20.495]  n=10   4090 median 9.769
+  encoder_decoder  decoder_prefill  A100 median MCER     0.087  [0.069, 0.107]  n= 4   4090 median 0.225
+  encoder_decoder  encode           A100 median MCER     0.044  [0.034, 0.055]  n= 4   4090 median 0.267
+  encoder_only     encode           A100 median MCER     0.046  [0.015, 0.519]  n=12   4090 median 0.324
+
+== D7. Baseline companion on the T1 split, both estimators (secondary Wilcoxon + Holm) ==
+  estimator R1: M8_split_dispatch MAPE   35.60%  (TOML)
+    M0_flops     MAPE   36.62%  p=0.1421  Holm p=0.4262  [NOT beaten]
+    roofline     MAPE   32.16%  p=0.6611  Holm p=0.6611  [NOT beaten]
+    layerwise    MAPE   39.84%  p=0.1645  Holm p=0.4262  [NOT beaten]
+    roofline fitted P_avg 368.7 W vs the 400 W envelope (4090 diagnostic: 378 W vs a 150 W part)
+  estimator absolute: M8_split_dispatch MAPE   71.68%  (TOML)
+    M0_flops     MAPE   65.96%  p=0.7563  Holm p=1  [NOT beaten]
+    roofline     MAPE   32.97%  p=0.8877  Holm p=1  [NOT beaten]
+    layerwise    MAPE  174.07%  p=0.0001068  Holm p=0.0003204  [BEATEN]
+    roofline fitted P_avg 413.0 W vs the 400 W envelope (4090 diagnostic: 378 W vs a 150 W part)
+  roofline constants: A100 FP32 19.49 / FP16 311.9 TFLOP/s, 1,555 GB/s (fit/baselines.py, vendor-cited); the roofline encodes the 16x fp32/fp16 datapath gap
+
+== Spot cells: Follow-up B decomposition on Ampere (descriptive; excluded from every fit) ==
+    random      E = 0.1933 J per forward (GPT-2 prefill s512 fp16)
+    random_v    E = 0.1977 J per forward (GPT-2 prefill s512 fp16)
+    ported      E = 0.1908 J per forward (GPT-2 prefill s512 fp16)
+    pretrained  E = 0.2140 J per forward (GPT-2 prefill s512 fp16)
+  1 - E_random/E_HF = +0.0970   (4090 Step-4 primary gap: 0.24-0.33; findings.md 2026-08-10)
+  E_HF/E_ported     = 1.1219   (4090: 1.405, the HF-fp16 implementation overhead)
+  E_ported/E_random_v - 1 = -0.0350;  E_ported/E_random - 1 = -0.0129   (4090 implementation-free value effect ~0.05-0.065)
+
+== Verdict summary ==
+  T0: PASS
+  T1: FAIL
+  T2: FAIL
+  T3: FAIL
