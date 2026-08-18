@@ -321,3 +321,80 @@ Approved by: M. Syed, 2026-08-10.
 
 This amendment and the LOGBOOK Step 5 entry are committed together and pushed
 before any Step 6 work begins.
+
+## 16. Amendment 2 (2026-08-17): T2 calibration-set resolution and descriptive companions, recorded before any Step 7 fit
+
+- Date: 2026-08-17 (America/New_York)
+- Status: recorded per section 0 (a further dated amendment before the
+  affected results are examined). No A100 fit of any kind has been computed.
+  What has been examined: the validator reports and the matched-pair
+  fp32/fp16 per-unit(B) ratios by phase (LOGBOOK, 2026-08-17). This section
+  changes NO band, estimator, model form, split, evaluation set, or
+  exclusion; it resolves one ambiguous cell name and pre-registers
+  descriptive companions and post-verdict exploratory work.
+
+16.1 Root cause of the ambiguity (documented in the LOGBOOK, 2026-08-17).
+Section 5c's enc-dec budget (12 fp16 + 6 fp32) requires the fp16 decode
+arms to omit the (s1024, ctx1024) center cell, and the frozen grid
+(configs/exp_002_a100.yaml) does omit it, by explicit comment. Section 9's
+"T5-small decode anchor-1024" (fp16) therefore names a cell that does not
+exist in the frozen enumeration; the fp16 T5-small decode cells are
+(s128, ctx1024), (s2048, ctx1024), (s1024, ctx128), (s1024, ctx2048). This
+is internal to the amendment; the 98-point dataset is exactly the frozen
+grid, and no further measurement is needed.
+
+16.2 Resolution. The T2 calibration subset (8 cells, fp16, flash) is fixed
+as the following seed-less keys (the per-point seed suffix joins each key
+at expansion; matching is on the seed-less prefix). Rule for the enc-dec
+decode cell, stated blind to any fit outcome: ctx = 1024 mirrors the
+decoder calibration cells ("decode ctx1024"), and among the source-arm
+cells s = 2048 is nearer the 1024 anchor in log space than s = 128. The
+cell's repeat noise (CV(B) 15 percent) is immaterial to a one-parameter fit
+over 8 cells whose target is the median of 10 repeats.
+  1. decoder_only|GPT-2|prefill|fp16|flash|random|s1024|b1
+  2. decoder_only|GPT-2|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing
+  3. decoder_only|GPT-2-XL|prefill|fp16|flash|random|s1024|b1
+  4. decoder_only|GPT-2-XL|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing
+  5. encoder_only|BERT-base|encode|fp16|flash|random|s1024|b1
+  6. encoder_only|BERT-large|encode|fp16|flash|random|s1024|b1
+  7. encoder_decoder|T5-small|decode|fp16|flash|random|s2048|b1|ctx1024|k64|growing
+  8. encoder_decoder|BART-base|encode|fp16|flash|random|s1024|b1
+Cells 1 and 3 are the flash main-grid cells, not their eager companions
+(section 5d). These keys are locked by tests/test_a100_calibration_cells.py
+against the frozen enumeration and live in fit/a100_calibration.py, the
+single source the fit script imports.
+
+16.3 T2 sensitivity companion (DESCRIPTIVE, no verdict authority). T2 is
+recomputed with cell 7 replaced in turn by each of the other three fp16
+T5-small decode cells; each variant fits s* on its own 8 cells and evaluates
+on its own remaining 76. Reported next to the verdict so the cell choice is
+demonstrably immaterial or its fragility is on record.
+
+16.4 Precision breakdown (DESCRIPTIVE, no verdict authority). For T1
+(held-out) and T2 (remaining 76), the MAPE and signed relative error are
+reported split by precision (fp16 / fp32) and by phase class (forward /
+decode-like). Purpose: separate transfer of the memory-tier prior (D6,
+alpha_hbm ratio, read on fp16 cells) from transfer of the precision prior.
+Predictions for these tables are registered in the LOGBOOK (2026-08-17)
+before any fit.
+
+16.5 Post-verdict EXPLORATORY work (no verdict authority; run only after
+T0-T3 are recorded in findings.md; reported as the 4090 R1 exploratory
+was, under its own label):
+  (a) A precision-split MAC model: to_mac split into fp16 and fp32 columns,
+      all else identical to M8_split_dispatch, fitted under R1 on the same
+      T1 split, and the T2 scalar transfer repeated with the corresponding
+      4090 refit; quantifies what a device-level precision multiplier
+      recovers.
+  (b) Follow-up C (optional, about 1 GPU-hour on a fresh A100 instance):
+      re-measure a small set of matched fp32 cells with TF32 enabled.
+      Prediction registered now: the fp32/fp16 ratio collapses from about
+      7.4x toward 2-3x because the GEMMs move to tensor cores. Follow-up C
+      is a mechanism probe; it does not enter any confirmatory test.
+
+16.6 Unchanged: T0-T3 bands (5 / 25 / 30 / 30 percent), R1 primary with
+absolute NNLS secondary, M8_split_dispatch form, the 84 / 76 / 10 sets, spot
+cells excluded from every fit and test, all section 10 secondaries.
+
+Approved by: M. Syed, 2026-08-17 (plan approved in chat; this text records
+it before any fit).
