@@ -843,3 +843,129 @@ if used.
 T2 calibrates one scalar on fp16-only cells; the 36 fp32 evaluation cells
 are expected to be systematically under-predicted and to dominate T2's
 residual. Thresholds and mechanisms unchanged.
+
+
+### 2026-08-17 - A100 pre-registered tests: T0 PASS; T1, T2, T3 FAIL (verdicts as they fell)
+
+**Status:** CONFIRMATORY, pre-registered (a100_amendment.md sections 3, 9,
+16, approved 2026-08-10, amendment 2 recorded 2026-08-17 before any fit).
+Computed once by scripts/fit_exp002_a100.py at commit 176183d; artifacts in
+experiments/exp_002_size_sweep/a100/fit/. Estimator R1 relative-error NNLS
+(primary), form M8_split_dispatch frozen, device registry a100 -> hbm2e.
+Verdicts stand as recorded; nothing was re-selected.
+
+**T0 (pooled A-B median <= 5%): PASS, 0.60%** over all 98 points (forward
+0.58%, decode-like 0.63%; shared-84 median 0.59%); B-C (Zeus) median
+0.000%. The 100 Hz + hardware-counter methodology holds on Ampere with 8x
+margin, versus 4.80% on the 4090.
+
+**T1 (on-platform R1 refit, held-out MAPE <= 25%): FAIL, 35.60%** on the
+17-point stratified test split (67 train; strata (arch, phase-class,
+precision), seed 42, same machinery as the 4090). Absolute companion 71.68%.
+R1 coefficients on train: to_mac 3.264e-15, to_hbm 3.664e-15, to_sram 0,
+n_launches 0, intercept 0 J/TO (two of five terms fit to zero on the A100;
+the 4090 R1 vector had to_sram 2.69e-14 and n_launches 7.57e-4). Held-out
+breakdown (section 16.4): fp16 MAPE 28.4% (mean signed +19.9%), fp32 45.8%
+(mean signed -40.0%); fp16/forward +38%, fp32/forward -50%, fp16/decode-like
+14%, fp32/decode-like -26%.
+
+**T2 (scale-calibrated transfer, MAPE <= 30% on the remaining 76): FAIL,
+52.93%** with s* = 0.386 fitted on the 8 fp16 cells of section 16.2 against
+the frozen 4090 R1 vector (db1f984 lineage, values pinned). Zero-shot (s=1)
+105.7%. Absolute companion 106.7%. Breakdown on the 76: fp16 41.1% (mean
+signed -7.5%), fp32 66.0% (-60.3%); fp16/decode-like +21.5%, fp16/forward
+-33.8%, fp32/decode-like -41.0%, fp32/forward -75.7%. Sensitivity companion
+(section 16.3): with the enc-dec decode calibration cell replaced by each
+alternate, 52.1 / 51.9 / 54.2%, all FAIL; the cell choice is immaterial.
+Zero-shot y/yhat is 0.68-0.70 on four of the five fp16 forward calibration
+cells (0.58 on GPT-2-XL prefill) but 0.24-0.29 on the small-model decode
+cells and 0.69 on GPT-2-XL decode: even at fp16, one scalar cannot serve
+both regimes because the dispatch term does not scale with the compute and
+memory terms across hosts.
+
+**T3 (R1 fit on all 84, predict the 10 7B-class points, pooled MAPE <=
+30%): FAIL, 42.66%.** Absolute companion 192.5%. Per regime: decode (4)
+5.8% MAPE, mean signed -5.8%; prefill s1024/4096 (4) +67.8%; prefill s8192
+(2) +66.2%. Every 7B prefill is over-predicted by +65 to +71%; every 7B
+decode is within -1 to -13%. R1 coefficients on all 84: to_mac 3.118e-15,
+to_hbm 3.62e-15, others 0; in-sample MAPE 35.8%, R2 0.766.
+
+**Pre-registered predictions (LOGBOOK 2026-08-17), scored:** T1 fp16 +20% /
+fp32 -50% and MAPE 25-35% predicted; observed +19.9% / -40.0%, 35.6%:
+CONFIRMED (top of the range). T2 fp32 cells expected to carry the bulk of
+the residual: CONFIRMED (fp32 66% vs fp16 41%), but the fp16 subset also
+exceeds the band, which was NOT predicted (see mechanism 2). T3 forward
+over-prediction predicted at about +20% with moderate risk: direction
+CONFIRMED, magnitude EXCEEDED (+67%). Roofline competitive on the A100:
+CONFIRMED (below). Model-implied fp32/fp16 ratio capped at 3.03 vs measured
+above 6: CONFIRMED (forward pairs, 20: measured median 7.52 [6.23, 10.18],
+model-implied 2.96 [2.51, 3.01]; decode-like pairs, 14: 4.12 vs 2.18).
+
+**Post-hoc descriptive analysis of the residual structure (NOT
+pre-registered; labeled as such):** from per_point_predictions.jsonl joined
+with the frozen records' per-point median SM clocks and repeat temperatures.
+Mechanism 1, precision datapath (predicted): fp32 forward cells -52.8% mean
+signed, uniform (-47 to -57) across every model and shape. Mechanism 2,
+operating point (not predicted): the fp16 flash forward residual of the
+all-84 fit tracks the recorded SM clock. Cells at 1410 MHz (9): +6.0% mean,
+range 0 to +16, the model works there. Cells at the low DVFS state, 1095
+MHz (5, all s128, 20-60 W active): +44 to +73%. Cells that ran power-capped
+at 1250-1330 MHz with about 320-330 W above the 71 W idle, i.e. at the 400
+W envelope (GPT-2-XL fp16 prefill at s128/1024/2048; every 7B prefill):
++40 to +71%. fp32 cells ran at 1410 MHz at 260-300 W (the CUDA-core path
+does not saturate power). Energy per TO on the A100 therefore depends on the
+operating point by roughly a factor of two across the grid, and the frozen
+form has no term for it; this is the whole of T3's prefill error, while
+memory-bound 7B decode at 1410 MHz transfers within 6%. Mechanism 3, minor:
+the six eager cells are under-predicted by 71% (math SDPA backend on
+Ampere); to_sram and n_launches fit to zero, so the eager penalty (extra
+launches, materialized scores) has little representation. Pipeline checks:
+units gate passed on all 98; the 7B decode composites reconcile
+arithmetically (prefill over-prediction offset by a slightly
+under-predicted decode part); T0 at 0.60%; no artifact found.
+
+**Secondaries (pre-registered as such).** D6 coefficient transfer, R1
+all-84 over R1 all-296: to_mac 0.906, to_hbm 0.489, to_sram and n_launches
+0 (4090 nonzero); effective per-word off-chip energy (alpha_hbm x prior
+word cost) 695 pJ/word on the A100 vs 1,778 pJ/word on the 4090, ratio 0.39
+against the recorded expectation of about 1.0 (0.96 under an HBM2 6.25
+pJ/bit prior; the 40 GB SXM4 part is HBM2 per the vendor datasheet, the
+registry tier is labeled hbm2e). Caveat: the A100 alpha_hbm also absorbs the
+vanished sram and launch terms and the precision compromise. MCER on the
+A100 (R1 all-84) vs the 4090 (R1 all-296): decoder decode 4.6 vs 10.5;
+enc-dec decode 5.2 vs 9.8; decoder prefill 0.11 vs 0.43; encoder encode
+0.046 vs 0.32; enc-dec encode 0.044 vs 0.27; decoder_prefill 0.087 vs 0.23.
+The prefill/decode MCER phase transition (the central thesis) reproduces on
+Ampere; the magnitudes are platform-dependent. D7 baselines on the T1 split
+(secondary Wilcoxon + Holm, n=17): under R1, M8 35.6%, roofline 32.2%, M0
+36.6%, layerwise 39.8%, none beaten (Holm p 0.43-0.66); under absolute NNLS,
+M8 71.7%, roofline 33.0%, M0 66.0%, layerwise 174% (only layerwise beaten,
+Holm p 3e-4). Roofline fitted P_avg 368.7 W (R1) / 413.0 W (absolute)
+against the 400 W envelope: on the A100 the roofline is physically sane and
+is the best predictor by MAPE, though not significantly at n=17 (the 4090
+diagnostic was 378 W against a 150 W part). Roofline constants: FP32 19.49 /
+FP16 311.9 TFLOP/s dense, 1,555 GB/s, vendor-cited in fit/baselines.py.
+Spot cells (descriptive, excluded from every fit): GPT-2 prefill s512 fp16,
+random 0.1933, random_v 0.1977, ported 0.1908, HF pretrained 0.2140 J per
+forward; 1 - E_random/E_HF = 0.097 (4090: 0.24-0.33); E_HF/E_ported = 1.122
+(4090: 1.405); E_ported/E_random_v - 1 = -3.5%, E_ported/E_random - 1 =
+-1.3% (4090: about +5 to +6.5%). The Follow-up B decomposition replicates on
+Ampere with smaller magnitudes: the HF-vs-random gap is implementation
+overhead, and random-init represents trained weights within about 3.5% on
+this platform, with the sign reversed.
+
+**Scientific reading for the paper (verdicts untouched):** the cross-platform
+claims 1-3 of the amendment fail as registered, for two identifiable,
+physically interpretable reasons that the framework does not model:
+execution-unit routing by precision (tensor cores versus CUDA cores) and
+operating-point dependence of energy per op (DVFS state and the power cap).
+Both were named as limitations in the prior TOML papers (FLAIRS: DVFS; cloud
+paper: TED); on the A100 they are first-order. What does transfer: the
+measurement methodology (T0), the memory-bound decode regime (7B decode
+within 6% under extrapolation of 4.7x in parameters), and the MCER phase
+transition. What the paper must not say: that the precision multiplier was
+fitted (it is asserted at 0.33) or that coefficients transfer up to a
+scalar. Post-verdict exploratory work is pre-registered in amendment section
+16.5: (a) a precision-split MAC model, and, motivated by mechanism 2, a
+descriptive residual-vs-operating-point table; (b) optional Follow-up C
+(TF32 probe). Neither alters any verdict above.

@@ -789,3 +789,58 @@ that the fp32/fp16 ratio collapses from about 7.4x toward 2-3x because the
 GEMMs move to tensor cores. Both feed EXP-003 (quantization), where precision
 multipliers are the object of study. Next: amendment section 16; calibration
 key lock test; full read of scripts/fit_exp002.py; scripts/fit_exp002_a100.py.
+
+### 2026-08-17 - Step 7 confirmatory phase computed and closed: T0 PASS, T1/T2/T3 FAIL as they fell; two mechanisms identified
+Code first, then results, in that order. Committed 176183d
+(feat(fit)): scripts/fit_exp002_a100.py (imports the frozen R1 and absolute
+estimators, target and units gate by path from scripts/fit_exp002.py,
+which is unchanged; form M8 frozen; sets resolved mechanically: shared 84 /
+extension 10 / spot 4 by pass name via the new fit/a100_strata.py, T2
+calibration cells via fit/a100_calibration.py); fit/baselines.py gained the
+A100 roofline constants, vendor-cited (NVIDIA A100 datasheet June 2021;
+Ampere whitepaper): FP32 19.49 TFLOP/s by 2 x 6,912 x 1.410 GHz, FP16 311.9
+TFLOP/s dense by 108 x 1,024 FMA/clk x 2 x 1.410 GHz, 1,555 GB/s, 400 W;
+4090 defaults untouched; 12 new tests (test_fit_baselines_a100.py,
+test_a100_strata.py) green, suite 300 expected. Then the fit ran once (CPU,
+seconds) and wrote a100/fit/{fit_report.txt, fit_results.json,
+per_point_predictions.jsonl}. Verdicts as they fell (findings.md, this
+date, full numbers): T0 PASS 0.60 percent; T1 FAIL 35.60 percent (band 25,
+17 held-out points); T2 FAIL 52.93 percent (band 30; s* 0.386; sensitivity
+companion 51.9-54.2 percent, all FAIL, cell choice immaterial); T3 FAIL
+42.66 percent (band 30; decode 5.8 percent, prefill +66 to +71 percent).
+Prediction scorecard against this morning's entry: T1 CONFIRMED (fp16
++19.9 percent, fp32 -40.0 percent, 35.6 percent at the top of the 25-35
+range); T2 fp32-dominant CONFIRMED, fp16 subset also failing NOT predicted;
+T3 direction CONFIRMED, magnitude EXCEEDED; roofline competitive
+CONFIRMED (best MAPE under both estimators, P_avg 369-413 W against the 400
+W envelope, no comparison significant at n=17); precision-ratio ceiling
+CONFIRMED (model-implied 2.96 vs measured 7.52 on forward pairs).
+Post-hoc descriptive analysis (labeled): joining per-point residuals with
+the recorded median SM clocks shows a second mechanism beside the
+precision datapath. fp16 flash forward cells at 1410 MHz: +6 percent mean,
+0 to +16; cells at the low DVFS state 1095 MHz (light s128 cells): +44 to
++73 percent; cells power-capped at 1250-1330 MHz drawing about 320-330 W
+above the 71 W idle, i.e. at the 400 W envelope (GPT-2-XL fp16 prefill and
+every 7B prefill): +40 to +71 percent; fp32 cells at 1410 MHz at 260-300 W.
+Energy per TO on the A100 depends on the operating point by about a factor
+of two across the grid, which the frozen form cannot express; T3's prefill
+error is entirely this, while memory-bound 7B decode at 1410 MHz transfers
+within 6 percent. Third, minor: eager cells under-predicted 71 percent
+(math SDPA backend on Ampere); to_sram and n_launches fit to zero. Pipeline
+checks passed (units gate on all 98; 7B decode composites reconcile; T0).
+Secondaries recorded: D6 alpha_hbm ratio 0.489, effective per-word 695 vs
+1,778 pJ/word (ratio 0.39 vs expectation about 1.0; caveat, alpha_hbm
+absorbs the vanished sram and launch terms); MCER phase transition
+reproduces on Ampere with smaller magnitudes; spot cells replicate the
+Follow-up B decomposition (E_HF/E_ported 1.12, value effect -3.5 percent).
+Decisions: verdicts recorded as they fell; no re-selection; the paper
+reports T1-T3 as FAIL with the two mechanisms, and reports what transfers
+(T0, decode regime, MCER transition). Next, in order: commit the artifacts
+and these entries; full suite before push; then the post-verdict exploratory
+work of amendment section 16.5 under its own label: (a) precision-split MAC
+model on the T1 split and the T2 repeat, plus a descriptive
+residual-vs-operating-point table; (b) Follow-up C remains optional. Then
+Step 8 (figures, UEMCON manuscript, journal venue scan). Fidelity note for
+the paper: the A100-SXM4-40GB carries HBM2 per the datasheet; the registry
+tier is labeled hbm2e (6.00 pJ/bit); an HBM2 6.25 pJ/bit prior rescales
+to_hbm by 200/192 uniformly, absorbed by alpha_hbm, verdict-invariant.
