@@ -807,3 +807,39 @@ only.
 will specify random-init for the full A100 grid, citing this decomposition;
 optional ported/HF spot cells on the A100 replicate the floor and value
 effect cross-platform if budget allows.
+
+
+### 2026-08-17 - A100 fp32/fp16 matched-shape check: 34 pairs, 0 inversions; forward precision ratio about 2.3x the 4090's
+
+**Status:** validator output (scripts/validate_exp002.py section 10, with the
+seed-agnostic pairing added this date; a100/validation_report.{txt,json}),
+descriptive; not a pre-registered test; recorded before any Step 7 fit.
+
+**Result (A100-SXM4-40GB, per-unit instrument-B energy):** 34 fp32/fp16
+matched-shape pairs (prefill 12, decode 12, encode 8, decoder_prefill 2),
+0 inversions (fp32 > fp16 in every pair). Forward-phase fp32/fp16 ratio
+(n=20): min 6.20, p25 6.68, median 7.43, p75 8.76, max 10.20.
+
+**4090 comparison (frozen 296-pt sweep, committed validation_report.txt):**
+143 pairs, 0 inversions; forward-phase ratio (n=62): min 2.04, p25 2.55,
+median 3.24, p75 3.79, max 4.11. The precision penalty is a platform
+property: ratio of medians 2.29, and the two ranges are disjoint (A100 min
+6.20 above 4090 max 4.11).
+
+**Coverage note:** 36 fp32 points, 34 paired; the two unpaired are the
+enc-dec decode fp32 anchors at s1024/ctx1024 (T5-small, BART-base), whose
+fp16 twin cell is not in the frozen grid; frozen-grid property, not a data
+gap. Decode-like ratios are not emitted by the validator; they belong to
+Step 7's descriptive tables.
+
+**Hypothesis (not a claim):** Ampere runs true fp32 GEMMs on CUDA cores at a
+small fraction of its FP16 tensor-core peak, whereas the Ada consumer part's
+fp32-to-fp16 throughput gap is much smaller; energy per unit follows. Whether
+the runner leaves PyTorch's default TF32 setting (matmul TF32 off) must be
+checked before this appears in paper text; vendor peak figures to be cited
+if used.
+
+**Consequence for Step 7 (prediction registered in the LOGBOOK this date):**
+T2 calibrates one scalar on fp16-only cells; the 36 fp32 evaluation cells
+are expected to be systematically under-predicted and to dominate T2's
+residual. Thresholds and mechanisms unchanged.

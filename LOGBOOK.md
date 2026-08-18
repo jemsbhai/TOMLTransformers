@@ -645,3 +645,60 @@ Termination gate: dataset verified on origin AND the local workstation
 instance is terminated. Next: verify Lambda tree clean and terminate; dated
 validator update; then Step 7, the pre-registered fit phase (T0-T3, R1
 primary, frozen M8 form), which runs locally with no GPU required.
+
+### 2026-08-17 - Dated validator update: --idle-band CLI and seed-agnostic fp32/fp16 pairing; A100 re-validated under [40, 90] W
+Two WARN/report-only changes to scripts/validate_exp002.py, both gating
+nothing; tests approved and added (tests/test_validate_cli.py, 8 tests, the
+script's first test coverage; full suite 278 passed in 514 s). (1) --idle-band
+LOW HIGH (two floats), default [1.0, 15.0] bound to the existing 4090
+constants; the section 9 check and its WARN text use the parsed band; when a
+non-default band is passed the report header prints one extra line naming the
+override and the default (an addition beyond the two approved changes, flagged
+in chat; default output unchanged). (2) fp32/fp16 matched-shape pairing is
+seed-agnostic through a module-level pure function shape_pair_key(spec) with
+PAIR_EXCLUDE = ("precision", "key", "seed"). Mechanism correction to the
+2026-08-12 entry, which anticipated stripping a seed suffix from key strings:
+the pairing code never touched key strings; it built the pair key from
+spec.items() minus precision and key, and the A100 specs carry a separate
+spec.seed field, derived from the precision-inclusive key, that differs
+between fp16 and fp32 twins; excluding that field is the whole fix. The 4090
+specs carry no seed field, so default pairing is provably identical (a test
+asserts shape_pair_key equals the legacy tuple on a seedless spec). Argparse
+construction factored to a module-level build_arg_parser() for testability,
+behavior unchanged. Byte-identity check on the 4090 default path: the default
+invocation regenerated into a temp path differs from the committed
+validation_report.txt in exactly one line, the generated timestamp (git diff
+--no-index: 1 insertion, 1 deletion). A100 re-validation (all four path args,
+--idle-band 40 90, reports regenerated in place): warnings 106 -> 8, the 98
+idle-band artifacts gone, the 8 remaining being the 7 CV(B) cells and the 1
+B-C cell recorded on 2026-08-12; the precision-pairing check executed on the
+A100 data for the first time: 34 matched-shape pairs, 0 inversions;
+forward-phase fp32/fp16 per-unit energy ratio n=20, min 6.20, p25 6.68,
+median 7.43, p75 8.76, max 10.20 (findings.md entry of this date).
+Reconciliation of 34 pairs against 36 fp32 points, verified from the records:
+pairs are prefill 12, decode 12, encode 8 (6 encoder-only + 2 enc-dec),
+decoder_prefill 2; the two unpaired fp32 points are the enc-dec decode fp32
+anchors at s1024/ctx1024 (T5-small, BART-base), whose fp16 twin cell is not in
+the frozen grid (the fp16 enc-dec decode arms are s128/ctx1024, s2048/ctx1024,
+s1024/ctx128, s1024/ctx2048); a frozen-grid property, not a data gap (98/98
+complete). All 36 fp32 points lie in the 84 shared cells; extension, eager
+and spot cells are all fp16. Open items carried into Step 7, recorded before
+any fit computation: (a) verify the amendment's exact definition of the T2
+calibration cell "T5-small decode anchor-1024" (fp16) against the actual fp16
+cells above, since no fp16 s1024/ctx1024 decode cell exists; (b) check
+whether the runner leaves PyTorch's default TF32 setting (matmul TF32 off)
+before any text attributes the A100's larger fp32 penalty to fp32 GEMMs
+running on CUDA cores; (c) T2 residual prediction: T2 fits one scalar on
+fp16-only calibration cells against the frozen 4090 vector, and the A100's
+forward fp32/fp16 ratio (median 7.43) is about 2.3x the 4090's (3.24), so to
+first order the 36 fp32 evaluation cells are expected to be systematically
+under-predicted under T2 and to carry the bulk of its residual; the T2
+verdict is at risk on this mechanism, and if it fails, the fp32-cell residual
+pattern is the pre-stated diagnosis, not a post-hoc one. Threshold, mechanism
+and calibration set are unchanged; whether T1's refit can express a
+platform-specific precision ratio depends on M8's feature structure (check
+when building the fit path); precision-structured residuals are to be
+reported descriptively; no model re-selection on the A100 (settled). Commits:
+feat(validator) for the script and tests, chore(exp-002) for the regenerated
+a100 reports, docs(lab) for this entry and findings.md. Next: Step 7, read
+a100_amendment.md in full, then propose the fit-path shape.
