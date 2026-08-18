@@ -8,6 +8,7 @@ Run after each nightly chunk, from the repo root:
 Optional overrides:
 
     python scripts/validate_exp002.py --data <energy.jsonl> --summary <sweep_summary.json>
+    python scripts/validate_exp002.py --idle-band 40 90
 
 What it checks:
   1.  File integrity: parse errors, schema versions, git commits seen,
@@ -25,11 +26,13 @@ What it checks:
   7.  Repeat noise: CV of instrument B, cv_exceeded frequencies by phase.
   8.  Window sizing: inner_iters and measured wall-time floor.
   9.  Thermal and clocks: settle temps, max temps, median SM clocks with
-      the first sample per point dropped (known idle artifact), idle power.
+      the first sample per point dropped (known idle artifact), idle power
+      against a configurable attention band (--idle-band).
   10. Physics sanity: per-forward energy monotone in seq_len for prefill
       and encode (ViT excluded; seq_len is ignored for vision, so ViT
       points are checked for invariance instead), fp32 > fp16 at matched
-      shape, decode per-unit contamination flags.
+      shape (matching is seed-agnostic on seeded grids), decode per-unit
+      contamination flags.
 
 This script never modifies energy.jsonl. It prints the report and writes
 two derived, regenerable artifacts next to the data:
@@ -62,11 +65,20 @@ B_C_UPPER = 0.03           # usually bit-identical; encoder probe 1.2%
 CV_B_UPPER = 0.075         # smoke showed 0.85-4.3%
 INNER_ITERS_MIN = 3
 WALL_FLOOR_S = 3.9         # min_window_s is 4.0; small float tolerance
-IDLE_W_LOW, IDLE_W_HIGH = 1.0, 15.0  # laptop GPU idles ~4-5 W
+IDLE_W_LOW, IDLE_W_HIGH = 1.0, 15.0  # default --idle-band; the 4090 laptop GPU idles ~4-5 W
 TEMP_ATTENTION_C = 83.0
 MONO_TOL = 0.02            # allow 2% wiggle before calling non-monotone
 VIT_INVARIANCE_CV = 0.05
 CHUNK_GAP_S = 7200.0
+
+# Spec fields excluded when forming the fp32/fp16 matched-shape pairing
+# key: precision is the variable under test, the raw key string embeds
+# precision, and the per-point seed (present on seeded grids such as the
+# A100 sweep) is derived from the precision-inclusive key, so it differs
+# across precisions at the same shape. Fields absent from a spec simply do
+# not appear in spec.items(), so seedless grids (the 4090 data) pair
+# exactly as before.
+PAIR_EXCLUDE = ("precision", "key", "seed")
 
 LINES = []
 WARNINGS = []
@@ -88,6 +100,15 @@ def note(s):
 
 def klass(phase):
     return "forward" if phase in FORWARD_PHASES else "decode-like"
+
+
+def shape_pair_key(spec):
+    """Pairing key for the fp32/fp16 matched-shape check (section 10).
+
+    Pure function of a record's spec dict: every field except those in
+    PAIR_EXCLUDE, as a sorted tuple of (field, value) pairs.
+    """
+    return tuple(sorted((k, v) for k, v in spec.items() if k not in PAIR_EXCLUDE))
 
 
 def pctile(sorted_vals, p):
@@ -125,13 +146,23 @@ def dist(name, vals, fmt):
     return d
 
 
-def main():
+def build_arg_parser():
     ap = argparse.ArgumentParser(description="EXP-002 energy.jsonl data-quality report")
     ap.add_argument("--data", type=Path, default=DEFAULT_DATA)
     ap.add_argument("--summary", type=Path, default=DEFAULT_SUMMARY)
     ap.add_argument("--json", dest="json_out", type=Path, default=DEFAULT_JSON)
     ap.add_argument("--txt", dest="txt_out", type=Path, default=DEFAULT_TXT)
-    args = ap.parse_args()
+    ap.add_argument(
+        "--idle-band", nargs=2, type=float, metavar=("LOW", "HIGH"),
+        default=[IDLE_W_LOW, IDLE_W_HIGH],
+        help="idle-power attention band in watts (WARN-only; default: "
+             "the 4090 band {:.0f} {:.0f})".format(IDLE_W_LOW, IDLE_W_HIGH))
+    return ap
+
+
+def main():
+    args = build_arg_parser().parse_args()
+    idle_low, idle_high = args.idle_band
 
     if not args.data.exists():
         print("ERROR: data file not found: {}".format(args.data))
@@ -155,6 +186,9 @@ def main():
     out("EXP-002 sweep data-quality report")
     out("generated: {}".format(datetime.now().astimezone().isoformat(timespec="seconds")))
     out("data: {}".format(args.data))
+    if [idle_low, idle_high] != [IDLE_W_LOW, IDLE_W_HIGH]:
+        out("idle band override: [{:.0f}, {:.0f}] W (default [{:.0f}, {:.0f}])".format(
+            idle_low, idle_high, IDLE_W_LOW, IDLE_W_HIGH))
 
     # ------------------------------------------------------------------
     out()
@@ -430,9 +464,9 @@ def main():
         "idle power (W)", [r.get("idle_power_w") for r in ok], "{:.2f}")
     for r in ok:
         ip = r.get("idle_power_w")
-        if ip is not None and not (IDLE_W_LOW <= ip <= IDLE_W_HIGH):
+        if ip is not None and not (idle_low <= ip <= idle_high):
             warn("idle power {:.2f} W outside [{:.0f}, {:.0f}] ({})".format(
-                ip, IDLE_W_LOW, IDLE_W_HIGH, r["spec"]["key"]))
+                ip, idle_low, idle_high, r["spec"]["key"]))
 
     # ------------------------------------------------------------------
     out()
@@ -497,9 +531,7 @@ def main():
         pu = (r.get("per_unit_j") or {}).get("B")
         if pu is None:
             continue
-        pk = tuple(sorted((k2, v2) for k2, v2 in s.items()
-                          if k2 not in ("precision", "key")))
-        pairs[pk][s.get("precision")] = (pu, s.get("key"), s.get("phase"))
+        pairs[shape_pair_key(s)][s.get("precision")] = (pu, s.get("key"), s.get("phase"))
     ratios_fwd = []
     inversions = 0
     npairs = 0
