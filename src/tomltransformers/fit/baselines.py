@@ -13,6 +13,25 @@ Roofline constants (approved 2026-07-24; RTX 4090 Laptop GPU, AD103/GN21-X11):
   is 2,325 MHz (energy.jsonl, validation report), giving 45.24 TFLOP/s FP32;
   reported as a one-line sensitivity only, never the primary.
 
+A100 roofline constants (added 2026-08-17 for a100_amendment.md section 10,
+decision D7, BEFORE any A100 baseline is fitted; NVIDIA A100-SXM4-40GB,
+Ampere GA100, the EXP-002 A100 phase device):
+- 108 SMs x 64 FP32 CUDA cores = 6,912 cores; boost 1,410 MHz (whitepaper).
+- Peak FP32 = 2 x 6,912 x 1.410e9 = 19.49 TFLOP/s (formula stated; the
+  datasheet rounds to 19.5). fp32 GEMMs run on the CUDA cores under
+  PyTorch's default (TF32 off for matmul; the runner sets nothing).
+- Peak FP16 = dense tensor-core rate: 108 SMs x 1,024 FMA/clk/SM x 2 x
+  1.410e9 = 311.9 TFLOP/s (whitepaper per-SM rate; the datasheet rounds to
+  312; the 624 sparse figure does not apply). Unlike the 4090's assumed 2x,
+  this is the vendor figure, and it is 16x the FP32 peak: the two datapaths
+  differ, which the roofline encodes and the TO priors do not (LOGBOOK
+  2026-08-17).
+- Memory bandwidth 1,555 GB/s (40 GB HBM2 per the datasheet; the device
+  registry tier is labeled hbm2e, see to_costs.py); TDP 400 W.
+- The A100 campaign's maximum sustained median SM clock is the rated boost
+  (1,410 MHz, validation report), so no measured-clock sensitivity line is
+  needed on that platform.
+
 Raw structural counts are recovered EXACTLY by inverting to_costs with the
 same constants the feature bridge used, so the baselines consume untainted
 op and word counts: raw_macs = to_mac / mac(prec); off-chip words =
@@ -44,6 +63,20 @@ CITATIONS = {
                         "16 GB GDDR6, 256-bit, 576 GB/s, boost 2040 MHz.",
     "measured_clock": "energy.jsonl (frozen EXP-002 dataset): maximum sustained "
                       "median SM clock 2325 MHz across 296 points.",
+    "nvidia_a100_datasheet": "NVIDIA, 'NVIDIA A100 Tensor Core GPU' datasheet "
+                             "(SXM4 and PCIe form factors, June 2021): FP32 19.5 "
+                             "TFLOPS; FP16 Tensor Core 312 TFLOPS (624 with "
+                             "sparsity); A100 40GB SXM: 40 GB HBM2, 1,555 GB/s, "
+                             "400 W max TDP.",
+    "nvidia_a100_whitepaper": "NVIDIA, 'NVIDIA A100 Tensor Core GPU "
+                              "Architecture' whitepaper v1.0 (2020): A100 = "
+                              "GA100 with 108 SMs, 64 FP32 CUDA cores per SM "
+                              "(6,912), four third-generation Tensor Cores per "
+                              "SM at 256 FP16/FP32 FMA per clock each (1,024 "
+                              "dense FMA/clk/SM); GPU boost clock 1,410 MHz.",
+    "measured_clock_a100": "a100/energy.jsonl (frozen EXP-002 A100 dataset): "
+                           "median SM clocks bimodal 1095/1410 MHz across 98 "
+                           "points; maximum 1410 MHz equals the rated boost.",
 }
 
 CORES = 9_728
@@ -57,6 +90,44 @@ MEASURED_MAX_SM_HZ = 2.325e9                              # frozen dataset
 PEAK_FP32_MEASURED = 2.0 * CORES * MEASURED_MAX_SM_HZ     # 45.24e12
 PEAK_BY_PRECISION_MEASURED = {"fp32": PEAK_FP32_MEASURED,
                               "fp16": 2.0 * PEAK_FP32_MEASURED}
+
+# --- NVIDIA A100-SXM4-40GB (Ampere GA100); see module docstring -------------
+A100_SMS = 108
+A100_CORES_PER_SM = 64
+A100_CORES = A100_SMS * A100_CORES_PER_SM                          # 6,912
+A100_BOOST_HZ = 1.410e9
+A100_PEAK_FP32_FLOPS_S = 2.0 * A100_CORES * A100_BOOST_HZ          # 19.49e12
+A100_TENSOR_FMA_PER_CLK_PER_SM = 1_024
+A100_PEAK_FP16_FLOPS_S = (2.0 * A100_SMS * A100_TENSOR_FMA_PER_CLK_PER_SM
+                          * A100_BOOST_HZ)                         # 311.9e12
+A100_PEAK_BY_PRECISION = {"fp32": A100_PEAK_FP32_FLOPS_S,
+                          "fp16": A100_PEAK_FP16_FLOPS_S}
+A100_BANDWIDTH_BYTES_S = 1555.0e9
+
+# Power envelopes for the fitted-P_avg diagnostic (a100_amendment.md section
+# 10): 4090 Laptop GPU 150 W TGP configuration (techspot_4090m); A100 SXM
+# 400 W max TDP (nvidia_a100_datasheet).
+TDP_W_BY_DEVICE = {"rtx4090": 150.0, "a100": 400.0}
+
+_ROOFLINE_BY_DEVICE = {
+    "rtx4090": {"peak_by_precision": PEAK_BY_PRECISION,
+                "bandwidth_bytes_s": BANDWIDTH_BYTES_S},
+    "a100": {"peak_by_precision": A100_PEAK_BY_PRECISION,
+             "bandwidth_bytes_s": A100_BANDWIDTH_BYTES_S},
+}
+
+
+def roofline_constants(device: str) -> dict:
+    """Roofline keyword arguments (peak_by_precision, bandwidth_bytes_s) for
+    a device registry name; the rtx4090 entry is the module default set."""
+    try:
+        c = _ROOFLINE_BY_DEVICE[device]
+    except KeyError:
+        raise KeyError(f"no roofline constants for device {device!r}; known: "
+                       f"{sorted(_ROOFLINE_BY_DEVICE)}") from None
+    return {"peak_by_precision": dict(c["peak_by_precision"]),
+            "bandwidth_bytes_s": float(c["bandwidth_bytes_s"])}
+
 
 BYTES_PER_WORD = 4.0
 
