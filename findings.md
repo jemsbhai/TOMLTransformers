@@ -1052,3 +1052,74 @@ operating-point behavior; the memory-tier coefficient ratio is 0.50, i.e.
 HBM2 at about half of GDDR6 per fitted word beyond the 0.80 prior ratio.
 (iv) Follow-up C (TF32 probe, section 16.5(b)) remains the direct mechanism
 test for (i) and stays optional.
+
+
+### 2026-08-18 - Instrument A characterization: agreement is window-length dependent; sampler ceiling about 96 Hz; GIL contention ruled out
+
+**Status:** DIAGNOSTIC, post-campaign, on the RTX 4090 Laptop GPU. Triggered by
+`tests/test_instruments.py::test_gpu_smoke_A_and_B_agree_roughly` failing on an
+idle GPU (A-B 50-58% across three runs) where it had previously passed. Run
+with `scripts/diag_instrument_a.py`; artifact
+`experiments/exp_002_size_sweep/diagnostics/instrument_a.json`. Changes NO
+verdict and NO frozen datum: both energy.jsonl files and every recorded A-B
+figure stand exactly as committed.
+
+**Environment identical to the sweep:** driver 595.79 in both
+`environment.json` (2026-07-20) and today's `nvidia-smi`. Not a driver change.
+
+**Result 1, settled 3.0 s matmul window (the healthy regime).** A-B by
+sampling rate: 24.4% at 20 Hz, 7.1% at 50 Hz, 8.3% at 100 Hz, 7.1% at 200 Hz.
+Trapezoid, rectangle and mean-times-duration agree to 0.1% at every rate;
+coverage 0.989-1.000; first-sample delay negative (the sampler opens before
+t0). The residual is therefore not integration placement, not span coverage,
+and not undersampling above 50 Hz.
+
+**Result 2, GIL contention ruled out.** At 100 Hz the in-process sampler's mean
+power is 491.8 J / 3.018 s = 162.9 W; the EXTERNAL out-of-process nvidia-smi
+logger reads 163.7 W over the same window. Two independent readers of
+`nvmlDeviceGetPowerUsage` agree, while the accumulator implies 536.3 / 3.018 =
+177.7 W on a 175 W part. The residual is a genuine NVML sampled-power versus
+hardware-counter offset, the branch the diagnostic's own guide maps to "B
+primary, A a sanity check". That decision was already on record and is
+unchanged; this is independent support for it, not a new decision. Caveat: the
+external logger's ENERGY column is unusable (218-413 J for the same window; its
+loop timing is unreliable), so only its mean power is meaningful.
+
+**Result 3, sampler ceiling about 96 Hz on this host.** A 5 ms requested
+interval yields a 10.37 ms median gap, indistinguishable from the 10 ms request
+(10.43 ms). 200 Hz buys nothing here. The sweep's 100 Hz was already at the
+practical ceiling, which retrospectively justifies that choice.
+
+**Result 4, BOTH instruments degrade below about 0.5 s.** On the 0.25 s GPT-2
+prefill s1024 window, A-B runs 36-94%, improving monotonically with rate, and B
+is itself unstable: 33.5, 35.5, 52.1, 37.5 J for identical work, a spread of
+about 25%, with the 52.1 J reading implying 209.6 W on a 175 W part. That is
+the accumulator's update period showing through. This is the first quantified
+statement in this project of WHY the frozen protocol's 4.0 s minimum window
+(measure_until_floor) is necessary; previously the floor rested only on the
+20 Hz versus 100 Hz sampling result of 2026-05-29.
+
+**Why the smoke test changed behavior.** It measured ONE unfloored window of
+about 0.7-0.9 s, sitting between the 3 s case (8%) and the 0.25 s case
+(36-94%), and asserted a 50% bound. It was always marginal: 50.19% inside the
+full suite, where the GPU was warm from preceding tests, and 57-58% cold.
+Nothing regressed; a thin margin tipped. The test was rewritten this date to
+size its window to the 4 s floor, to assert the floor was actually reached, and
+to gate at 25% against the 7-8% measured there. The band was NOT simply
+loosened: the window was corrected so that the assertion tests the regime the
+sweep actually operates in.
+
+**Consequence for the paper (positive, methods).** The 4 s floor and the
+instrument hierarchy are now supported by direct measurement rather than by
+assertion. The sweep's recorded pooled A-B of 4.80% on the 4090 and 0.60% on
+the A100 were obtained at or above that floor and sit at or better than the
+7-8% seen here at 3 s, which is consistent. Honest limits: one host, one GPU,
+two workloads, and the short-window arm confounds window length with workload
+(matmul 3.0 s versus GPT-2 prefill 0.25 s), so "window length" is the supported
+reading, not a proven isolation of duration from burstiness.
+
+**A separate benign artifact, recorded so it is not re-investigated:** idle
+`nvidia-smi` reports 593 W on this 175 W part at 0% utilization with Disp.A
+off. This is the documented Runtime D3 suspended-sensor reading on Ada mobile
+parts, not a telemetry fault; it does not touch the measured windows, where the
+GPU is awake, and it is not evidence of anything about instrument A.

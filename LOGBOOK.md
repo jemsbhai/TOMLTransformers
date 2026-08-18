@@ -876,3 +876,64 @@ secondaries recorded, exploratory work done and labeled. Next: Step 8
 exploratory phase may be presented as a fitted result of this experiment; if
 the precision-split model is to carry weight, it needs its own dated
 pre-registration on new data (EXP-003 or the next platform).
+
+
+## 2026-08-18 - Step 8a begins: figure pipeline, lineage gate, and an
+## instrument-A diagnostic detour
+
+Step 8a (figures) opened. Two new modules: `src/tomltransformers/figures/`
+(data layer) and `scripts/make_figures.py` (plotting). The figure pipeline
+FITS NOTHING; every predicted value plotted comes from a committed artifact
+(4090 db1f984, A100 confirmatory 176183d, A100 exploratory 4e774c7). Only two
+per-point quantities are recomputed, both by importing the frozen validator's
+own `shape_pair_key` by path so it cannot drift: per-record A-B agreement and
+fp32/fp16 matched-shape ratios, which the artifacts summarize but do not store
+point by point.
+
+LINEAGE GATE added and green (12 tests, `tests/test_figures_data.py`). It
+recomputes those quantities and compares them against the artifacts they must
+match, and cross-checks the per-point prediction files against the recorded
+verdicts: 4090 pooled A-B, 4090 fp pair count and inversions and the full
+five-number forward-ratio summary, 4090 R1 full-data MAPE; A100 pooled and
+per-class A-B, A100 fp pairs and ratios, A100 T1 held-out MAPE, T2 eval-76
+MAPE, T3 pooled MAPE, and the exploratory M8p T3 MAPE. NO gate value is
+hardcoded; each expectation is read from the artifact it must match, so the
+gate cannot silently drift. Any mismatch aborts the run and writes no figures.
+
+Agreed figure set F1-F8 (approved this date): F1 instrument agreement both
+platforms; F2 4090 measured vs predicted, two panels, absolute confirmatory
+and R1 exploratory; F3 A100 measured vs predicted with the 10 7B points
+marked; F4 fp32/fp16 ratio by platform against the 3.03 model-implied ceiling;
+F5 MCER by architecture and phase; F6 residual vs operating point; F7 7B
+extrapolation per point; F8 baselines by platform, two panels. Multi-panel
+approved for F2 and F8 only. M8p appears only on F6 and F7 and is labeled
+EXPLORATORY in legend and caption. Output to `paper/figures/` as PDF plus PNG
+with a `figures_manifest.json` recording commit and sources.
+
+F5 DESIGN DECISION, recorded because it changes a headline. The MCER crossing
+of unity is ESTIMATOR DEPENDENT on the 4090: under the confirmatory absolute
+fit every regime is memory-bound (decoder prefill 3.05, decode 12.61), and
+only under R1 does prefill drop below 1 (0.43 vs decode 10.50). On the A100,
+where R1 is the pre-registered primary, prefill is 0.11 vs decode 4.65. The
+estimator-independent claim that survives on both platforms and both
+estimators is a 4x to 40x SEPARATION between prefill and decode, and that is
+what the paper will headline; the crossing of unity is reported under the
+estimator where it is primary, and disclosed as estimator dependent. F5 draws
+all three series so the reader sees this directly.
+
+DETOUR, resolved: `test_gpu_smoke_A_and_B_agree_roughly` failed on an idle GPU
+(A-B 50-58%). Diagnosed with `scripts/diag_instrument_a.py`; full record in
+findings.md this date. Instrument A is NOT broken: on a settled 3.0 s window
+A-B is 7-8% at 50-200 Hz, the three integration methods agree to 0.1%,
+coverage is 99%+, and an external out-of-process nvidia-smi logger reads the
+same mean power as the in-process sampler (163.7 W vs 162.9 W), ruling out
+GIL contention. The residual is a genuine NVML sampled-power vs
+hardware-counter offset, supporting the existing B-primary decision. New
+quantified facts: the sampler ceiling on this host is about 96 Hz (200 Hz
+requests yield the same 10.4 ms median gap as 100 Hz), and BOTH instruments
+degrade below about 0.5 s, where B itself swings about 25% on identical work.
+The test measured an unfloored 0.7-0.9 s window and was always marginal; it
+was rewritten to size its window to the protocol's 4 s floor, to assert the
+floor was reached, and to gate at 25% against the 7-8% measured there. The
+band was not merely loosened; the window was corrected. No verdict, dataset,
+or paper number is affected.

@@ -12,6 +12,12 @@ import pytest
 
 from tomltransformers.measure import instruments as ins
 
+# The frozen sweep protocol's minimum measurement window (measure_until_floor).
+# Agreement between instruments is only meaningful at or above this floor; see
+# test_gpu_smoke_A_and_B_agree_roughly and findings.md 2026-08-18.
+WINDOW_FLOOR_S = 4.0
+AB_SMOKE_BAND = 0.25
+
 
 # --- pure-logic tests (no GPU needed) -----------------------------------------
 
@@ -62,19 +68,41 @@ def test_gpu_smoke_A_and_B_agree_roughly():
     a = torch.randn(4096, 4096, device=dev, dtype=torch.float32)
     b = torch.randn(4096, 4096, device=dev, dtype=torch.float32)
 
-    def work():
-        c = a
-        for _ in range(200):          # ~sub-second of sustained matmul
-            c = a @ b
-        return c
-
     for _ in range(10):               # warmup: autotune + cache fill
         _ = a @ b
     torch.cuda.synchronize()
 
+    # Size the window to the protocol's 4 s floor. BELOW that floor both
+    # instruments degrade, so an agreement assertion there tests a regime the
+    # sweep never operates in. Diagnostic of 2026-08-18
+    # (diagnostics/instrument_a.json): on a settled 3.0 s matmul window A-B is
+    # 7.1-8.3% at 50-200 Hz, but on a 0.25 s window it is 36-94%, and B itself
+    # swung 33.5-52.1 J on identical work there (one reading implying 210 W on
+    # a 175 W part). The earlier unfloored ~0.8 s window sat in that degraded
+    # band and tripped a 50% assertion intermittently.
+    t0 = time.perf_counter()
+    for _ in range(20):
+        _ = a @ b
+    torch.cuda.synchronize()
+    per_iter_s = (time.perf_counter() - t0) / 20
+    n_iters = max(50, int(WINDOW_FLOOR_S / per_iter_s) + 1)
+
+    def work():
+        c = a
+        for _ in range(n_iters):
+            c = a @ b
+        return c
+
     win = ins.measure_once(work)      # all instruments; C optional
     print(f"\n[smoke] available={win.available} energy_j={win.energy_j} "
-          f"n_samples={win.n_power_samples} notes={win.notes}")
+          f"n_samples={win.n_power_samples} wall_s={win.wall_time_s:.2f} "
+          f"n_iters={n_iters} notes={win.notes}")
+
+    # The window must actually clear the floor, or the agreement check below is
+    # not testing what it claims to test.
+    assert win.wall_time_s >= WINDOW_FLOOR_S * 0.8, (
+        f"window {win.wall_time_s:.2f} s did not reach the {WINDOW_FLOOR_S} s "
+        f"floor; instrument agreement is not meaningful below it")
 
     # B (the hardware accumulator) is the most reliable single reading on Ada.
     assert "B" in win.available, f"energy counter unavailable; notes={win.notes}"
@@ -84,10 +112,14 @@ def test_gpu_smoke_A_and_B_agree_roughly():
         assert win.energy_j["A"] > 0.0
         assert win.n_power_samples >= 5
 
-    # Loose ballpark gate for a smoke test (the real pre-registered gate is 5%
-    # median under thermal control, enforced by the runner, not here).
+    # Smoke gate on a floored window. The pre-registered gate is a 5% pooled
+    # median under thermal control, enforced by the runner, not here; this band
+    # sits well above the 7-8% measured on a settled window, so the test catches
+    # a broken instrument rather than the normal power-vs-counter offset.
     for pair, val in win.agreement().items():
-        assert val < 0.5, f"{pair} disagree by {val:.0%} on smoke; notes={win.notes}"
+        assert val < AB_SMOKE_BAND, (
+            f"{pair} disagree by {val:.0%} on a {win.wall_time_s:.1f} s "
+            f"window; notes={win.notes}")
 
 
 @pytest.mark.skipif(not ins.nvml_available(), reason="no NVML / GPU")
