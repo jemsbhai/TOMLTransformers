@@ -969,3 +969,86 @@ scalar. Post-verdict exploratory work is pre-registered in amendment section
 16.5: (a) a precision-split MAC model, and, motivated by mechanism 2, a
 descriptive residual-vs-operating-point table; (b) optional Follow-up C
 (TF32 probe). Neither alters any verdict above.
+
+
+### 2026-08-18 - EXPLORATORY: precision-split MAC model (M8p) and operating-point table on the A100; correction to the 2026-08-17 T3 attribution
+
+**Status:** EXPLORATORY, pre-registered as post-verdict work in
+a100_amendment.md section 16.5(a); computed by scripts/explore_exp002_a100.py
+at commit 4e774c7 after the T0-T3 verdicts were recorded; artifacts in
+a100/fit/exploratory/. NO VERDICT AUTHORITY: T1/T2/T3 remain FAIL as
+recorded on 2026-08-17. M8p = M8_split_dispatch with to_mac split into fp16
+and fp32 columns, fitted under R1 (same math as fit_relative). "Would be
+inside the band" below is a description of a number, not a verdict.
+
+**(a1) M8p on the identical T1 split (17 held-out):** MAPE 20.02% (M8 on
+record 35.60%; the band would be 25%). Coefficients (train): to_mac_fp16
+1.925e-15, to_mac_fp32 7.116e-15, to_nonlinear 2.856e-14, to_sram 0, to_hbm
+3.614e-15, n_launches 1.257e-05, intercept 0. Fitted fp16 MAC multiplier
+(alpha_fp16 x 0.33 / alpha_fp32) 0.089 vs the asserted 0.33. Held-out
+breakdown balanced: fp16/decode-like -9.4%, fp16/forward +8.9%,
+fp32/decode-like -11.0%, fp32/forward +5.6% (M8: -7.6 / +38.2 / -26.3 /
+-50.3).
+
+**(a2) M8p on all 84, predicting the 10 7B-class points:** pooled MAPE
+11.04% (M8 on record 42.66%; the band would be 30%): prefill s1024/4096
++4.5%, prefill s8192 +10.6%, decode -17.8%. Fitted multiplier 0.083;
+in-sample MAPE 19.74%, R2 0.941 (M8: 35.8%, 0.766). In-sample:
+fp16/decode-like -3.6%, fp16/forward -15.1%, fp32/decode-like -15.9%,
+fp32/forward +2.5%.
+
+**(a3) T2 repeat with an M8p refit on all 296 4090 points, one scalar on
+the same 8 cells:** MAPE 52.42% on the 76 (M8 on record 52.93%; s* 0.367 vs
+0.386); zero-shot 102.7%. Breakdown: fp16/decode-like +19.7%, fp16/forward
+-42.9%, fp32/decode-like -42.1%, fp32/forward -73.5%. The 4090 M8p fit:
+to_mac_fp16 1.352e-15, to_mac_fp32 3.437e-15, to_nonlinear 3.729e-14,
+to_sram 1.525e-13, to_hbm 7.201e-15, n_launches 8.598e-04, intercept 0;
+in-sample MAPE 13.97% (frozen M8 R1 on record 18.24%); fitted multiplier
+0.130 vs the asserted 0.33. Cross-platform coefficient ratios A100/4090:
+to_mac_fp16 1.31, to_mac_fp32 2.05, to_hbm 0.50, n_launches 0.0096 (about
+100x smaller on the A100 host), to_sram 0 vs nonzero.
+
+**(b) Operating-point table (M8 -> M8p mean signed residual of the all-84
+fits, by recorded median SM clock; P_total = net + measured idle):**
+extension fp16 prefill at 1290 MHz, 397 W total (the 400 W envelope): +67
+-> +6.5%; shared fp16 forward at the 1095 MHz DVFS state, 88 W total: +56
+-> +24.5%; shared fp16 forward power-capped at 1316 MHz, 392 W: +35 ->
++7.6%; shared fp16 forward flash at 1410 MHz, 211 W: +6 -> -11%; fp32
+forward at 1410 MHz, 331 W: -53 -> +2.5%; fp32 decode-like at 1410 MHz: -50
+-> -28%; fp16 decode-like at 1095 MHz: +1.5 -> +0.6%; eager fp16 forward at
+1410 MHz: -71 -> -77%; 7B decode at 1410 MHz, 293 W: -6 -> -18%.
+
+**Correction (honest, to the 2026-08-17 entry):** that entry attributed
+T3's prefill error entirely to the operating point. That was wrong. The
++66 to +71% on every 7B prefill was overwhelmingly the alpha_mac
+compromise: M8's shared coefficient 3.118e-15 against M8p's fp16 coefficient
+1.766e-15 is a ratio of 1.77, which is the +67% (LLaMA-7B prefill s1024:
+predicted 37.2 J vs measured 21.8 J under M8; +2 to +11% under M8p). The
+operating-point effect is real but secondary: after the split, the 1095 MHz
+cells sit at +24.5%, the power-capped cells at +7%, and the 1410 MHz cells
+at -11%, a spread of about 35 points rather than a factor of two. Also
+revised: fp32 decode-like cells remain under-predicted by 28% under M8p
+(range -63 to +5%), a residual precision effect in the decode regime that
+the split does not remove; and the eager cells remain under-predicted by
+about 4x, an inadequate representation of the math-SDPA path on Ampere (six
+cells; not pursued here).
+
+**Reading (exploratory, for the journal and EXP-003; nothing here changes a
+verdict):** (i) The asserted fp16 MAC multiplier 0.33 (provenance
+NEW_ESTIMATE, Horowitz bit-width scaling) is not supported on either
+platform: fitted 0.130 on the 4090 and 0.083 on the A100. The precision
+prior is a device property set by execution-unit routing (tensor cores vs
+CUDA cores), and it belongs in the device registry beside the memory tier.
+(ii) With that single change, on-platform refit and 7B extrapolation on the
+A100 land at 20.0% and 11.0%, numbers that would sit inside the
+pre-registered bands; this is the exploratory finding to carry into a
+re-pre-registered protocol (EXP-003 or the next platform), never re-fitted
+here as confirmatory. (iii) Cross-platform scalar transfer still fails
+(52.4%) because three device-level quantities differ, not one: the fp16
+multiplier, the dispatch coefficient (about 100x; hypothesis: Windows WDDM
+kernel-launch overhead on the 4090 laptop host versus Linux on the A100
+host, consistent with the signals paper's host-dependent alpha_o), and the
+operating-point behavior; the memory-tier coefficient ratio is 0.50, i.e.
+HBM2 at about half of GDDR6 per fitted word beyond the 0.80 prior ratio.
+(iv) Follow-up C (TF32 probe, section 16.5(b)) remains the direct mechanism
+test for (i) and stays optional.

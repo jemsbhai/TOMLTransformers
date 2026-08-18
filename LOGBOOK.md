@@ -844,3 +844,35 @@ Step 8 (figures, UEMCON manuscript, journal venue scan). Fidelity note for
 the paper: the A100-SXM4-40GB carries HBM2 per the datasheet; the registry
 tier is labeled hbm2e (6.00 pJ/bit); an HBM2 6.25 pJ/bit prior rescales
 to_hbm by 200/192 uniformly, absorbed by alpha_hbm, verdict-invariant.
+
+### 2026-08-18 - Exploratory phase (amendment 16.5(a)) computed; T3 attribution corrected; Step 7 closed
+scripts/explore_exp002_a100.py committed at 4e774c7, then run once (CPU);
+artifacts in a100/fit/exploratory/{explore_report.txt, explore_results.json}.
+One bug found and fixed before the successful run: PRECISION_MAC_MULT
+entries are TOCost records, not floats (fixed to .value; commit amended).
+EXPLORATORY throughout, no verdict authority; the confirmatory artifacts and
+the T0-T3 verdicts of 2026-08-17 are untouched. Numbers in findings.md, this
+date. Headlines: M8p (to_mac split by precision, all else M8) gives held-out
+20.02% on the identical T1 split (M8 35.60%) and 11.04% on the 10 7B points
+(M8 42.66%); the fitted fp16 MAC multiplier is 0.083 on the A100 and 0.130
+on the 4090 against the asserted 0.33, so the precision prior is a device
+property and belongs in the device registry beside the memory tier. T2 still
+fails under M8p (52.42%) because three device quantities differ, not one:
+the fp16 multiplier, the dispatch coefficient (n_launches 8.6e-4 on the 4090
+vs 8.2e-6 on the A100, about 100x; hypothesis, Windows WDDM launch overhead
+on the laptop host vs Linux on the A100 host, consistent with the signals
+paper's host-dependent alpha_o), and the operating-point behavior; to_hbm
+ratio 0.50. HONEST CORRECTION recorded in findings.md: the 2026-08-17 entry
+attributed T3's +67% prefill error entirely to the operating point; it was
+overwhelmingly the alpha_mac compromise (M8 3.118e-15 vs M8p fp16 1.766e-15,
+ratio 1.77 = the +67%). The operating-point effect is real but secondary
+(about a 35-point spread after the split, not a factor of two); the table in
+section (b) of the report stands as the descriptive record. Two residual
+structures the split does not remove: fp32 decode-like still -28% mean, and
+the six eager cells still about -77% (math SDPA path on Ampere).
+Step 7 is now CLOSED: confirmatory verdicts recorded as they fell,
+secondaries recorded, exploratory work done and labeled. Next: Step 8
+(figures, UEMCON manuscript, journal venue-fit scan). Nothing in the
+exploratory phase may be presented as a fitted result of this experiment; if
+the precision-split model is to carry weight, it needs its own dated
+pre-registration on new data (EXP-003 or the next platform).
