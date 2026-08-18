@@ -34,6 +34,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import statistics
 import subprocess
 import sys
 from datetime import datetime
@@ -171,8 +173,8 @@ def fig_f1(outdir, formats):
         y_by_key[row["key"]] = row["y_j"]
 
     fig, ax = plt.subplots(figsize=(W1, 2.5))
-    for label, path, marker in (("RTX 4090 (n=296)", fd.R4090_ENERGY, "o"),
-                                ("A100 SXM4 (n=98)", fd.A100_ENERGY, "^")):
+    for label, path, marker in (("RTX 4090", fd.R4090_ENERGY, "o"),
+                                ("A100 SXM4", fd.A100_ENERGY, "^")):
         rows = fd.ab_percentages(fd.load_records(path))
         xs, ys = [], []
         for r in rows:
@@ -181,12 +183,14 @@ def fig_f1(outdir, formats):
                 continue
             xs.append(y)
             ys.append(100.0 * r["ab"])
-        ax.scatter(xs, ys, s=6, marker=marker, alpha=0.55, label=label,
-                   linewidths=0)
+        med = statistics.median(ys)
+        ax.scatter(xs, ys, s=6, marker=marker, alpha=0.55, linewidths=0,
+                   label=f"{label} (n={len(ys)}, median {med:.2f}%)")
 
     ax.axhline(5.0, linestyle="--", linewidth=0.8, color="0.35")
-    ax.text(0.98, 0.93, "pre-registered target 5%", transform=ax.transAxes,
-            ha="right", va="top", fontsize=6.5, color="0.3")
+    ax.text(0.98, 0.95, "pre-registered target: pooled median 5%",
+            transform=ax.transAxes, ha="right", va="top", fontsize=6.5,
+            color="0.3")
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("Measured energy per composite execution (J)")
@@ -284,16 +288,19 @@ def fig_f4(outdir, formats):
     fig, ax = plt.subplots(figsize=(W1, 2.6))
     ax.boxplot([r4090, ra100], widths=0.5, showfliers=False,
                medianprops={"linewidth": 1.2})
+    # Deterministic fixed-width jitter (golden angle), so both swarms are the
+    # same width regardless of n.
     for i, vals in enumerate((r4090, ra100), start=1):
-        xs = [i + 0.22 + 0.0035 * (j - len(vals) / 2) for j in range(len(vals))]
+        xs = [i + 0.24 + 0.05 * math.sin(j * 2.399963) for j in range(len(vals))]
         ax.scatter(xs, vals, s=5, alpha=0.5, linewidths=0)
 
     ax.axhline(fd.MODEL_IMPLIED_RATIO_CEILING, linestyle="--", linewidth=0.9,
                color="0.35")
-    ax.text(0.5, fd.MODEL_IMPLIED_RATIO_CEILING * 1.04,
-            f"model-implied ceiling {fd.MODEL_IMPLIED_RATIO_CEILING:g}"
-            r" ($\beta \geq 0$)",
-            fontsize=6.5, color="0.3", va="bottom")
+    ax.text(0.04, 0.95,
+            f"model-implied ceiling {fd.MODEL_IMPLIED_RATIO_CEILING:g}\n"
+            r"(any $\beta \geq 0$ under the frozen priors)",
+            transform=ax.transAxes, ha="left", va="top", fontsize=6.5,
+            color="0.3")
     ax.set_xticks([1, 2])
     ax.set_xticklabels([f"RTX 4090\n(n={len(r4090)})",
                         f"A100 SXM4\n(n={len(ra100)})"])
@@ -322,11 +329,12 @@ def fig_f5(outdir, formats):
 
     labels, s_a100, s_4090_r1, s_4090_abs = [], [], [], []
     for arch, phase, label in MCER_GROUPS:
+        # Both artifacts key this map FLAT, as "arch/phase", not nested.
         entry = a100[f"{arch}/{phase}"]
         labels.append(label)
         s_a100.append(entry["median"])
         s_4090_r1.append(entry["median_4090_r1"])
-        s_4090_abs.append(r4090[arch][phase]["median"])
+        s_4090_abs.append(r4090[f"{arch}/{phase}"]["median"])
 
     x = range(len(labels))
     width = 0.27
@@ -352,35 +360,58 @@ def fig_f5(outdir, formats):
 
 # ----------------------------------------------------------------------
 # F6: residual vs operating point
+#
+# Deliberately NOT a scatter against clock. Six of the twelve rows sit at
+# 1410 MHz and three at 1095 MHz, and at 1410 MHz alone the M8 residual spans
+# -70.9% (eager) to +6.0% (fp16 flash forward). Clock does not organise that
+# spread; precision and the eager path do. Plotting against clock would
+# visually charge mechanism 1 (precision datapath) and mechanism 3 (eager) to
+# mechanism 2 (operating point), which is the exact misattribution the
+# 2026-08-18 correction in findings.md exists to undo. Rows are therefore
+# labeled with their full operating point and ordered by clock, so the
+# operating-point effect reads WITHIN the comparable fp16 flash rows.
 # ----------------------------------------------------------------------
 
+PHASE_SHORT = {"forward": "fwd", "decode_like": "dec"}
+
+
 def fig_f6(outdir, formats):
-    table = fd.load_a100_explore()["b_operating_point_table"]
-    fig, ax = plt.subplots(figsize=(W2, 3.0))
+    table = sorted(fd.load_a100_explore()["b_operating_point_table"],
+                   key=lambda r: (r["median_clock_mhz"], r["median_p_total_w"]))
+    rows = list(range(len(table)))
+    labels = [
+        f"{r['median_clock_mhz']:.0f} MHz, {r['median_p_total_w']:.0f} W   "
+        f"{r['precision']} {r['attn_kind']} "
+        f"{PHASE_SHORT.get(r['phase_class'], r['phase_class'])} (n={r['n']})"
+        for r in table]
 
-    for offset, mkey, marker, label in (
-            (-6, "m8", "o", "M8 (confirmatory form)"),
-            (+6, "m8p", "^", "M8p precision split (EXPLORATORY)")):
-        xs, ys, lo, hi, sizes = [], [], [], [], []
-        for row in table:
-            mean = row[f"{mkey}_mean_signed_pct"]
-            xs.append(row["median_clock_mhz"] + offset)
-            ys.append(mean)
-            lo.append(mean - row[f"{mkey}_min"])
-            hi.append(row[f"{mkey}_max"] - mean)
-            sizes.append(6 + 0.09 * row["median_p_total_w"])
-        ax.errorbar(xs, ys, yerr=[lo, hi], fmt="none", elinewidth=0.7,
-                    capsize=1.5, alpha=0.6)
-        ax.scatter(xs, ys, s=sizes, marker=marker, alpha=0.8, linewidths=0,
-                   label=label)
+    fig, ax = plt.subplots(figsize=(W2, 4.2))
 
-    ax.axhline(0.0, linestyle="--", linewidth=0.8, color="0.35")
-    ax.set_xlabel("Recorded median SM clock (MHz); marker area scales with "
-                  "total board power")
-    ax.set_ylabel("Mean signed residual (%)")
-    ax.set_title("Energy per transistor operation depends on the operating "
-                 "point;\nthe frozen form has no term for it")
-    ax.legend(loc="upper right", frameon=False)
+    # Connector showing what the precision split moves, drawn under the markers.
+    for i, r in enumerate(table):
+        ax.plot([r["m8_mean_signed_pct"], r["m8p_mean_signed_pct"]], [i, i],
+                linewidth=0.8, color="0.6", zorder=1)
+
+    for mkey, marker, label in (("m8", "o", "M8 (confirmatory form)"),
+                                ("m8p", "D",
+                                 "M8p precision split (EXPLORATORY)")):
+        xs = [r[f"{mkey}_mean_signed_pct"] for r in table]
+        lo = [r[f"{mkey}_mean_signed_pct"] - r[f"{mkey}_min"] for r in table]
+        hi = [r[f"{mkey}_max"] - r[f"{mkey}_mean_signed_pct"] for r in table]
+        ax.errorbar(xs, rows, xerr=[lo, hi], fmt="none", elinewidth=0.7,
+                    capsize=1.5, alpha=0.55, zorder=2)
+        ax.scatter(xs, rows, s=22, marker=marker, label=label, zorder=3,
+                   linewidths=0)
+
+    ax.axvline(0.0, linestyle="--", linewidth=0.8, color="0.35")
+    ax.set_yticks(rows)
+    ax.set_yticklabels(labels, fontsize=6.5)
+    ax.set_ylim(-0.6, len(table) - 0.4)
+    ax.invert_yaxis()
+    ax.set_xlabel("Mean signed residual (%), whiskers span the cell group")
+    ax.set_title("Residual by operating point and execution path\n"
+                 "(rows ordered by SM clock; whiskers are min to max)")
+    ax.legend(loc="upper left", frameon=False)
     return save(fig, "f6_operating_point_residual", outdir, formats)
 
 
@@ -428,7 +459,7 @@ def fig_f7(outdir, formats):
     ax.set_ylabel("Signed prediction error (%)")
     ax.set_title("Extrapolation to 7B-class models: decode transfers, "
                  "prefill does not")
-    ax.legend(loc="upper left", frameon=False)
+    ax.legend(loc="lower left", frameon=False)
     return save(fig, "f7_extrapolation_7b", outdir, formats)
 
 
@@ -473,16 +504,18 @@ def fig_f8(outdir, formats):
 
     x = range(len(BASELINE_ORDER))
     width = 0.38
-    fig, axes = plt.subplots(1, 2, figsize=(W2, 3.2))
+    # sharey: these are both MAPE, and a reader will compare across panels.
+    # Independent scales would make the 4090 bars look larger than they are.
+    fig, axes = plt.subplots(1, 2, figsize=(W2, 3.2), sharey=True)
     for ax, (title, absolute, relative, note) in zip(axes, panels):
         ax.bar([i - width / 2 for i in x], absolute, width,
                label="absolute NNLS")
         ax.bar([i + width / 2 for i in x], relative, width, label="R1")
         ax.set_xticks(list(x))
         ax.set_xticklabels(BASELINE_ORDER, rotation=20, ha="right")
-        ax.set_title(title)
-        ax.text(0.5, 0.94, note, transform=ax.transAxes, ha="center",
-                va="top", fontsize=6.5, color="0.3")
+        # The note lives in the title so it cannot collide with the bars or
+        # the legend.
+        ax.set_title(f"{title}\n{note}")
     axes[0].set_ylabel("Held-out MAPE (%)")
     axes[0].legend(loc="upper left", frameon=False)
     return save(fig, "f8_baselines_by_platform", outdir, formats)
