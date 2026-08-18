@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-08-18T06:11:38-04:00",
+  "git_commit": "32b28215d6be6754a5d9d3cca0267bf747628309",
+  "git_dirty": true,
+  "lineage_gate_checks": 30,
+  "lineage_gate_all_passed": true,
+  "sources": {
+    "rtx4090_fit": "experiments\\exp_002_size_sweep\\fit\\fit_results.json",
+    "rtx4090_predictions": "experiments\\exp_002_size_sweep\\fit\\per_point_predictions.jsonl",
+    "a100_fit": "experiments\\exp_002_size_sweep\\a100\\fit\\fit_results.json",
+    "a100_predictions": "experiments\\exp_002_size_sweep\\a100\\fit\\per_point_predictions.jsonl",
+    "a100_exploratory": "experiments\\exp_002_size_sweep\\a100\\fit\\exploratory\\explore_results.json"
+  },
+  "figures": {
+    "F1": [
+      "paper\\figures\\f1_instrument_agreement.pdf",
+      "paper\\figures\\f1_instrument_agreement.png"
+    ],
+    "F2": [
+      "paper\\figures\\f2_4090_measured_vs_predicted.pdf",
+      "paper\\figures\\f2_4090_measured_vs_predicted.png"
+    ],
+    "F3": [
+      "paper\\figures\\f3_a100_measured_vs_predicted.pdf",
+      "paper\\figures\\f3_a100_measured_vs_predicted.png"
+    ],
+    "F4": [
+      "paper\\figures\\f4_precision_ratio_by_platform.pdf",
+      "paper\\figures\\f4_precision_ratio_by_platform.png"
+    ],
+    "F5": [
+      "paper\\figures\\f5_mcer_phase_separation.pdf",
+      "paper\\figures\\f5_mcer_phase_separation.png"
+    ],
+    "F6": [
+      "paper\\figures\\f6_operating_point_residual.pdf",
+      "paper\\figures\\f6_operating_point_residual.png"
+    ],
+    "F7": [
+      "paper\\figures\\f7_extrapolation_7b.pdf",
+      "paper\\figures\\f7_extrapolation_7b.png"
+    ],
+    "F8": [
+      "paper\\figures\\f8_baselines_by_platform.pdf",
+      "paper\\figures\\f8_baselines_by_platform.png"
+    ]
+  }
+}
