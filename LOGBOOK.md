@@ -702,3 +702,90 @@ reported descriptively; no model re-selection on the A100 (settled). Commits:
 feat(validator) for the script and tests, chore(exp-002) for the regenerated
 a100 reports, docs(lab) for this entry and findings.md. Next: Step 7, read
 a100_amendment.md in full, then propose the fit-path shape.
+
+### 2026-08-17 - Pre-fit record: precision-prior structural mismatch on the A100, T1/T2/T3 risk predictions, T2 calibration-cell root cause; no fit computed yet
+Written BEFORE any A100 fit of any kind. What has been examined so far on the
+A100 data: the validator reports (this date) and, ad hoc, the fp32/fp16
+matched-pair per-unit(B) ratios by phase computed from the frozen records
+with the validator's own matcher; the forward-phase numbers agree with the
+committed reports. Nothing else.
+(1) T2 calibration cell root cause, verified against configs/exp_002_a100.yaml,
+configs/exp_002.yaml, sweep/grid.py and both datasets: the 4090 grid carries
+the enc-dec decode center cell (s1024, ctx1024) in BOTH precisions (T5-small
+decode: source arm s in {128,512,1024,2048,4096} at ctx1024, target arm ctx in
+the same set at s1024, deduped at the center; 143 fp32 points, 143 pairs, 0
+unpaired), which is the mental model behind amendment section 9's "T5-small
+decode anchor-1024" (fp16). Amendment section 5c budgeted enc-dec at 12 fp16
++ 6 fp32 = 18, and 12 fp16 for two models is reachable only by omitting the
+fp16 center decode cell (encode + decoder_prefill + 4 off-center decode cells
+per model). The Step 6 grid encoding followed 5c exactly and states it in a
+comment ("The 1024/1024 decode cell is deliberately absent here (it is the
+fp32 anchor below)"). So the discrepancy is internal to the amendment
+(section 5c counts vs section 9 cell naming), faithfully implemented; the 98
+points are exactly the frozen enumeration; not a builder or data fault. Not
+caught earlier because the enumeration-lock tests check counts and tuples
+against the config, not section 9's prose; the 4090 fits never named cells;
+the pairing check was broken for the whole campaign, hiding the two unpaired
+fp32 anchors; and coverage reconciliation was config-vs-data. Process fix: a
+spec-to-enumeration test that resolves every named cell to exactly one key.
+No further A100 measurement is needed for any pre-registered test; the cell
+is resolved by dated clarification (amendment section 16, this date) with a
+descriptive sensitivity companion over the four candidates.
+(2) The larger finding. Precision enters the frozen model only through fixed
+priors: to_costs PRECISION_MAC_MULT fp16 = 0.33 (provenance NEW_ESTIMATE,
+Horowitz bit-width scaling) vs fp32 = 1.00, and words per element fp16 = 0.5
+vs fp32 = 1.0; to_nonlinear, n_launches and the intercept are
+precision-independent, and M8_split_dispatch shares one coefficient set
+across precisions. Hence the model's implied fp32/fp16 energy ratio at
+matched shape lies in [1.0, 3.03] for every beta >= 0. Measured matched-pair
+ratios (per-unit B): 4090 prefill n=25 median 3.39 (2.04-3.90), encode n=37
+median 3.17 (2.12-4.11), decoder_prefill n=20 median 3.40 (2.96-3.92), decode
+n=61 median 1.69 (1.23-2.65), all inside or at the edge of the expressible
+range, which is why the prior fit there. A100 prefill n=12 median 7.43
+(6.20-9.07), encode n=8 median 7.46 (6.59-10.20), decoder_prefill n=2 (6.34,
+10.11), decode n=12 median 3.51 (1.54-5.52, rising with context because the
+measured decode composite includes the prefill of the context). A100 forward
+ratios sit about 2x above the model's ceiling; no refit of the frozen form
+can express them. Mechanism (hypothesis, well supported): Ampere runs fp16 on
+tensor cores and true fp32 GEMMs on CUDA cores (vendor peaks 312 vs 19.5
+TFLOP/s dense, to be cited in fit/baselines.py before D7), a datapath gap the
+Ada consumer part does not have to the same degree; the 0.33 prior is
+arithmetic switching cost and misses operand-delivery energy on scalar FMA
+units. TF32 status checked: measure/runner.py, sweep/point.py and
+workloads/decoder.py set no allow_tf32 or float32_matmul_precision, so the
+PyTorch default applied (matmul TF32 off in every version known here; the
+torch 2.13 default on the Lambda venv is to be confirmed by release notes or a
+one-liner before the paper asserts it). Framing caution: the 4090 config's
+Fork 2 comment reads "to fit the precision MAC multiplier ... instead of
+asserting them", but no M-family member has a precision-split column and
+fit_plan.md treats the multiplier as descriptive discussion; the multiplier is
+asserted, not fitted, and the paper must say so.
+(3) Predictions registered now, thresholds and mechanisms unchanged. T2:
+single scalar on fp16-only calibration cells against the frozen 4090 vector;
+the 36 fp32 evaluation cells under-predicted by roughly half on forward
+phases; verdict at high risk. T1: the R1 compromise on each forward pair
+lands near fp16 +20 percent, fp32 -50 percent (relative loss favors the fp16
+side); pooled held-out MAPE plausibly 25-35 percent against the 25 percent
+band; risk material. T3: the all-84 fit's fp16 predictions inherit the
+forward over-prediction before any extrapolation error, and 6 of the 10
+targets are prefill; risk moderate. D7: the roofline baseline uses
+per-precision peaks (4090: 39.69 / 79.38 TFLOP/s; A100: 19.5 / 312), so it
+encodes the datapath structure M8 lacks and may be competitive on A100 fp32
+cells; reported as it falls. If any test fails, the precision-structured
+residual is the pre-stated diagnosis, not a post-hoc one.
+(4) Decisions. Confirmatory tests run exactly as frozen (M8 form, R1
+primary, T0-T3 bands, 84/76/10 sets, spot cells excluded); no
+re-specification in response to these observations. Pre-registered as
+DESCRIPTIVE (section 16): fp16-vs-fp32 breakdown of the T1 and T2 residuals,
+separating "does the memory-tier prior transfer" (D6, alpha_hbm ratio, read
+on fp16 cells) from "does the precision prior transfer"; the T2 sensitivity
+companion. Named as POST-VERDICT EXPLORATORY work with no verdict authority,
+to be run only after T0-T3 are recorded in findings.md: (a) a precision-split
+MAC model (to_mac split into fp16 and fp32 columns, all else M8) under R1 on
+the same T1 split, reported as the 4090 R1 exploratory was; (b) optional
+Follow-up C, about 1 GPU-hour on a fresh A100 instance, re-measuring a few
+matched fp32 cells with TF32 enabled, with the prediction registered here
+that the fp32/fp16 ratio collapses from about 7.4x toward 2-3x because the
+GEMMs move to tensor cores. Both feed EXP-003 (quantization), where precision
+multipliers are the object of study. Next: amendment section 16; calibration
+key lock test; full read of scripts/fit_exp002.py; scripts/fit_exp002_a100.py.
