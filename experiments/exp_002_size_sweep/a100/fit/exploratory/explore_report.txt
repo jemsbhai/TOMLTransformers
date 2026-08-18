@@ -1,0 +1,59 @@
+EXPLORATORY: EXP-002 A100 post-verdict analyses (amendment section 16.5(a)); NO VERDICT AUTHORITY
+generated: 2026-08-18T00:01:13-04:00
+git commit: 4e774c73259ad88ac4de114d2cbb4c5b470aef68
+confirmatory artifacts (untouched): E:\data\code\claudecode\TOMLTransformers\experiments\exp_002_size_sweep\a100\fit\fit_results.json
+confirmatory verdicts on record: {'T0': 'PASS', 'T1': 'FAIL', 'T2': 'FAIL', 'T3': 'FAIL'}  (T1 35.60%, T2 52.93%, T3 42.66%)
+data: A100 98 records (shared 84, extension 10); 4090 296 records; units gates passed
+
+== (a1) EXPLORATORY: M8p (precision-split MAC) on the identical T1 split, R1 ==
+  M8 (confirmatory, on record) held-out MAPE 35.60%  ->  M8p held-out MAPE 20.02%  (band would be 25%; NO verdict)
+    coefficients (R1, train): to_mac_fp16=1.925e-15  to_mac_fp32=7.116e-15  to_nonlinear=2.856e-14  to_sram=0  to_hbm=3.614e-15  n_launches=1.257e-05  intercept=0
+    fitted fp16 MAC multiplier 0.089 vs asserted 0.33
+    held-out by precision x phase class:
+      fp16/decode_like           n=  4  MAPE   15.17%  mean signed    -9.39%
+      fp16/forward               n=  6  MAPE   24.64%  mean signed    +8.87%
+      fp32/decode_like           n=  3  MAPE   29.82%  mean signed   -10.98%
+      fp32/forward               n=  4  MAPE   10.59%  mean signed    +5.55%
+    (M8 confirmatory, same cells: fp16/decode_like -7.6%; fp16/forward +38.2%; fp32/decode_like -26.3%; fp32/forward -50.3%)
+
+== (a2) EXPLORATORY: M8p fit on all 84, predict the 10 extension points ==
+  M8 (confirmatory) pooled MAPE 42.66%  ->  M8p pooled MAPE 11.04%  (band would be 30%; NO verdict)
+    coefficients (R1, all 84): to_mac_fp16=1.766e-15  to_mac_fp32=7.043e-15  to_nonlinear=3.29e-14  to_sram=0  to_hbm=3.622e-15  n_launches=8.222e-06  intercept=0
+    fitted fp16 MAC multiplier 0.083 vs asserted 0.33; in-sample MAPE 19.74%, R2 0.9411
+    per regime:
+      decode                     n=  4  MAPE   17.80%  mean signed   -17.80%
+      prefill_s1024_4096         n=  4  MAPE    4.50%  mean signed    +4.50%
+      prefill_s8192              n=  2  MAPE   10.60%  mean signed   +10.60%
+    in-sample by precision x phase class:
+      fp16/decode_like           n= 22  MAPE   11.09%  mean signed    -3.59%
+      fp16/forward               n= 26  MAPE   29.03%  mean signed   -15.09%
+      fp32/decode_like           n= 16  MAPE   29.88%  mean signed   -15.90%
+      fp32/forward               n= 20  MAPE    9.08%  mean signed    +2.49%
+
+== (a3) EXPLORATORY: T2 repeat with M8p refit on all 296 4090 points, one scalar on the same 8 cells ==
+  4090 M8p (R1, all 296): to_mac_fp16=1.352e-15  to_mac_fp32=3.437e-15  to_nonlinear=3.729e-14  to_sram=1.525e-13  to_hbm=7.201e-15  n_launches=0.0008598  intercept=0
+    4090 in-sample MAPE 13.97% (frozen M8 R1 all-296 on record: 18.24%); fitted fp16 MAC multiplier 0.130 vs asserted 0.33
+  M8 (confirmatory) scaled MAPE 52.93% (s* 0.3862)  ->  M8p scaled MAPE 52.42% (s* 0.3666); zero-shot 102.67%  (band would be 30%; NO verdict)
+    scaled residuals on the 76 by precision x phase class:
+      fp16/decode_like           n= 19  MAPE   30.77%  mean signed   +19.71%
+      fp16/forward               n= 21  MAPE   51.13%  mean signed   -42.90%
+      fp32/decode_like           n= 16  MAPE   53.40%  mean signed   -42.08%
+      fp32/forward               n= 20  MAPE   73.54%  mean signed   -73.54%
+  cross-platform fitted fp16 MAC multiplier: 4090 0.130, A100 0.083 (asserted 0.33 on both): the precision prior is a device property, not a circuit constant
+
+== (b) DESCRIPTIVE: residuals by recorded operating point (median SM clock bin x precision x phase class) ==
+  residual = signed % of the R1 all-84 fit; M8 = confirmatory frozen form (from per_point_predictions), M8p = above;
+  P_net = window energy / window wall (W above the per-point measured idle); P_total = P_net + idle_power_w
+  extension 1100-1399 (intermediate)   fp16  forward     flash n= 6  clk  1290  P_net   325 W  P_total   397 W  Tmax  60 C  M8  +67.3% [+65,+71]  M8p   +6.5% [+2,+11]
+  extension 1410 (rated boost)         fp16  decode_like flash n= 4  clk  1410  P_net   221 W  P_total   293 W  Tmax  48 C  M8   -5.8% [-13,-1]  M8p  -17.8% [-29,-10]
+  shared    1095 (low DVFS state)      fp16  decode_like flash n=19  clk  1095  P_net    13 W  P_total    83 W  Tmax  32 C  M8   +1.5% [-19,+49]  M8p   +0.6% [-16,+39]
+  shared    1095 (low DVFS state)      fp16  forward     flash n= 5  clk  1095  P_net    17 W  P_total    88 W  Tmax  32 C  M8  +56.1% [+44,+73]  M8p  +24.5% [+17,+34]
+  shared    1095 (low DVFS state)      fp32  decode_like flash n= 2  clk  1095  P_net    18 W  P_total    88 W  Tmax  32 C  M8  +30.6% [+23,+38]  M8p  +39.6% [+32,+47]
+  shared    1100-1399 (intermediate)   fp16  forward     flash n= 6  clk  1316  P_net   320 W  P_total   392 W  Tmax  59 C  M8  +35.2% [+18,+45]  M8p   +7.6% [-6,+29]
+  shared    1100-1399 (intermediate)   fp32  decode_like flash n= 1  clk  1185  P_net    25 W  P_total    96 W  Tmax  33 C  M8  +18.6% [+19,+19]  M8p  +27.9% [+28,+28]
+  shared    1410 (rated boost)         fp16  decode_like flash n= 3  clk  1410  P_net    74 W  P_total   145 W  Tmax  36 C  M8  -23.1% [-38,+0]  M8p  -30.1% [-41,-12]
+  shared    1410 (rated boost)         fp16  forward     eager n= 6  clk  1410  P_net   202 W  P_total   274 W  Tmax  48 C  M8  -70.9% [-83,-57]  M8p  -76.6% [-85,-67]
+  shared    1410 (rated boost)         fp16  forward     flash n= 9  clk  1410  P_net   139 W  P_total   211 W  Tmax  46 C  M8   +6.0% [+0,+16]  M8p  -11.2% [-19,+4]
+  shared    1410 (rated boost)         fp32  decode_like flash n=13  clk  1410  P_net    82 W  P_total   153 W  Tmax  38 C  M8  -50.1% [-71,-18]  M8p  -27.8% [-63,+5]
+  shared    1410 (rated boost)         fp32  forward     flash n=20  clk  1410  P_net   259 W  P_total   331 W  Tmax  56 C  M8  -52.8% [-57,-47]  M8p   +2.5% [-15,+20]
+  reading: after the precision split, what remains is the operating-point structure (low DVFS state and power-capped cells over-predicted, 1410 MHz mid-power cells fit); the frozen form has no term for it

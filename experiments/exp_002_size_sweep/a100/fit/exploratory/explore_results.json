@@ -1,0 +1,419 @@
+{
+  "label": "EXPLORATORY",
+  "generated_at": "2026-08-18T00:01:13-04:00",
+  "git_commit": "4e774c73259ad88ac4de114d2cbb4c5b470aef68",
+  "confirmatory_verdicts": {
+    "T0": "PASS",
+    "T1": "FAIL",
+    "T2": "FAIL",
+    "T3": "FAIL"
+  },
+  "m8p_columns": [
+    "to_mac_fp16",
+    "to_mac_fp32",
+    "to_nonlinear",
+    "to_sram",
+    "to_hbm",
+    "n_launches",
+    "intercept"
+  ],
+  "asserted_fp16_mac_multiplier": 0.33,
+  "a1_t1_repeat": {
+    "m8_mape_on_record": 35.59772298357768,
+    "m8p_mape": 20.019087945651503,
+    "m8p_coef_train": {
+      "to_mac_fp16": 1.924569254736302e-15,
+      "to_mac_fp32": 7.116458785259972e-15,
+      "to_nonlinear": 2.85629263036517e-14,
+      "to_sram": 0.0,
+      "to_hbm": 3.614188805682771e-15,
+      "n_launches": 1.2571047584241754e-05,
+      "intercept": 0.0
+    },
+    "fitted_fp16_multiplier": 0.08924492830316849,
+    "breakdown_test": {
+      "fp16/decode_like": {
+        "n": 4,
+        "mape": 15.16796905208234,
+        "mean_signed_pct": -9.39446118906026
+      },
+      "fp16/forward": {
+        "n": 6,
+        "mape": 24.64375170231669,
+        "mean_signed_pct": 8.867674150241688
+      },
+      "fp32/decode_like": {
+        "n": 3,
+        "mape": 29.815336367396622,
+        "mean_signed_pct": -10.977498603903888
+      },
+      "fp32/forward": {
+        "n": 4,
+        "mape": 10.586024887914025,
+        "mean_signed_pct": 5.554646985802819
+      }
+    }
+  },
+  "a2_t3_repeat": {
+    "m8_mape_on_record": 42.664434307462145,
+    "m8p_mape": 11.042690635390349,
+    "m8p_coef_all84": {
+      "to_mac_fp16": 1.7663122196243514e-15,
+      "to_mac_fp32": 7.042902658205481e-15,
+      "to_nonlinear": 3.289963206144557e-14,
+      "to_sram": 0.0,
+      "to_hbm": 3.622246457154023e-15,
+      "n_launches": 8.221635507940378e-06,
+      "intercept": 0.0
+    },
+    "fitted_fp16_multiplier": 0.08276176184217682,
+    "per_regime": {
+      "decode": {
+        "n": 4,
+        "mape": 17.800668898279046,
+        "mean_signed_pct": -17.800668898279046
+      },
+      "prefill_s1024_4096": {
+        "n": 4,
+        "mape": 4.503893343584904,
+        "mean_signed_pct": 4.503893343584904
+      },
+      "prefill_s8192": {
+        "n": 2,
+        "mape": 10.604328693223849,
+        "mean_signed_pct": 10.604328693223849
+      }
+    },
+    "in_sample_84": {
+      "fp16/decode_like": {
+        "n": 22,
+        "mape": 11.09439641403163,
+        "mean_signed_pct": -3.5925398788333567
+      },
+      "fp16/forward": {
+        "n": 26,
+        "mape": 29.033995803182837,
+        "mean_signed_pct": -15.09285575336451
+      },
+      "fp32/decode_like": {
+        "n": 16,
+        "mape": 29.875620414036753,
+        "mean_signed_pct": -15.89758249536701
+      },
+      "fp32/forward": {
+        "n": 20,
+        "mape": 9.076774455331174,
+        "mean_signed_pct": 2.4891125678278643
+      }
+    },
+    "per_point": [
+      {
+        "key": "decoder_only|LLaMA-7B|prefill|fp16|flash|random|s1024|b1|seed2047544009",
+        "y_j": 21.795594495648867,
+        "yhat_j": 22.928636231523072
+      },
+      {
+        "key": "decoder_only|LLaMA-7B|prefill|fp16|flash|random|s4096|b1|seed911582670",
+        "y_j": 89.60876465548527,
+        "yhat_j": 94.91810782627364
+      },
+      {
+        "key": "decoder_only|LLaMA-7B|prefill|fp16|flash|random|s8192|b1|seed232171392",
+        "y_j": 192.81336183623327,
+        "yhat_j": 214.48358553832554
+      },
+      {
+        "key": "decoder_only|LLaMA-7B|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing|seed1584328524",
+        "y_j": 196.99678114641637,
+        "yhat_j": 177.67310048514318
+      },
+      {
+        "key": "decoder_only|LLaMA-7B|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing|seed889783240",
+        "y_j": 327.6922045214105,
+        "yhat_j": 267.9005286060318
+      },
+      {
+        "key": "decoder_only|Mistral-7B|prefill|fp16|flash|random|s1024|b1|seed1327874003",
+        "y_j": 24.17956028042076,
+        "yhat_j": 24.618922273802443
+      },
+      {
+        "key": "decoder_only|Mistral-7B|prefill|fp16|flash|random|s4096|b1|seed1406899774",
+        "y_j": 96.26858053118153,
+        "yhat_j": 101.15418873047705
+      },
+      {
+        "key": "decoder_only|Mistral-7B|prefill|fp16|flash|random|s8192|b1|seed600016393",
+        "y_j": 206.22111293552106,
+        "yhat_j": 226.78072625842765
+      },
+      {
+        "key": "decoder_only|Mistral-7B|decode|fp16|flash|random|s1024|b1|ctx1024|k64|growing|seed1682702806",
+        "y_j": 216.23766308255557,
+        "yhat_j": 186.0410712709063
+      },
+      {
+        "key": "decoder_only|Mistral-7B|decode|fp16|flash|random|s4096|b1|ctx4096|k64|growing|seed1972048469",
+        "y_j": 377.55281888651615,
+        "yhat_j": 267.3726746719184
+      }
+    ]
+  },
+  "a3_t2_repeat": {
+    "m8_mape_on_record": 52.93010130569934,
+    "m8p_mape": 52.415661392003265,
+    "s_star": 0.3666188547643517,
+    "zero_shot_mape": 102.66902468073647,
+    "m8p_coef_4090_all296": {
+      "to_mac_fp16": 1.3522413828508199e-15,
+      "to_mac_fp32": 3.4372596385723797e-15,
+      "to_nonlinear": 3.7292692805007676e-14,
+      "to_sram": 1.5245054076368236e-13,
+      "to_hbm": 7.201272851096942e-15,
+      "n_launches": 0.0008598288693543439,
+      "intercept": 0.0
+    },
+    "fitted_fp16_multiplier_4090": 0.129824250496861,
+    "fitted_fp16_multiplier_a100": 0.08276176184217682,
+    "breakdown_76": {
+      "fp16/decode_like": {
+        "n": 19,
+        "mape": 30.76954617635506,
+        "mean_signed_pct": 19.710046579213984
+      },
+      "fp16/forward": {
+        "n": 21,
+        "mape": 51.130540113527054,
+        "mean_signed_pct": -42.9042837320539
+      },
+      "fp32/decode_like": {
+        "n": 16,
+        "mape": 53.4044807546024,
+        "mean_signed_pct": -42.08356393117968
+      },
+      "fp32/forward": {
+        "n": 20,
+        "mape": 73.53779269918978,
+        "mean_signed_pct": -73.53779269918978
+      }
+    }
+  },
+  "b_operating_point_table": [
+    {
+      "stratum": "extension",
+      "clock_bin": "1100-1399 (intermediate)",
+      "precision": "fp16",
+      "phase_class": "forward",
+      "attn_kind": "flash",
+      "n": 6,
+      "median_clock_mhz": 1290.0,
+      "median_p_net_w": 324.5717019602288,
+      "median_p_total_w": 397.0514486045241,
+      "median_max_temp_c": 60.0,
+      "m8_mean_signed_pct": 67.26201227882069,
+      "m8_min": 65.30320961569687,
+      "m8_max": 70.73591416297644,
+      "m8p_mean_signed_pct": 6.537371793464552,
+      "m8p_min": 1.8170801631055915,
+      "m8p_max": 11.238963677474779
+    },
+    {
+      "stratum": "extension",
+      "clock_bin": "1410 (rated boost)",
+      "precision": "fp16",
+      "phase_class": "decode_like",
+      "attn_kind": "flash",
+      "n": 4,
+      "median_clock_mhz": 1410.0,
+      "median_p_net_w": 221.3900514484145,
+      "median_p_total_w": 293.22120748868304,
+      "median_max_temp_c": 47.5,
+      "m8_mean_signed_pct": -5.7680673504243165,
+      "m8_min": -13.173801870606264,
+      "m8_max": -1.1249225223545065,
+      "m8p_mean_signed_pct": -17.800668898279046,
+      "m8p_min": -29.18270999526438,
+      "m8p_max": -9.809135229936071
+    },
+    {
+      "stratum": "shared",
+      "clock_bin": "1095 (low DVFS state)",
+      "precision": "fp16",
+      "phase_class": "decode_like",
+      "attn_kind": "flash",
+      "n": 19,
+      "median_clock_mhz": 1095.0,
+      "median_p_net_w": 12.70104332173668,
+      "median_p_total_w": 83.46650305328004,
+      "median_max_temp_c": 32.0,
+      "m8_mean_signed_pct": 1.4939174024119417,
+      "m8_min": -18.819822498734876,
+      "m8_max": 48.81057922761228,
+      "m8p_mean_signed_pct": 0.5885807135852079,
+      "m8p_min": -16.488633223347158,
+      "m8p_max": 39.20079110752865
+    },
+    {
+      "stratum": "shared",
+      "clock_bin": "1095 (low DVFS state)",
+      "precision": "fp16",
+      "phase_class": "forward",
+      "attn_kind": "flash",
+      "n": 5,
+      "median_clock_mhz": 1095.0,
+      "median_p_net_w": 17.342305036600195,
+      "median_p_total_w": 88.09046946613014,
+      "median_max_temp_c": 32.0,
+      "m8_mean_signed_pct": 56.05729432531833,
+      "m8_min": 43.941938756301035,
+      "m8_max": 73.15906297931745,
+      "m8p_mean_signed_pct": 24.46591630597651,
+      "m8p_min": 17.43231893408755,
+      "m8p_max": 33.751422768530084
+    },
+    {
+      "stratum": "shared",
+      "clock_bin": "1095 (low DVFS state)",
+      "precision": "fp32",
+      "phase_class": "decode_like",
+      "attn_kind": "flash",
+      "n": 2,
+      "median_clock_mhz": 1095.0,
+      "median_p_net_w": 17.737162532874223,
+      "median_p_total_w": 88.3459007879076,
+      "median_max_temp_c": 32.0,
+      "m8_mean_signed_pct": 30.561877151831105,
+      "m8_min": 22.651831649853964,
+      "m8_max": 38.47192265380824,
+      "m8p_mean_signed_pct": 39.55134680279681,
+      "m8p_min": 31.7692645508714,
+      "m8p_max": 47.33342905472221
+    },
+    {
+      "stratum": "shared",
+      "clock_bin": "1100-1399 (intermediate)",
+      "precision": "fp16",
+      "phase_class": "forward",
+      "attn_kind": "flash",
+      "n": 6,
+      "median_clock_mhz": 1316.25,
+      "median_p_net_w": 319.703757156474,
+      "median_p_total_w": 392.14611453902455,
+      "median_max_temp_c": 59.0,
+      "m8_mean_signed_pct": 35.17567275361626,
+      "m8_min": 17.805545434846973,
+      "m8_max": 44.75998280811772,
+      "m8p_mean_signed_pct": 7.573632040346764,
+      "m8p_min": -5.6953686381420665,
+      "m8p_max": 29.24823643872523
+    },
+    {
+      "stratum": "shared",
+      "clock_bin": "1100-1399 (intermediate)",
+      "precision": "fp32",
+      "phase_class": "decode_like",
+      "attn_kind": "flash",
+      "n": 1,
+      "median_clock_mhz": 1185.0,
+      "median_p_net_w": 25.199192302419075,
+      "median_p_total_w": 95.69861512121088,
+      "median_max_temp_c": 33.0,
+      "m8_mean_signed_pct": 18.55128698416234,
+      "m8_min": 18.55128698416234,
+      "m8_max": 18.55128698416234,
+      "m8p_mean_signed_pct": 27.94447121806323,
+      "m8p_min": 27.94447121806323,
+      "m8p_max": 27.94447121806323
+    },
+    {
+      "stratum": "shared",
+      "clock_bin": "1410 (rated boost)",
+      "precision": "fp16",
+      "phase_class": "decode_like",
+      "attn_kind": "flash",
+      "n": 3,
+      "median_clock_mhz": 1410.0,
+      "median_p_net_w": 74.00836569220337,
+      "median_p_total_w": 145.0336005915321,
+      "median_max_temp_c": 36.0,
+      "m8_mean_signed_pct": -23.108775988812262,
+      "m8_min": -37.6688780868642,
+      "m8_max": 0.3811955993258587,
+      "m8p_mean_signed_pct": -30.072970297484257,
+      "m8p_min": -41.16281859316906,
+      "m8p_max": -11.703359250955184
+    },
+    {
+      "stratum": "shared",
+      "clock_bin": "1410 (rated boost)",
+      "precision": "fp16",
+      "phase_class": "forward",
+      "attn_kind": "eager",
+      "n": 6,
+      "median_clock_mhz": 1410.0,
+      "median_p_net_w": 202.16747506223504,
+      "median_p_total_w": 273.93208580049,
+      "median_max_temp_c": 48.0,
+      "m8_mean_signed_pct": -70.87084648250774,
+      "m8_min": -82.55421980112881,
+      "m8_max": -57.447783671093475,
+      "m8p_mean_signed_pct": -76.61309856281189,
+      "m8p_min": -84.60298840747457,
+      "m8p_max": -67.02031872666853
+    },
+    {
+      "stratum": "shared",
+      "clock_bin": "1410 (rated boost)",
+      "precision": "fp16",
+      "phase_class": "forward",
+      "attn_kind": "flash",
+      "n": 9,
+      "median_clock_mhz": 1410.0,
+      "median_p_net_w": 139.21691652924324,
+      "median_p_total_w": 210.9877588111224,
+      "median_max_temp_c": 46.0,
+      "m8_mean_signed_pct": 5.972887740645715,
+      "m8_min": 0.05904993671272018,
+      "m8_max": 15.553296928943263,
+      "m8p_mean_signed_pct": -11.167447998063233,
+      "m8p_min": -18.93647766165053,
+      "m8p_max": 3.9634388721882927
+    },
+    {
+      "stratum": "shared",
+      "clock_bin": "1410 (rated boost)",
+      "precision": "fp32",
+      "phase_class": "decode_like",
+      "attn_kind": "flash",
+      "n": 13,
+      "median_clock_mhz": 1410.0,
+      "median_p_net_w": 81.73631265291868,
+      "median_p_total_w": 152.85332607573736,
+      "median_max_temp_c": 38.0,
+      "m8_mean_signed_pct": -50.10391491676602,
+      "m8_min": -71.21252069880562,
+      "m8_max": -17.80620557398172,
+      "m8p_mean_signed_pct": -27.80065267304069,
+      "m8p_min": -62.5853307786593,
+      "m8p_max": 4.77713852570109
+    },
+    {
+      "stratum": "shared",
+      "clock_bin": "1410 (rated boost)",
+      "precision": "fp32",
+      "phase_class": "forward",
+      "attn_kind": "flash",
+      "n": 20,
+      "median_clock_mhz": 1410.0,
+      "median_p_net_w": 259.1653736883451,
+      "median_p_total_w": 331.139523742762,
+      "median_max_temp_c": 55.5,
+      "m8_mean_signed_pct": -52.84428243069395,
+      "m8_min": -56.66514588115395,
+      "m8_max": -47.45077719405908,
+      "m8p_mean_signed_pct": 2.4891125678278643,
+      "m8p_min": -14.714805448150287,
+      "m8p_max": 20.093194662253648
+    }
+  ]
+}
