@@ -1,0 +1,189 @@
+%% References for the UEMCON submission.
+%% NOTE ON DOUBLE-BLIND: prior TOML-series entries are cited in the third
+%% person in the text. Do not add "our" phrasing anywhere.
+%%
+%% ENTRIES MARKED "VERIFY" NEED A FIELD CONFIRMED BEFORE SUBMISSION.
+
+@inproceedings{horowitz2014,
+  author    = {Mark Horowitz},
+  title     = {Computing's Energy Problem (and What We Can Do About It)},
+  booktitle = {IEEE International Solid-State Circuits Conference (ISSCC)},
+  pages     = {10--14},
+  year      = {2014}
+}
+
+@article{sze2017,
+  author  = {Vivienne Sze and Yu-Hsin Chen and Tien-Ju Yang and Joel S. Emer},
+  title   = {Efficient Processing of Deep Neural Networks: A Tutorial and Survey},
+  journal = {Proceedings of the IEEE},
+  volume  = {105},
+  number  = {12},
+  pages   = {2295--2329},
+  year    = {2017}
+}
+
+@article{li2024,
+  author  = {Chen Li and Antonios Tsourdos and Weisi Guo},
+  title   = {A Transistor Operations Model for Deep Learning Energy Consumption Scaling Law},
+  journal = {IEEE Transactions on Artificial Intelligence},
+  volume  = {5},
+  number  = {1},
+  pages   = {192--204},
+  year    = {2024}
+}
+
+@article{garciamartin2019,
+  author  = {Eva Garc\'ia-Mart\'in and Crefeda Faviola Rodrigues and Graham Riley and H\aa{}kan Grahn},
+  title   = {Estimation of Energy Consumption in Machine Learning},
+  journal = {Journal of Parallel and Distributed Computing},
+  volume  = {134},
+  pages   = {75--88},
+  year    = {2019}
+}
+
+%% ---------------------------------------------------------------
+%% TOML series. Cited in the third person; see note above.
+%% ---------------------------------------------------------------
+
+@inproceedings{toml2026flairs,
+  author    = {Muntaser Syed and Marius Silaghi and Sheikh Abujar and Sharun Akter Khushbu},
+  title     = {{TOML}: Transistor Operations for Machine Learning, A Physics-Grounded Energy Efficiency Framework},
+  booktitle = {Proceedings of the 39th International Florida Artificial Intelligence Research Society Conference (FLAIRS-39)},
+  year      = {2026}
+}
+
+@inproceedings{tomlsignals2026,
+  author    = {Muntaser Syed and Marius Silaghi and Sheikh Abujar and Sharun Akter Khushbu},
+  title     = {Transistor-Level Energy Analysis of Signal Processing Algorithms: Beyond Operation Counting},
+  booktitle = {IEEE International Workshop on Machine Learning for Signal Processing (MLSP)},
+  year      = {2026},
+  note      = {To appear}
+}
+
+%% VERIFY: replace with the arXiv identifier once posted. An unciteable
+%% "under review" reference weakens Section II; see the discussion of the
+%% preprint route.
+@misc{tomlcloud2026,
+  author = {Muntaser Syed and Marius Silaghi and Sheikh Abujar and Sharun Akter Khushbu},
+  title  = {Beyond Proportional Allocation: Transistor-Level Energy Attribution for Containerized {ML} Workloads},
+  year   = {2026},
+  note   = {arXiv preprint, identifier to be inserted}
+}
+
+@inproceedings{tomlvision2026,
+  author    = {Muntaser Syed and Marius Silaghi and Sheikh Abujar and Sharun Akter Khushbu},
+  title     = {Beyond {FLOP}s: A Vision for Physics-Grounded Energy Intelligence in Machine Learning},
+  booktitle = {ACM AI Summit '26},
+  year      = {2026},
+  note      = {To appear}
+}
+
+%% ---------------------------------------------------------------
+%% LLM energy and carbon models
+%% ---------------------------------------------------------------
+
+@inproceedings{llmcarbon,
+  author    = {Ahmad Faiz and Sotaro Kaneda and Ruhan Wang and Rita Osi and Prateek Sharma and Fan Chen and Lei Jiang},
+  title     = {{LLMCarbon}: Modeling the End-to-End Carbon Footprint of Large Language Models},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024}
+}
+
+%% VERIFY: full author list. Published in ACM SIGEnergy Energy Informatics
+%% Review (HotCarbon 2025), DOI 10.1145/3757892.3757901; arXiv:2410.02950.
+@inproceedings{llmco2,
+  title     = {{LLMCO2}: Advancing Accurate Carbon Footprint Prediction for {LLM} Inferences},
+  booktitle = {Workshop on Sustainable Computer Systems (HotCarbon)},
+  year      = {2025},
+  note      = {Also ACM SIGEnergy Energy Informatics Review; arXiv:2410.02950}
+}
+
+@article{luccioni2023,
+  author  = {Alexandra Sasha Luccioni and Sylvain Viguier and Anne-Laure Ligozat},
+  title   = {Estimating the Carbon Footprint of {BLOOM}, a 176{B} Parameter Language Model},
+  journal = {Journal of Machine Learning Research},
+  volume  = {24},
+  number  = {253},
+  pages   = {1--15},
+  year    = {2023}
+}
+
+%% ---------------------------------------------------------------
+%% Measurement tooling and analytic accelerator models
+%% ---------------------------------------------------------------
+
+@inproceedings{zeus,
+  author    = {Jie You and Jae-Won Chung and Mosharaf Chowdhury},
+  title     = {Zeus: Understanding and Optimizing {GPU} Energy Consumption of {DNN} Training},
+  booktitle = {USENIX Symposium on Networked Systems Design and Implementation (NSDI)},
+  year      = {2023}
+}
+
+@inproceedings{accelergy,
+  author    = {Yannan Nellie Wu and Joel S. Emer and Vivienne Sze},
+  title     = {{Accelergy}: An Architecture-Level Energy Estimation Methodology for Accelerator Designs},
+  booktitle = {IEEE/ACM International Conference on Computer-Aided Design (ICCAD)},
+  year      = {2019}
+}
+
+@inproceedings{timeloop,
+  author    = {Angshuman Parashar and Priyanka Raina and Yakun Sophia Shao and Yu-Hsin Chen and Victor A. Ying and Anurag Mukkara and Rangharajan Venkatesan and Brucek Khailany and Stephen W. Keckler and Joel S. Emer},
+  title     = {{Timeloop}: A Systematic Approach to {DNN} Accelerator Evaluation},
+  booktitle = {IEEE International Symposium on Performance Analysis of Systems and Software (ISPASS)},
+  year      = {2019}
+}
+
+@inproceedings{carbontracker,
+  author    = {Lasse F. Wolff Anthony and Benjamin Kanding and Raghavendra Selvan},
+  title     = {Carbontracker: Tracking and Predicting the Carbon Footprint of Training Deep Learning Models},
+  booktitle = {ICML Workshop on Challenges in Deploying and Monitoring Machine Learning Systems},
+  year      = {2020}
+}
+
+@misc{codecarbon,
+  author = {{CodeCarbon Contributors}},
+  title  = {{CodeCarbon}: Track and Reduce {CO2} Emissions from Compute},
+  year   = {2022},
+  note   = {\url{https://codecarbon.io/}}
+}
+
+@article{greenalgorithms,
+  author  = {Lo\"ic Lannelongue and Jason Grealey and Michael Inouye},
+  title   = {Green Algorithms: Quantifying the Carbon Footprint of Computation},
+  journal = {Advanced Science},
+  volume  = {8},
+  number  = {12},
+  pages   = {2100707},
+  year    = {2021}
+}
+
+@techreport{iea2026,
+  author      = {{International Energy Agency}},
+  title       = {Energy and {AI}},
+  institution = {International Energy Agency},
+  year        = {2026},
+  note        = {\url{https://www.iea.org/reports/energy-and-ai}}
+}
+
+%% ---------------------------------------------------------------
+%% Hardware references (constants cited in fit/baselines.py)
+%% ---------------------------------------------------------------
+
+@misc{a100datasheet,
+  author = {{NVIDIA Corporation}},
+  title  = {{NVIDIA A100} Tensor Core {GPU} Datasheet},
+  year   = {2021}
+}
+
+@misc{ga100whitepaper,
+  author = {{NVIDIA Corporation}},
+  title  = {{NVIDIA A100} Tensor Core {GPU} Architecture Whitepaper, v1.0},
+  year   = {2020}
+}
+
+@misc{flashattention,
+  author = {Tri Dao and Daniel Y. Fu and Stefano Ermon and Atri Rudra and Christopher R\'e},
+  title  = {{FlashAttention}: Fast and Memory-Efficient Exact Attention with {IO}-Awareness},
+  year   = {2022},
+  note   = {Advances in Neural Information Processing Systems (NeurIPS)}
+}
