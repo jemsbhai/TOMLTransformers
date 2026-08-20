@@ -586,6 +586,19 @@ and dividing by 64 tokens, rises with context: for GPT-2 at fp16 from
 0.156\,J at context 128 to 0.332\,J at 2048, a factor of 2.1 for a 16-fold
 increase in context, with projections and feed-forward held constant.
 
+\subsection{Attention Kernel}
+
+At matched shape and precision, standard attention costs 1.9x the energy of
+the fused kernel at $s = 512$, rising to 12.0x at $s = 4096$ (eight pairs,
+instrument~B, pre-registered as a report-only derived quantity). The excess
+energy scales exactly as the score-matrix accounting of
+Section~\ref{sec:model} predicts: quadratically in $s$, with each doubling
+multiplying it by 4.0 to 4.9, and linearly in depth, with GPT-2's excess
+2.0x DistilGPT2's at every $s$, matching its layer count. The same pairs on
+the A100 give 3.7x to 6.9x with the same two scalings. The two kernels
+perform identical arithmetic; FLOP counts assign them identical cost while
+measured energy differs by up to 12x.
+
 \subsection{Pre-Registered Extrapolation}
 
 Both declared readings were computed. E1 passes at 14.3\% against the 25\%
@@ -901,17 +914,8 @@ precision prior that is wrong on the A100 and approximate on the 4090, so
 the additional terms carry error as well as information. The baselines have
 no precision prior to get wrong. The exploratory $M_{8p}$ results suggest
 correcting it changes the comparison; establishing that needs a fresh
-pre-registration.
-
-The roofline baseline is also physically unsound on one platform. Its fitted
-average power is 378\,W on the RTX 4090, roughly twice the laptop part's
-envelope; on the A100 it is 369\,W under R1 against a 400\,W part. A model
-can predict energy well while implying an impossible operating point,
-because power and latency errors cancel. The TO
-coefficients are energies per switching event and must be non-negative;
-they cannot compensate this way, which costs accuracy on a small split and
-buys interpretability. Section~\ref{sec:mechanism} could not have been
-written from the roofline fit.
+pre-registration. Table~\ref{tab:baselines} also reports each roofline
+fit's average power against the part's rated envelope.
 
 \section{Discussion and Limitations}
 \label{sec:discussion}

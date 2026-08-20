@@ -1169,3 +1169,45 @@ re-read. The frozen data settled which floor actually governed. Lesson
 already in the working protocol, restated because it was violated: verify
 against the artifact before writing the number down, including in lab notes,
 not only in paper prose.
+
+
+### 2026-08-19 - Eager/flash energy ratio: the pre-registered derived quantity, computed
+
+**Status:** DESCRIPTIVE, pre-registered in the fit plan as a report-only
+derived quantity ("eager-vs-flash energy ratio vs s"). Pure measurement from
+the frozen datasets: matched pairs on all spec fields except `attn_kind`,
+instrument B per composite execution, no fitting, no coefficients.
+Implementation: `figures/data.py::eager_flash_pairs`, covered by two tests in
+`tests/test_figures_data.py` asserting the counts, extreme ratios, and both
+scalings below.
+
+**RTX 4090 (8 pairs, GPT-2 + DistilGPT2, prefill fp16, s = 512-4096):**
+E_eager / E_flash = 1.93-1.98 at s=512, 3.73-3.75 at s=1024, 6.99-7.19 at
+s=2048, 11.59-11.96 at s=4096.
+
+**A100 (5 pairs; the sixth eager cell, DistilGPT2 s=512, has no flash twin on
+the shared grid):** 3.71 at s=512 (GPT-2), 4.00-4.08 at s=1024, 6.68-6.88 at
+s=2048.
+
+**Two structural facts in the excess energy (E_eager - E_flash):**
+1. Quadratic in s: each doubling multiplies the excess by 4.95 -> 4.33 ->
+   4.04 (DistilGPT2, 4090) and 4.91 -> 4.42 -> 4.09 (GPT-2, 4090),
+   converging to 4 from above as O(s) terms fade; A100 shows 3.16 -> 4.11
+   (GPT-2) and 4.05 (DistilGPT2, one step).
+2. Linear in depth: GPT-2's excess is 1.98-2.06x DistilGPT2's at every s on
+   both platforms, matching its 2x layer count.
+
+The excess therefore scales as layers x s^2, which is the off-chip
+score-matrix traffic the standard-attention accounting charges and the fused
+accounting does not. The two kernels perform identical arithmetic, so this is
+a direct FLOPs-falsifying measurement: identical FLOP count, up to 12x
+measured energy. The ratio itself is close across platforms at matched s
+(3.74 vs 4.04-4.08 at s=1024; 6.99-7.19 vs 6.68-6.88 at s=2048), consistent
+with it being a workload-structure quantity.
+
+**Honest limits:** two models, one architecture family (decoder-only), one
+phase (prefill), fp16 only; the quadratic and depth-linear scalings are
+observed regularities on this grid, not established laws. Entered the paper
+as section VI "Attention Kernel" this date; at the director's direction the
+roofline physical-unsoundness paragraph in section IX was removed to make
+room, with the fitted-P_avg-vs-envelope evidence retained in Table IV.

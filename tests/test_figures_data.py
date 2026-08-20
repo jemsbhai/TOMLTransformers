@@ -135,3 +135,45 @@ def test_ab_percentages_are_fractions_not_percents():
     assert len(rows) == 98
     assert max(r["ab"] for r in rows) < 0.5
     assert {r["phase_class"] for r in rows} == {"forward", "decode_like"}
+
+
+# ----------------------------------------------------------------------
+# Eager/flash attention-kernel pairs (paper section VI, Attention Kernel)
+# ----------------------------------------------------------------------
+
+def test_eager_flash_pairs_4090_match_the_paper_numbers():
+    pairs = fd.eager_flash_pairs(fd.load_records(fd.R4090_ENERGY))
+    assert len(pairs) == 8
+    assert all(p["phase"] == "prefill" and p["precision"] == "fp16"
+               for p in pairs)
+    ratios = sorted(p["ratio"] for p in pairs)
+    assert ratios[0] == pytest.approx(1.93, abs=0.01)
+    assert ratios[-1] == pytest.approx(11.96, abs=0.01)
+
+    # Excess energy is quadratic in s: each doubling of s multiplies it by
+    # 4.0 to 4.9 for both models.
+    by = {(p["model"], p["seq_len"]): p["excess_j"] for p in pairs}
+    for model in ("DistilGPT2", "GPT-2"):
+        for s in (512, 1024, 2048):
+            growth = by[(model, 2 * s)] / by[(model, s)]
+            assert 4.0 <= growth <= 5.0, (model, s, growth)
+
+    # And linear in depth: GPT-2 (12 layers) carries 2x DistilGPT2's
+    # (6 layers) excess at every s.
+    for s in (512, 1024, 2048, 4096):
+        assert by[("GPT-2", s)] / by[("DistilGPT2", s)] == pytest.approx(
+            2.0, abs=0.1), s
+
+
+def test_eager_flash_pairs_a100_match_the_paper_numbers():
+    pairs = fd.eager_flash_pairs(fd.load_records(fd.A100_ENERGY))
+    # Six eager cells; DistilGPT2 s=512 has no flash twin on the shared grid.
+    assert len(pairs) == 5
+    ratios = sorted(p["ratio"] for p in pairs)
+    assert ratios[0] == pytest.approx(3.71, abs=0.01)
+    assert ratios[-1] == pytest.approx(6.88, abs=0.01)
+    # Same structure as the 4090: depth-linear at matched s.
+    by = {(p["model"], p["seq_len"]): p["excess_j"] for p in pairs}
+    for s in (1024, 2048):
+        assert by[("GPT-2", s)] / by[("DistilGPT2", s)] == pytest.approx(
+            2.0, abs=0.1), s

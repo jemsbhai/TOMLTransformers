@@ -226,6 +226,49 @@ def precision_pairs(records) -> list[dict]:
     return rows
 
 
+# Spec fields that define "the same workload" for the attention-kernel
+# comparison: everything except attn_kind (and the key, which embeds it).
+EAGER_FLASH_PAIR_FIELDS = (
+    "model", "arch", "phase", "precision", "weights", "seq_len", "tgt_len",
+    "tgt_ctx", "decode_tokens", "decode_mode", "batch_size")
+
+
+def eager_flash_pairs(records) -> list[dict]:
+    """eager/flash matched-shape pairs, per pair (instrument B, per unit).
+
+    Pre-registered in the fit plan as a report-only derived quantity. Pure
+    measurement: no fitting, no coefficients. 'excess_j' is the energy
+    attributable to the standard kernel's off-chip score-matrix traffic.
+    """
+    buckets: dict[tuple, dict] = {}
+    for r in records:
+        s = r["spec"]
+        pu = (r.get("per_unit_j") or {}).get("B")
+        if pu is None:
+            continue
+        k = tuple(s.get(f) for f in EAGER_FLASH_PAIR_FIELDS)
+        buckets.setdefault(k, {})[s.get("attn_kind")] = (float(pu), s.get("key"))
+
+    rows = []
+    for k, d in buckets.items():
+        if "eager" not in d or "flash" not in d:
+            continue
+        e_e, k_e = d["eager"]
+        e_f, k_f = d["flash"]
+        spec = dict(zip(EAGER_FLASH_PAIR_FIELDS, k))
+        rows.append({
+            **{f: spec[f] for f in ("model", "arch", "phase", "precision",
+                                     "seq_len")},
+            "key_eager": k_e,
+            "key_flash": k_f,
+            "e_eager_j": e_e,
+            "e_flash_j": e_f,
+            "ratio": (e_e / e_f) if e_f > 0 else None,
+            "excess_j": e_e - e_f,
+        })
+    return rows
+
+
 def forward_ratios(pairs) -> list[float]:
     """The ratio list the validator summarizes (forward phases, e16 > 0)."""
     return [p["ratio"] for p in pairs
