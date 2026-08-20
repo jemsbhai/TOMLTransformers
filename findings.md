@@ -1123,3 +1123,49 @@ reading, not a proven isolation of duration from burstiness.
 off. This is the documented Runtime D3 suspended-sensor reading on Ada mobile
 parts, not a telemetry fault; it does not touch the measured windows, where the
 GPU is awake, and it is not evidence of anything about instrument A.
+
+
+### 2026-08-19 - CORRECTION to the 2026-08-18 instrument entry: window floor provenance, and prior art for the sub-second instability
+
+Two statements in the 2026-08-18 entry above need correcting. Verdicts,
+datasets, and the test fix are unaffected; what was wrong is the provenance
+narrative.
+
+**Correction 1: "the frozen protocol's 4.0 s minimum window" conflates the
+registration with the implementation.** The pre-registered configuration
+(`configs/exp_002.yaml`, `min_window_s`, comment dated 2026-05-29) records a
+floor of **2.0 s**. The implementation default in
+`src/tomltransformers/sweep/point.py` (`target_s = 4.0`, `min_window_s =
+4.0`) is what actually ran, and the frozen data confirms it: all 296 RTX 4090
+records have `wall_time_s_median >= 4.001 s`, zero `short_window` flags. So
+the operative floor was 4.0 s, the registered floor was 2.0 s, and the
+divergence (conservative direction: the harness was stricter than the
+registration) was never amended in the config. The 2026-08-18 entry stated
+the 4.0 s figure as "the frozen protocol's" without noting the config says
+2.0; the paper's methods section (main.tex, Instrument Characterization)
+discloses the divergence explicitly, and this entry brings the lab record in
+line with the paper.
+
+**Correction 2: the sub-second instability of instrument B was presented as a
+new finding; it was first observed on 2026-05-29.** The `min_window_s` config
+comment records the original observation verbatim: on sub-second windows the
+hardware energy counter itself was self-inconsistent (GPT-2 s=1024 x40 gave B
+= 94/38/47/35 J across repeats, n~9 samples). What the 2026-08-18 diagnostic
+ADDS is (i) the quantified 3.0 s point (A-B 7-8% at 50-200 Hz, methods
+agreeing to 0.1%), (ii) the 0.25 s quantification with per-rate breakdown,
+(iii) the external-logger check excluding GIL contention, and (iv) the ~96 Hz
+sampler ceiling. The phenomenon itself was already on record and motivated
+the floor in May; the 2026-08-18 entry's claim to be "the first quantified
+statement in this project of WHY the 4.0 s minimum window is necessary"
+overstates novelty and should be read as: the first characterization that
+separates the candidate causes and quantifies the window-length dependence at
+multiple points.
+
+**Why this correction exists:** the 4.0 s figure was asserted from memory
+during test triage on 2026-08-18 and propagated into `tests/
+test_instruments.py` (as WINDOW_FLOOR_S, where it is CORRECT, matching the
+implementation), `findings.md`, and `LOGBOOK.md` before the config was
+re-read. The frozen data settled which floor actually governed. Lesson
+already in the working protocol, restated because it was violated: verify
+against the artifact before writing the number down, including in lab notes,
+not only in paper prose.

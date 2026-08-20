@@ -937,3 +937,44 @@ was rewritten to size its window to the protocol's 4 s floor, to assert the
 floor was reached, and to gate at 25% against the 7-8% measured there. The
 band was not merely loosened; the window was corrected. No verdict, dataset,
 or paper number is affected.
+
+
+## 2026-08-19 - Step 8b: full manuscript drafted, trimmed to ten pages,
+## reframed; correction to the 2026-08-18 window-floor statements
+
+Manuscript complete: paper/main.tex (IEEEtran conference, double-blind) and
+paper/refs.bib, all eleven sections, seven figures (F3 cut; F8 converted to
+Table IV), four tables, twenty references, compiling to exactly ten pages,
+verified both on Overleaf and in a local IEEEtran build reproducing the
+Overleaf page count. Consistency pass: 87 numeric claims in the prose checked
+against the committed fit artifacts, 87 match. All four TOML-series bib
+entries verified against the papers' own page-1 author blocks; LLMCO2 author
+list verified against the arXiv record; cloud paper cited third-person as
+manuscript under review pending its arXiv ID (submission blocker noted in
+refs.bib).
+
+FRAMING DECISION, recorded because it bounds what any future edit may do: on
+external-review feedback that the draft undersold the work, the paper was
+reframed around what each pre-registered test ESTABLISHED (transfer boundary:
+workload structure crosses hardware, device priors do not) rather than around
+the pass/fail ledger. The option of recasting the T1-T3 FAILs as "future
+work" was considered and REJECTED: the bands are dated, committed, and
+public, so any label other than FAIL would be discoverable HARKing and would
+also dissolve the mechanism section, which is downstream of the exceedances.
+What changed is emphasis and structure only: verdict table gains an
+"Established" column, section VII retitled "What Transfers Across
+Architectures", abstract and conclusion lead with the three delivered
+results, discussion gains a practitioner paragraph and a named research
+program. Every verdict, band, date, and number is unchanged.
+
+CORRECTION carried into findings.md this date: the 2026-08-18 entries (both
+files) called 4.0 s "the frozen protocol's" window floor. The registered
+floor (configs/exp_002.yaml, 2026-05-29) is 2.0 s; the implementation
+enforced 4.0 s and the frozen data confirms all 296 windows >= 4.001 s. The
+divergence is conservative and is disclosed in the paper's methods. The
+sub-second instability of instrument B was also not first observed on
+2026-08-18: the config comment records it from 2026-05-29 (B = 94/38/47/35 J
+on sub-second GPT-2 windows); the 08-18 diagnostic's contribution is the
+cause separation (GIL excluded via external logger), the multi-point
+quantification, and the ~96 Hz sampler ceiling. Full correction text in
+findings.md 2026-08-19.
