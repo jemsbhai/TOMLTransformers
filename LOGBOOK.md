@@ -978,3 +978,21 @@ on sub-second GPT-2 windows); the 08-18 diagnostic's contribution is the
 cause separation (GIL excluded via external logger), the multi-point
 quantification, and the ~96 Hz sampler ceiling. Full correction text in
 findings.md 2026-08-19.
+
+
+## 2026-08-20 - SUBMITTED: UEMCON, ten pages, double-blind
+
+The manuscript was submitted to IEEE UEMCON via EDAS this date. Submitted
+state: ten pages, seven figures plus four tables, twenty references, all
+numeric claims verified against committed artifacts (87/87 prose check plus
+the suite-pinned eager/flash and figure-layer numbers), TOML-series citations
+third-person with authors verified against the papers' own page-1 blocks,
+cloud paper cited as manuscript under review pending its arXiv identifier.
+Known open items for any revision or camera-ready, in order: author voice
+pass was completed pre-submission by the director; arXiv ID swap for the
+cloud citation when assigned; --no-titles figure regeneration, author block,
+and acknowledgements at camera-ready only. Step 8 (conference paper) is
+CLOSED. Next on the plan: the Step 8 venue/scope-fit scan for the journal
+consolidation (JAIR/JMLR preference; TOMPECS/TACO/TSUSC/TC alternatives),
+with the A100 phase (frozen amendment, T1-T3) as the journal's central new
+material.
