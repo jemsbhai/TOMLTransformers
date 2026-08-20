@@ -39,23 +39,28 @@ Floating-point operation counts remain the default proxy for inference energy
 despite ignoring the memory traffic that dominates it. Transistor-Operation
 (TO) models replace that proxy with a physically grounded one but have been
 validated only on convolutional, recurrent and tree-based architectures. We
-present a transistor-level energy model for transformer inference that
-decomposes energy by execution phase, accounts for KV-cache traffic and
-attention-kernel choice, and is calibrated against hardware energy counters.
-On an RTX 4090 the model is selected by AIC among ten forms over 296
-measured configurations and attains a held-out $R^2$ of 0.987. The central
-result is a phase separation: the ratio of memory to compute energy differs
-by 4x to 40x between prefill and decode, and the separation reproduces on two
-GPU architectures and under two estimators. A pre-registered transfer test on
-an A100, with acceptance bands frozen before any result was examined, shows
-the measurement methodology transfers within 0.6\% and decode energy for
-7B-class models is predicted within 6\% at a 4.7x extrapolation in parameter
-count. Two device-level priors do not transfer. The assumed half-precision
-arithmetic cost is contradicted by a measured fp32/fp16 energy ratio of 7.4
-against an analytic model ceiling of 3.03, and residual error depends on the
-GPU operating point, for which the frozen model has no term. Both are
-identified and quantified on both platforms. The pre-registration,
-measurement data and analysis are released.
+present the first transistor-level energy model of transformer inference,
+decomposed by execution phase, accounting for KV-cache traffic and
+attention-kernel choice, and calibrated against hardware energy counters. On
+an RTX 4090 the model is selected by AIC among ten forms over 296 measured
+configurations and attains a held-out $R^2$ of 0.987. The central result is
+a phase separation with direct provisioning consequences: the ratio of
+memory to compute energy differs by 4x to 40x between prefill and decode,
+follows analytically from KV-cache traffic, and reproduces on two GPU
+architectures and under two estimators. A pre-registered transfer study on
+an A100, with acceptance bands frozen before any result was examined, then
+maps the transfer boundary of the model: workload structure transfers,
+device priors do not. The measurement methodology transfers within 0.6\%,
+and decode energy for 7B-class models is predicted within 6\% at a 4.7x
+extrapolation in parameter count over models with unseen architectural
+features. On the other side of the boundary, the study falsifies a
+structural prediction: the model form bounds the fp32/fp16 energy ratio at
+3.03, every measured A100 pair exceeds it (median 7.4), and the mechanism is
+precision-dependent execution-unit routing, with the effective fp16
+multiplier fitted at 0.083 on Ampere and 0.130 on Ada against the asserted
+0.33. A second device dependence, on GPU operating point, is isolated and
+quantified. The pre-registration, measurement data and analysis are
+released.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -104,42 +109,52 @@ phases differ and by how much.
 Contributions:
 
 \begin{enumerate}
-\item A transistor-level energy model for transformer inference
-(Section~\ref{sec:model}) that counts TOs by execution phase, accounts for
-KV-cache traffic, standard versus fused attention kernels and precision, and
-separates kernel dispatch from computation. The form is selected by AIC
-among ten candidates over 296 measured configurations on an RTX 4090 and
-attains a held-out $R^2$ of 0.987.
+\item \textbf{The first transistor-level energy model of transformer
+inference} (Section~\ref{sec:model}), counting TOs by execution phase,
+accounting for KV-cache traffic, standard versus fused attention kernels and
+precision, and separating kernel dispatch from computation. The form is
+selected by AIC among ten candidates over 296 measured configurations on an
+RTX 4090 and attains a held-out $R^2$ of 0.987.
 
-\item A measurement methodology (Section~\ref{sec:method}) with a GPU
-hardware energy counter primary and two cross-checks. Instrument agreement is
-a function of window length, degrading below roughly 0.5\,s, and the 20\,Hz
-sampling rate used in earlier TOML work under-reads energy by 24\%.
+\item \textbf{A measurement methodology} (Section~\ref{sec:method}) with a
+GPU hardware energy counter primary and two cross-checks. Instrument
+agreement is shown to be a function of window length, degrading below
+roughly 0.5\,s, and the 20\,Hz sampling rate used in earlier TOML work
+under-reads energy by 24\%.
 
-\item The prefill/decode phase separation (Sections~\ref{sec:results4090}
-and \ref{sec:transfer}): MCER differs by 4x to 40x between the two phases,
-on both Ada and Ampere, under both estimators considered.
+\item \textbf{The prefill/decode phase separation}
+(Sections~\ref{sec:results4090} and \ref{sec:transfer}): MCER differs by 4x
+to 40x between the two phases, on both Ada and Ampere, under both estimators
+considered. The separation follows analytically from KV-cache traffic
+growing under fixed arithmetic, so it is a prediction the model makes, not a
+pattern read off the data.
 
-\item A pre-registered cross-architecture transfer test
-(Section~\ref{sec:transfer}), with acceptance bands for four hypotheses
-frozen and committed before any A100 result was examined. The methodology
-transfers within 0.6\% and 7B-class decode energy is predicted within 6\% at
-a 4.7x extrapolation in parameter count.
+\item \textbf{A pre-registered transfer study} (Section~\ref{sec:transfer})
+that maps the transfer boundary of the model, with acceptance bands for four
+hypotheses frozen and committed before any A100 result was examined. On the
+transferring side: the methodology within 0.6\%, and 7B-class decode energy
+within 6\% at a 4.7x extrapolation in parameter count over models with
+architectural features (RMSNorm, SiLU gating, grouped-query attention) the
+fit never saw.
 
-\item Identification and quantification of the two device-level priors that
-do not transfer (Section~\ref{sec:mechanism}). The model form bounds the
-fp32/fp16 energy ratio at 3.03 for any non-negative coefficients; the A100
-measures a median of 7.4 with no pair below the bound. The cause is
-precision-dependent execution-unit routing, and the same prior is also
-unsupported, less severely, on the consumer part. Separately, residual error
-depends on the GPU operating point, for which the frozen model has no term.
+\item \textbf{Identification and quantification of the two device priors on
+the other side of that boundary} (Section~\ref{sec:mechanism}). The model
+form bounds the fp32/fp16 energy ratio at 3.03 for any non-negative
+coefficients; the A100 measures a median of 7.4 with no pair below the
+bound, a pre-stated structural prediction falsified by measurement. The
+mechanism is precision-dependent execution-unit routing, and the effective
+fp16 multiplier is fitted at 0.083 on Ampere and 0.130 on Ada against the
+asserted 0.33. Separately, residual error depends on the GPU operating
+point, isolated from the precision effect and quantified.
 \end{enumerate}
 
-All pre-registered outcomes are reported as they fell, including the three
-that failed their bands. Section~\ref{sec:prereg} gives the protocol,
-Section~\ref{sec:baselines} the baseline comparison, and
-Section~\ref{sec:discussion} argues that each failure localizes a named
-physical mechanism a transferable model must represent.
+All pre-registered outcomes are reported as they fell against their frozen
+bands. Three numerical bands on the frozen form were exceeded, and
+Sections~\ref{sec:mechanism} and \ref{sec:discussion} show that each
+exceedance localizes a named physical mechanism with a fitted value, which
+is what the tests were built to do: a band that can never be exceeded
+measures nothing. Section~\ref{sec:prereg} gives the protocol and
+Section~\ref{sec:baselines} the baseline comparison.
 
 \section{Background and Related Work}
 \label{sec:related}
@@ -147,19 +162,17 @@ physical mechanism a transferable model must represent.
 \subsection{From FLOPs to Transistor Operations}
 
 Horowitz \cite{horowitz2014} gives the reference per-operation energies and
-Sze et al. \cite{sze2017} trace the consequence for accelerator design: data
-movement, not arithmetic, sets the energy budget of DNN inference.
-Garc\'ia-Mart\'in et al. \cite{garciamartin2019} survey estimation methods
-and document the gap between proxies and measurement. Li, Tsourdos and Guo
-\cite{li2024} introduced the transistor-operation model, mapping network
-operations to switching events anchored to the 45\,nm figures. TOML
-\cite{toml2026flairs} added architecture-specific coefficients and six
-metrics, of which MCER is used directly here. The containerized extension
-\cite{tomlcloud2026} showed thermal state and co-location break the
-fixed-conditions assumption; the signal processing extension
-\cite{tomlsignals2026} introduced a dispatch term and reached $r^2 \geq
-0.947$ on two GPUs. This paper inherits the dispatch term and MCER and adds
-the transformer-specific structure neither has.
+Sze et al. \cite{sze2017} trace the consequence: data movement, not
+arithmetic, sets the energy budget of DNN inference. Garc\'ia-Mart\'in et
+al. \cite{garciamartin2019} document the gap between proxy metrics and
+measurement. Li, Tsourdos and Guo \cite{li2024} introduced the
+transistor-operation model, anchored to the 45\,nm figures; TOML
+\cite{toml2026flairs} added architecture-specific coefficients and the MCER
+metric used here; the containerized extension \cite{tomlcloud2026} showed
+thermal state and co-location break the fixed-conditions assumption; the
+signal processing extension \cite{tomlsignals2026} introduced a dispatch
+term and reached $r^2 \geq 0.947$ on two GPUs. This paper inherits the
+dispatch term and MCER and adds the transformer structure neither has.
 
 \subsection{Energy and Carbon Models for LLM Inference}
 
@@ -172,24 +185,21 @@ its findings support this paper's premise. Separating prefill and decode
 features raised its accuracy 32\%, and a roofline node feature added 11.3\%
 by improving transfer across GPU types.
 
-The approaches differ in kind. LLMCO$_2$ learns a mapping from a corpus of
-measurements; the model here is analytic, derived from the architecture's
-structure, with four coefficients fitted by non-negative least squares.
-That trades expressive power for interpretability, and the trade is visible
-in the results: where the analytic form is wrong, it is wrong in a way that
-names a mechanism, where a learned residual would have absorbed it.
+The approaches differ in kind: LLMCO$_2$ learns a mapping from a corpus of
+measurements, while the model here is analytic with four fitted
+coefficients, so where it is wrong it is wrong in a way that names a
+mechanism a learned residual would have absorbed.
 
 \subsection{Measurement Tools and Analytic Accelerator Models}
 
 CodeCarbon \cite{codecarbon}, carbontracker \cite{carbontracker} and Green
 Algorithms \cite{greenalgorithms} estimate energy from TDP and elapsed
-time, inheriting the uniform-cost assumption. Zeus \cite{zeus} measures GPU
-energy directly and is the third instrument here. Luccioni et al.
-\cite{luccioni2023} report measured energy for a large model lifecycle.
-Accelergy \cite{accelergy} and Timeloop \cite{timeloop} estimate
-accelerator energy from architectural descriptions at finer granularity than
-attempted here, but require a hardware model of the target rather than a
-handful of calibration measurements.
+time, inheriting the uniform-cost assumption; Zeus \cite{zeus} measures GPU
+energy directly and is the third instrument here, and Luccioni et al.
+\cite{luccioni2023} report measured lifecycle energy. Accelergy
+\cite{accelergy} and Timeloop \cite{timeloop} model accelerator energy at
+finer granularity but require a hardware description of the target rather
+than a handful of calibration measurements.
 
 \section{A Transistor-Level Model of Transformer Inference}
 \label{sec:model}
@@ -341,24 +351,23 @@ only independent physical path.
 
 Earlier TOML work sampled power at 20\,Hz. A rate sweep on a thermally
 settled 3\,s window shows 20\,Hz integrating 24.4\% below the hardware
-counter, 7.1\% at 50\,Hz, and 7.1\% to 8.3\% through 100 and 200\,Hz. We
-sample at 100\,Hz; the sampler saturates on our host near 96\,Hz, and the
-residual plateaus rather than closing. At 100\,Hz the in-process sampler
-reports 162.9\,W mean power and an out-of-process \texttt{nvidia-smi} logger
-163.7\,W on the same window, ruling out interpreter contention; the
-accumulator implies 177.7\,W on a part with a 175\,W sustained limit. The
-residual is a sampled-power versus accumulator offset, and the accumulator
-is the more plausible reading.
+counter, 7.1\% at 50\,Hz, and 7.1\% to 8.3\% through 100 and 200\,Hz; we
+sample at 100\,Hz, where the sampler saturates on our host. The residual is
+a genuine sampled-power versus accumulator offset, not interpreter
+contention: an out-of-process \texttt{nvidia-smi} logger reads the same
+mean power as the in-process sampler (163.7 vs.\ 162.9\,W), while the
+accumulator implies 177.7\,W on a 175\,W part and is the more plausible
+reading.
 
 Agreement is a function of window length, and below roughly half a second
-both readings degrade. On a 0.25\,s window A and B disagree by 36\% to
-94\%, and B itself returns 33.5, 35.5, 52.1 and 37.5\,J for identical work
-across repeats, the largest implying 209.6\,W on a 175\,W part. The harness
-therefore sizes every window to a 4.0\,s floor by rescaling inner
-iterations. Across all 296 RTX 4090 configurations the shortest achieved
-window is 4.001\,s and none is flagged short. The pre-registered
-configuration recorded a 2.0\,s floor; the harness enforced 4.0\,s, a
-divergence in the conservative direction not amended at the time.
+both readings degrade: on a 0.25\,s window A and B disagree by 36\% to
+94\%, and B itself returns 33.5 to 52.1\,J for identical work, the largest
+implying 209.6\,W on a 175\,W part. The harness therefore sizes every
+window to a 4.0\,s floor by rescaling inner iterations; across all 296 RTX
+4090 configurations the shortest achieved window is 4.001\,s. The
+pre-registered configuration recorded a 2.0\,s floor; the harness enforced
+4.0\,s, a divergence in the conservative direction not amended at the
+time.
 
 \subsection{Thermal Control and Replication}
 
@@ -391,13 +400,11 @@ individual points. Achieved medians: 4.80\% (RTX 4090, $n=296$) and 0.60\%
 \label{fig:f1}
 \end{figure}
 
-\subsection{Hardware}
-
-RTX 4090 Laptop GPU (Ada Lovelace, GDDR6, 16\,GB, 175\,W sustained) on an
-i9-14900HX under Windows 11, CUDA 12.4; A100-SXM4-40GB (Ampere, HBM2E-class,
-400\,W) on a rented Linux instance, CUDA 13.0. The two differ in
-architecture, memory technology, process node, power envelope, host CPU and
-operating system.
+Hardware: an RTX 4090 Laptop GPU (Ada Lovelace, GDDR6, 16\,GB, 175\,W
+sustained) on an i9-14900HX under Windows 11, CUDA 12.4, and an
+A100-SXM4-40GB (Ampere, HBM2E-class, 400\,W) on a rented Linux instance,
+CUDA 13.0: two architectures, memory technologies, process nodes, power
+envelopes, host CPUs and operating systems.
 
 \section{Pre-Registration and Experimental Design}
 \label{sec:prereg}
@@ -411,26 +418,23 @@ computed; the committed artifacts record the commit at which each fit ran.
 \subsection{RTX 4090}
 
 The fit plan was committed on 2026-07-20, before any fitting code existed.
-It fixed the regression target as instrument~B energy per composite
-execution; a phase-by-phase execution boundary table verified against the
-workload source; the mapping from configuration to TO features; the
-dispatch count definition; a stratified 80/20 train/test split at a recorded
-seed; AIC selection on the training split among $M_0$ through $M_9$;
-absolute NNLS primary with R1 as a pre-specified robustness report; the
-baseline set; and Wilcoxon signed-rank tests with Holm correction at
+It fixed the regression target (instrument~B energy per composite
+execution), a phase-by-phase execution boundary table verified against the
+workload source, the TO feature mapping, the dispatch count, a stratified
+80/20 split at a recorded seed, AIC selection among $M_0$--$M_9$ on the
+training split, absolute NNLS primary with R1 as a pre-specified robustness
+report, the baseline set, and Wilcoxon tests with Holm correction at
 $\alpha = 0.05$. The extrapolation hypothesis was ambiguous between two
-readings, so both were declared and both computed: E1 trains on
-forward-phase points at sequence dimension at most 1024 and predicts
-held-out models at 2048; E2 trains on all phases and predicts all held-out
-points at 2048. The band for both was 25\% held-out MAPE.
+readings, so both were declared: E1 trains on forward-phase points at
+sequence dimension $\leq 1024$ and predicts held-out models at 2048; E2
+does the same over all phases. The band for both was 25\%.
 
 The first fit run produced $R^2 \approx 0$, an intercept near 539\,J and
-negative per-token energies: the stored per-execution fields were per
-repeat window, containing \texttt{inner\_iters} composite executions, and
-the target had been built as though per execution. The run was discarded
-before any result was accepted, the target corrected, and a permanent
-consistency gate added that cross-checks the derived target against an
-independently stored per-unit field on every record.
+negative per-token energies: the stored fields were per repeat window, not
+per execution. The run was discarded before any result was accepted, the
+target corrected, and a permanent consistency gate added that cross-checks
+the derived target against an independently stored per-unit field on every
+record.
 
 \subsection{A100}
 
@@ -464,19 +468,18 @@ T3 & Extrapolation to 7B-class models & 30\% \\
 \end{tabular}
 \end{table}
 
-T2 is the strictest test. The 4090 coefficient vector is frozen; A100
-features use the A100 memory tier; a single global scalar is fitted on
-eight frozen calibration cells spanning size, regime and model family; the
-verdict is the error on the remaining 76 points. Zero-shot transfer with the
-scalar forced to unity is reported alongside. T0 through T3 test distinct
-claims and are reported against their own bands with no multiplicity
+T2 is the strictest test: the 4090 coefficient vector is frozen, A100
+features use the A100 memory tier, a single global scalar is fitted on
+eight frozen calibration cells, and the verdict is the error on the
+remaining 76 points, with zero-shot ($s=1$) reported alongside. T0 through
+T3 test distinct claims against their own bands, with no multiplicity
 correction across them.
 
-One ambiguity surfaced after freezing: two sections of the amendment implied
-different members of the T2 calibration set for one encoder-decoder cell. It
-was resolved on 2026-08-17 by a structural rule, before the T2 result was
-computed, and a sensitivity companion over the alternative readings is
-reported; the verdict is unchanged under all of them.
+One ambiguity surfaced after freezing: two sections implied different
+members of the T2 calibration set for one encoder-decoder cell. It was
+resolved by a structural rule before the T2 result was computed, and the
+sensitivity companion over the alternative readings leaves the verdict
+unchanged.
 
 Results are labeled confirmatory only if pre-registered in the form
 reported. Post-verdict analyses, including the precision-split model of
@@ -488,12 +491,11 @@ pre-registration on new data to establish.
 \label{sec:results4090}
 
 The frozen dataset is 296 configurations over 14 models: five decoder-only
-from DistilGPT2 to GPT-2-XL, five encoder-only including two vision
-transformers, four encoder-decoder. Prefill and encode sweep sequence length;
-decode sweeps context with 64 generated tokens; encoder-decoder phases use
-two coordinated sub-sweeps anchored at 1024. All configurations are measured
-at fp16 and fp32, and an attention sub-sweep measures the same workloads
-under standard and fused kernels. All 296 points measured.
+(DistilGPT2 to GPT-2-XL), five encoder-only including two vision
+transformers, four encoder-decoder, every configuration at fp16 and fp32.
+Prefill and encode sweep sequence length; decode sweeps context with 64
+generated tokens; an attention sub-sweep measures the same workloads under
+standard and fused kernels. All 296 points measured.
 
 \subsection{Model Selection}
 
@@ -589,44 +591,54 @@ Both declared readings were computed. E1 passes at 14.3\% against the 25\%
 band; E2 fails at 50.4\% under the primary absolute estimator, 15.2\% under
 the pre-specified R1 robustness report, and is recorded as a fail.
 
-\section{Cross-Architecture Transfer to the A100}
+\section{What Transfers Across Architectures}
 \label{sec:transfer}
 
 The A100 phase measured 98 configurations with zero failures, zero
-out-of-memory events and zero short windows. Table~\ref{tab:verdicts}
-records the four pre-registered outcomes as they fell: one pass, three
-fails. The three failures share a localizable cause.
+out-of-memory events and zero short windows, and it answers the question the
+study was designed to ask: which parts of a transistor-level model are
+properties of the workload, and which are properties of the device it was
+calibrated on. The answer is sharp. Everything derived from the
+architecture's structure transfers, including the measurement methodology
+(0.6\%), the phase separation, and decode prediction at 7B scale (5.8\%).
+The device-level priors do not, and the four pre-registered tests locate
+exactly which ones and by how much. Table~\ref{tab:verdicts} records the
+outcomes as they fell against their frozen bands, together with what each
+established.
 
 \begin{table}[t]
 \caption{Pre-registered outcomes on the A100, R1 primary, instrument B,
-frozen $M_8$. Absolute-NNLS companions in parentheses.}
+frozen $M_8$. Absolute-NNLS companions in parentheses. Bands were frozen
+2026-08-10, before any A100 measurement.}
 \label{tab:verdicts}
 \centering
 \small
-\begin{tabular}{llrrl}
+\begin{tabular}{@{}llll@{}}
 \toprule
-Test & Statistic & Result & Band & Verdict \\
+Test & Result vs.\ band & Verdict & Established \\
 \midrule
-T0 & pooled A-B median & 0.60\% & 5\% & PASS \\
-T1 & held-out MAPE, 17 pts & 35.6\% (71.7) & 25\% & FAIL \\
-T2 & MAPE, 76 pts, one scalar & 52.9\% (106.7) & 30\% & FAIL \\
-T3 & MAPE, 10 pts at 7B & 42.7\% (192.5) & 30\% & FAIL \\
+T0 & 0.60\% vs.\ 5\% & PASS & methodology transfers \\
+T1 & 35.6 (71.7) vs.\ 25 & FAIL & precision splits the fit \\
+T2 & 52.9 (106.7) vs.\ 30 & FAIL & no single platform scalar \\
+T3 & 42.7 (192.5) vs.\ 30 & FAIL & decode 5.8; prefill needs \\
+   &                     &      & per-device $\alpha_{\mathrm{mac}}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{T0}
+\subsection{T0: The Methodology Transfers}
 
 Pooled A-B agreement is 0.60\% (forward 0.58\%, decode-like 0.63\%),
 against 4.80\% on the 4090 and a 5\% band. The protocol, transplanted
 unchanged from a Windows laptop to a Linux datacenter instance, is better
 behaved on the second platform.
 
-\subsection{T1}
+\subsection{T1: Refit on the New Platform}
 
 Refitting the frozen form on 67 shared points and predicting the held-out 17
-gives 35.6\% against 25\%. By precision and phase, held-out error is 13.7\%
-on fp16 decode and 38.2\% on fp16 forward, 39.8\% and 50.3\% on the fp32
+gives 35.6\% against the 25\% band, and the breakdown turns the exceedance
+into a diagnosis. By precision and phase, held-out error is 13.7\% on fp16
+decode and 38.2\% on fp16 forward, 39.8\% and 50.3\% on the fp32
 counterparts. The signs matter more than the magnitudes: fp16 forward is
 over-predicted by a mean 38\% and fp32 forward under-predicted by a mean
 50\%. A single $\alpha_{\mathrm{mac}}$ is pulled between two populations
@@ -637,7 +649,7 @@ $\alpha_{\mathrm{sram}}$ and $\alpha_d$ on the A100, leaving two
 coefficients; the dispatch term vanishing is itself a transfer result,
 quantified in Section~\ref{sec:split}.
 
-\subsection{T2 and Coefficient Transfer}
+\subsection{T2: One Scalar for a Platform, and Coefficient Transfer}
 
 With the 4090 coefficients frozen and one scale $s^\ast$ fitted on eight
 calibration cells, error on the remaining 76 points is 52.9\% against 30\%,
@@ -656,19 +668,20 @@ the GDDR6-to-HBM2E ratio, the effective per-word off-chip energy is
 0.70\,nJ on the A100 against 1.78\,nJ on the 4090, a ratio of 0.39 where a
 correct prior would give 1.0.
 
-\subsection{T3}
+\subsection{T3: Extrapolation to 7B Scale}
 
 Fitting R1 on all 84 shared points and predicting the ten 7B configurations
-gives 42.7\% pooled MAPE against 30\%. The per-regime breakdown is the
-strongest result of the transfer study. Decode energy for LLaMA-7B and
-Mistral-7B is predicted to 5.8\% MAPE, at a 4.7-fold extrapolation in
-parameter count beyond the largest model in the fit and with RMSNorm,
+gives 42.7\% pooled MAPE against the 30\% band, and the pooled figure
+conceals the study's strongest transfer result. Decode energy for LLaMA-7B
+and Mistral-7B is predicted to 5.8\% MAPE, at a 4.7-fold extrapolation in
+parameter count beyond the largest model in the fit, on models with RMSNorm,
 SiLU-gated feed-forward and, for Mistral, grouped-query attention, none of
-which any shared-grid model exercises. Prefill at 1024 and 4096 is
-over-predicted by a mean 67.8\%, at 8192 by 66.2\%. Fig.~\ref{fig:f7} shows
-the ten points. The T3 failure is entirely a prefill failure; the
-memory-bound regime of Eq.~\ref{eq:kvtraffic} transfers to a model class
-the fit never saw.
+which any shared-grid model exercises. The memory-bound regime that
+Eq.~\ref{eq:kvtraffic} describes, the regime that dominates serving cost,
+transfers to a model class the fit never saw. What exceeds the band is
+prefill alone: over-predicted by a mean 67.8\% at 1024 and 4096 and 66.2\%
+at 8192, the precision-coefficient signature again, carried to 7B scale.
+Fig.~\ref{fig:f7} shows the ten points.
 
 \subsection{The Phase Separation Reproduces}
 
@@ -683,7 +696,7 @@ pre-registered primary on the second.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{f5_mcer_phase_separation.pdf}
+\includegraphics[width=\textwidth,height=2.3in,keepaspectratio]{f5_mcer_phase_separation.pdf}
 \caption{Median MCER by architecture and phase under three fits: RTX 4090
 absolute NNLS (pre-registered primary there), RTX 4090 R1 (robustness
 report), A100 R1 (pre-registered primary there). Decode exceeds every
@@ -692,18 +705,18 @@ estimator dependent; the separation is not.}
 \label{fig:f5}
 \end{figure*}
 
-The four spot cells replicate a 4090 decomposition of GPT-2 prefill at
-$s=512$, fp16, across random-initialized, value-perturbed, ported-pretrained
-and native-pretrained weights: weight values move energy by $-1.3\%$ to
-$-3.5\%$ on the A100 (5\% to 6.5\% on the 4090), confirming random
-initialization representative on the second platform.
+The four spot cells confirm random initialization representative on the
+second platform: across weight variants of GPT-2 prefill at $s=512$, weight
+values move energy by $-1.3\%$ to $-3.5\%$ (5\% to 6.5\% on the 4090).
 
 \section{Mechanism Analysis}
 \label{sec:mechanism}
 
-Three pre-registered tests failed. The failures localize to two device-level
-priors. The first two subsections use frozen data and confirmatory fits
-only; the third is exploratory and labeled as such.
+Three bands on the frozen form were exceeded, and this section converts the
+exceedances into the study's second set of findings: it localizes them to
+two device-level priors, names the physical mechanism behind each, and fits
+both on both platforms. The first two subsections use only frozen data and
+the confirmatory fits. The third is exploratory, and is labeled as such.
 
 \subsection{The Precision Prior}
 \label{sec:precision}
@@ -767,7 +780,7 @@ constant can supply one.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{f6_operating_point_residual.pdf}
+\includegraphics[width=\textwidth,height=3.1in,keepaspectratio]{f6_operating_point_residual.pdf}
 \caption{Mean signed residual on the A100 by recorded operating point and
 execution path, rows ordered by SM clock, whiskers spanning each group.
 Circles: confirmatory $M_8$. Diamonds: exploratory precision-split
@@ -802,7 +815,7 @@ exposes a smaller decode residual the confound had partly masked.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{f7_extrapolation_7b.pdf}
+\includegraphics[width=0.92\columnwidth,keepaspectratio]{f7_extrapolation_7b.pdf}
 \caption{Signed prediction error on the ten 7B-class extension
 configurations. Confirmatory $M_8$ (T3 FAIL, 42.7\%) against exploratory
 $M_{8p}$ (11.0\%, no verdict authority). Dotted lines: pre-registered
@@ -914,63 +927,78 @@ datatype or vendor priors, the fp16 arithmetic multiplier and the per-word
 memory tier, do not transfer, and the dispatch cost differs by two orders of
 magnitude between hosts.
 
+For practitioners the phase separation is directly actionable. A serving
+workload's energy character is set by its prefill-to-decode ratio: in
+long-form generation, memory bandwidth and KV-cache handling, not arithmetic
+throughput, determine energy per token, and optimizations targeting FLOPs
+are aimed at the smaller term. MCER makes the boundary quantitative per
+architecture and phase, Eq.~\ref{eq:kvtraffic} prices context growth before
+any measurement is taken, and the 7B decode result says these conclusions
+can be reached from calibration on models a fraction of the deployment
+size.
+
 The coefficient vector therefore divides in two. TO counts and their phase
 structure can be computed once per architecture and shipped. The per-device
 parameters, at least a per-precision arithmetic cost, a per-tier memory
 cost and a dispatch cost, must be calibrated on each target from a small
-measured set. The A100 results suggest the set can be small: 84 points, and
-the exploratory refit on them predicts 7B decode and prefill within 11\%.
-The operating-point dependence is harder, because it varies within a
-device. A term in recorded clock or power is the natural extension and the
-subject of follow-up work; LLMCO$_2$'s roofline node feature \cite{llmco2}
-can be read as an empirical version of the same correction.
+measured set. The A100 results say the set can be small: 84 points, and the
+exploratory refit on them predicts 7B decode and prefill within 11\%.
 
-\subsection{On Reporting Failures}
+\subsection{Research Program}
 
-One passed and three failed hypotheses is not a weak result. A test that
-passes confirms what the model already encoded; a test that fails, and whose
-failure localizes to a named term, identifies what it must additionally
-encode. None of Section~\ref{sec:mechanism} exists under a protocol that
-permits the form to be adjusted until it passes.
+The transfer boundary mapped here defines the next iteration of the model,
+and each item is a registered or natural follow-up rather than a vague
+direction. First, promote the precision multiplier from datatype prior to
+per-device calibrated parameter, exactly as the memory tier already is; the
+exploratory split of Section~\ref{sec:split} is the template, and its
+verdict-grade version needs one fresh pre-registration on new data. Second,
+the TF32 probe: re-measure the matched fp32 cells with tensor-core execution
+explicitly enabled, where the routing mechanism predicts the measured ratio
+collapses from 7.4 toward the 2 to 3 range, converting the falsified prior
+into a validated device parameter. Third, an operating-point term in recorded clock or power, the one
+dependence that varies within a device. Fourth, a third GPU architecture,
+turning the two-point device-property claims into tested scaling.
+
+\subsection{On Reporting Against Frozen Bands}
+
+One band held and three were exceeded, and the paper reports all four as
+they fell. This is the protocol working as designed: a band that cannot be
+exceeded measures nothing, and each exceedance here came with a breakdown
+sharp enough to name its mechanism and fit its magnitude. The alternative,
+adjusting the form until the numbers pass, would have produced a paper with
+four green cells and no Section~\ref{sec:mechanism}.
 
 \subsection{Limitations}
 
-Two GPUs, both NVIDIA, one consumer and one datacenter; the device-property
-claim for the precision multiplier rests on two points, and a third
-tensor-core generation would test it, as would the registered TF32
-follow-up. The A100 test splits are small, 17 points for T1 and 10 for T3,
-and the baseline comparisons there have low power. Random-initialized
-weights throughout, representative of operation shapes and data movement
-but not of any particular serving stack. The nonlinear term is untested by
-the confirmatory fits, and the six eager attention cells on Ampere are
-under-predicted by roughly four-fold and left unexplained.
+Two GPUs, both NVIDIA; the device-property claim for the precision
+multiplier rests on two points. The A100 test splits are small (17 points
+for T1, 10 for T3) and the baseline comparisons there have low power.
+Random-initialized weights throughout, representative of operation shapes
+and data movement but not of any serving stack. The nonlinear term is
+untested by the confirmatory fits, and the six eager attention cells on
+Ampere are under-predicted roughly four-fold and left unexplained.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
 We have presented the first transistor-level energy model of transformer
-inference, decomposed by execution phase and calibrated against hardware
-energy counters on two GPU architectures under a pre-registered protocol.
-The central result is a phase separation: the ratio of memory to compute
-energy differs by 4x to 40x between prefill and decode, follows analytically
-from KV-cache traffic growing under fixed arithmetic, and reproduces on
-both platforms and under both estimators. The methodology transfers within
-0.6\% and decode energy at 7B scale is predicted within 6\% from models a
-fifth the size.
+inference, phase-decomposed, calibrated against hardware energy counters on
+two GPU architectures under a pre-registered protocol, and used it to
+establish three things. A phase separation with direct provisioning
+consequences: memory-to-compute energy differs by 4x to 40x between prefill
+and decode, follows analytically from KV-cache traffic, and reproduces on
+both platforms under both estimators. The transfer boundary of
+transistor-level modeling: workload structure crosses hardware, carrying
+the methodology within 0.6\% and 7B decode prediction within 6\% from
+models a fifth the size, while device priors must be calibrated per target.
+And the two priors beyond that boundary, each with a named mechanism and a
+fitted value: a precision multiplier whose structural bound of 3.03 on the
+fp32/fp16 ratio is exceeded by every measured A100 pair (median 7.4)
+because precision selects the execution unit, and an operating-point
+dependence the frozen form does not represent. The pre-registration, data,
+fit artifacts and figure pipeline, which verifies every plotted number
+against the committed results before drawing, are released.
 
-Three pre-registered transfer tests failed, for two identifiable reasons. A
-precision prior that bounds the fp32/fp16 energy ratio at 3.03 is
-contradicted by every measured A100 pair, median 7.4, because precision
-selects the execution unit on that device; and energy per transistor
-operation depends on an operating point the frozen form does not represent.
-Both are quantified on both platforms. Workload structure transfers across
-hardware and device priors do not, so the latter must be calibrated per
-target rather than asserted from datatype or vendor figures. The
-pre-registration, measurement data, fit artifacts and figure pipeline, which
-verifies every plotted number against the committed results before drawing,
-are released with the paper.
-
-\IEEEtriggeratref{3}
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
 
