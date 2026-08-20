@@ -1,6 +1,13 @@
 %% References for the UEMCON submission.
 %% NOTE ON DOUBLE-BLIND: prior TOML-series entries are cited in the third
 %% person in the text. Do not add "our" phrasing anywhere.
+
+%% IEEEtran.bst replaces repeated author lists on consecutive entries with
+%% an em-dash; this control entry (activated by \bstctlcite in main.tex)
+%% turns that off so every entry carries its full author list.
+@IEEEtranBSTCTL{BSTcontrol,
+  CTLdash_repeated_names = "no"
+}
 %%
 %% ENTRIES MARKED "VERIFY" NEED A FIELD CONFIRMED BEFORE SUBMISSION.
 
@@ -47,7 +54,7 @@
 
 @inproceedings{toml2026flairs,
   author    = {Muntaser Syed and Marius Silaghi and Sheikh Abujar and Sharun Akter Khushbu},
-  title     = {{TOML}: Transistor Operations for Machine Learning, A Physics-Grounded Energy Efficiency Framework},
+  title     = {{TOML}: Transistor Operations for Machine Learning: A Physics-Grounded Energy Efficiency Framework},
   booktitle = {Proceedings of the 39th International Florida Artificial Intelligence Research Society Conference (FLAIRS-39)},
   year      = {2026}
 }
@@ -60,14 +67,14 @@
   note      = {To appear}
 }
 
-%% VERIFY: replace with the arXiv identifier once posted. An unciteable
-%% "under review" reference weakens Section II; see the discussion of the
-%% preprint route.
+%% Under review; swap the note for the arXiv identifier the moment it is
+%% assigned. SUBMISSION BLOCKER: do not submit with "under review" if the
+%% ID exists.
 @misc{tomlcloud2026,
   author = {Muntaser Syed and Marius Silaghi and Sheikh Abujar and Sharun Akter Khushbu},
   title  = {Beyond Proportional Allocation: Transistor-Level Energy Attribution for Containerized {ML} Workloads},
   year   = {2026},
-  note   = {arXiv preprint, identifier to be inserted}
+  note   = {Manuscript under review}
 }
 
 @inproceedings{tomlvision2026,
