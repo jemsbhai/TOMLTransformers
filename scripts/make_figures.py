@@ -69,6 +69,9 @@ PRECISION_MARKER = {"fp16": "o", "fp32": "s"}
 
 FIGURES = ("F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8")
 
+# Set by --no-titles. See save().
+STRIP_TITLES = False
+
 
 # ----------------------------------------------------------------------
 # Plumbing
@@ -112,6 +115,11 @@ def style() -> None:
 
 def save(fig, name: str, outdir: Path, formats) -> list[str]:
     outdir.mkdir(parents=True, exist_ok=True)
+    if STRIP_TITLES:
+        # Camera-ready: the description lives in the LaTeX caption, not in
+        # the image. Titles stay on by default for review passes.
+        for ax in fig.get_axes():
+            ax.set_title("")
     written = []
     for ext in formats:
         path = outdir / f"{name}.{ext}"
@@ -537,6 +545,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
                    help="comma separated output formats (default pdf,png)")
     p.add_argument("--gate-only", action="store_true",
                    help="run the lineage gate and exit without drawing")
+    p.add_argument("--no-titles", action="store_true",
+                   help="strip axes titles for camera-ready (captions carry "
+                        "the description)")
     return p
 
 
@@ -560,6 +571,9 @@ def main(argv=None) -> int:
     outdir = Path(args.outdir)
     formats = [s.strip() for s in args.formats.split(",") if s.strip()]
 
+    global STRIP_TITLES
+    STRIP_TITLES = bool(args.no_titles)
+
     style()
     commit = git_commit()
     dirty = git_dirty()
@@ -570,6 +584,7 @@ def main(argv=None) -> int:
         "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "git_commit": commit,
         "git_dirty": dirty,
+        "titles_stripped": STRIP_TITLES,
         "lineage_gate_checks": len(results),
         "lineage_gate_all_passed": True,
         "sources": {
