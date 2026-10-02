@@ -996,3 +996,172 @@ CLOSED. Next on the plan: the Step 8 venue/scope-fit scan for the journal
 consolidation (JAIR/JMLR preference; TOMPECS/TACO/TSUSC/TC alternatives),
 with the A100 phase (frozen amendment, T1-T3) as the journal's central new
 material.
+
+
+## 2026-10-02 - ACCEPTED at UEMCON; camera-ready; post-verdict diagnosis of the standard-attention residual from committed artifacts
+
+Status. The UEMCON submission (2026-08-20) was accepted with three reviews, all
+Accept. Two reviews raise the unexplained eager-attention cells; one calls the
+precision-split model a post-hoc fix; one conflates the T1/T3 on-platform
+exceedances with cross-device transfer failure and calls the A100 "newer".
+Camera-ready is in preparation this date. Repository made public this date
+after a three-check secrets scan (tracked sensitive filenames; secret-looking
+strings in the tree; secret-looking strings anywhere in history: all empty),
+at commit 79afc42 (author block, URL, acknowledgment, reference statuses,
+README release update). Release tag deferred to the final camera-ready commit.
+
+(1) Diagnosis. Reviewer prompt: "eager cells on Ampere under-predicted ~4x,
+unexplained" (paper VIII-B, Limitations). Checked against the committed
+per-point predictions on BOTH platforms before writing anything. Source files:
+experiments/exp_002_size_sweep/fit/per_point_predictions.jsonl (fields y_j,
+yhat_r1_j, yhat_full_j) and experiments/exp_002_size_sweep/a100/fit/
+per_point_predictions.jsonl (fields y_j, yhat_t3_all84_fit_j,
+yhat_t1_train_fit_j). Computed in a sandbox from copies of the committed
+files; the script is transcribed at the end of this entry.
+
+RTX 4090, all eight eager cells (prefill, fp16), R1 all-296 fit (in-sample),
+signed residual (pred-meas)/meas, absolute-NNLS residual, measured/predicted
+under R1, the matched flash twin's R1 residual, measured eager/flash energy
+ratio, and the excess ratio = (meas eager - meas flash)/(pred eager - pred
+flash) under R1:
+  DistilGPT2 s512   y 0.418 J  R1 -32.7%  abs +50.4%  m/p 1.49  twin +17.1%  e/f 1.92  excess 7.7x
+  DistilGPT2 s1024  y 1.374 J  R1 -64.5%  abs  -7.5%  m/p 2.82  twin +12.4%  e/f 3.76  excess 13.2x
+  DistilGPT2 s2048  y 5.020 J  R1 -79.2%  abs -41.5%  m/p 4.81  twin  +6.1%  e/f 6.95  excess 15.5x
+  DistilGPT2 s4096  y 19.179 J R1 -85.7%  abs -59.3%  m/p 7.00  twin  +1.2%  e/f 11.71 excess 16.2x
+  GPT-2 s512        y 0.821 J  R1 -35.9%  abs +49.8%  m/p 1.56  twin +16.5%  e/f 2.02  excess 8.0x
+  GPT-2 s1024       y 2.692 J  R1 -65.2%  abs  -6.7%  m/p 2.87  twin  +8.1%  e/f 3.71  excess 12.9x
+  GPT-2 s2048       y 10.165 J R1 -79.8%  abs -42.5%  m/p 4.96  twin  +6.0%  e/f 7.21  excess 15.8x
+  GPT-2 s4096       y 39.213 J R1 -86.1%  abs -60.3%  m/p 7.21  twin  +0.5%  e/f 12.03 excess 16.6x
+  Mean R1 residual -66.1% (m/p mean 4.09x); mean absolute residual -14.7%;
+  flash twins mean R1 residual +8.5%.
+
+A100, all six eager cells (prefill, fp16, s512/1024/2048, both models),
+all-84 R1 fit / T1 train fit, and the excess ratio against the matched flash
+cell(s) under the all-84 fit (keys carry seeds; twins matched on
+model|phase|precision|s):
+  DistilGPT2 s512   y 0.364 J  pred 0.155  -57.4% / -55.8%   no matched flash cell in the A100 grid
+  DistilGPT2 s1024  y 1.097 J  pred 0.307  -72.0% / -70.9%   e/f 4.07  excess 31.5x
+  DistilGPT2 s2048  y 3.918 J  pred 0.687  -82.5% / -81.8%   e/f 6.73  excess 31.8x
+  GPT-2 s512        y 0.710 J  pred 0.296  -58.3% / -56.7%   e/f 3.32-3.72 across the four spot-cell weight variants  excess 37.7-39.5x
+  GPT-2 s1024       y 2.173 J  pred 0.600  -72.4% / -71.3%   e/f 4.15  excess 31.4x
+  GPT-2 s2048       y 7.798 J  pred 1.361  -82.6% / -81.9%   e/f 6.90  excess 31.8x
+  Mean all-84 residual -70.9% (m/p mean 3.90x). The paper's VI-D figure
+  "the same pairs on the A100 give 3.7x to 6.9x" reproduces (3.67-6.90).
+
+(2) Conclusion from (1). The under-prediction is NOT an Ampere effect: the
+4090 cells under R1 sit on the same curve (1.5x at s512 to 7.2x at s4096),
+and the A100 cells (s512-2048) on the matching segment. It is a
+workload-level accounting shortfall and it transfers, as every workload-level
+quantity in this study does. It was not isolated in the 4090 confirmatory
+report because absolute NNLS was primary there: the same cells sit at +50%
+(s512) to -60% (s4096) under it, the largest eager cells pulling the fit at
+the expense of the smallest, and VI-D examined the measured eager/flash ratio
+and its scaling, not the per-cell residual. The shortfall grows with s and
+saturates (excess ratio 7.7 -> 16.2 on the 4090), so it sits in the
+quadratic term, i.e. in how the materialized score matrix is charged.
+
+(3) Accounting reference. src/tomltransformers/architectures/attention.py,
+attention_core(kind="standard"): to_hbm = mem_cost(score_passes *
+score_elems, offchip_tier(device), prec.act) with score_passes = 2 (one
+write, one read) and score_elems = n_heads * attention_pairs(s_q, s_kv,
+causal) = n_heads * s(s+1)/2 for causal prefill (lower triangle only);
+to_nonlinear = n_heads * pairs * op("softmax"), charged to the nonlinear
+coefficient that every confirmatory fit sets to zero; launches = 3 per layer
+(QK^T, softmax, AV). The module docstring declares score_passes a
+"calibration target". It was never calibrated: no M-family member fits it.
+The executed HF eager path materializes the FULL s x s matrix (QK^T over all
+pairs, then causal masking), so the pair count alone is short by ~2x, and
+traverses the matrix in separate kernels (scaling, masking, softmax) before
+the AV matmul reads it, so the pass count is short by a factor of several
+before any device effect. The eager QK^T and AV MACs are also charged on the
+triangle; at s4096 (DistilGPT2) the missing MACs are ~0.4 J of a 17.5 J
+measured excess, so memory passes carry the shortfall.
+
+(4) What is and is not explained. The square-vs-triangle factor (2x) times a
+pass count of several accounts for the bulk of the 8-16x gap on the 4090.
+Not explained by (3) alone: the rise of the excess ratio from 7.7x at s512 to
+16x at s4096 (candidates: the score matrix fits L2 at s512/1024 on both
+parts, 6.3/25 MB per layer vs 64 MB AD103 L2 and 40 MB GA100 L2, so early
+passes may be partly on-chip; a fixed per-kernel cost), and the A100's larger
+31-39x gap (candidates: the A100's fitted alpha_hbm is 0.39x of the 4090's
+effective per-word cost, set by streaming KV reads whose access pattern
+differs from elementwise/reduction passes over a 400 MB matrix; a softmax
+fp32 intermediate in the newer transformers eager path). Environment
+caveat: the two campaigns ran different stacks, transformers 5.1.0 / torch
+2.6.0 (4090, environment.json 2026-07-20) vs transformers 5.15.0 / torch
+2.13.0 (A100, environment.json 2026-08-11); the exact kernel sequence of the
+eager path must be read from each pinned transformers source before any
+numeric pass count is asserted. The paper says "several" and no number.
+
+(5) Paper changes made this date, all labeled post-hoc, from committed
+artifacts, no verdict authority: new subsection VIII-D "Post-hoc: The
+Standard-Attention Accounting" with the numbers above; VIII opening announces
+it; VIII-B tail no longer says "on Ampere ... we flag and do not pursue";
+VI-D gains one sentence (scaling matches the accounting, magnitude does not);
+Limitations replaced "on Ampere ... left unexplained" with the localized
+statement; X-B research program gains a fifth item (count or fit the
+score-matrix pass count). Every new prose number must be added to the
+pre-build claim check (87 at submission) before the camera-ready build.
+No verdict, band, estimator, split, or figure changes.
+
+(6) Other camera-ready text changes this date, with rationale:
+  - Contribution 5: "a pre-stated structural prediction falsified by
+    measurement" -> "a structural prediction entailed by the frozen form and
+    falsified by measurement". Reason: the 3.03 bound is a property of the
+    form frozen 2026-07-20 but was written down in the 2026-08-17 pre-fit
+    record AFTER the A100 grid was measured and the raw matched-pair ratios
+    examined, and BEFORE any fit. With the repository public, "pre-stated"
+    is checkable and wrong relative to measurement; "entailed by the frozen
+    form" is exact. VIII-A now states that sequence in words (no dates in
+    the paper by the director's rule) and cites the pre-fit T1-T3 risk
+    predictions from that entry (fp16 forward over-predicted, fp32 forward
+    under-predicted by roughly half; the fits returned those signs, fp32
+    forward on T1 at a mean of -50%).
+  - VIII-C: M8p provenance stated exactly: reserved in Amendment 2
+    (2026-08-17), recorded after measurement and raw ratios, before any fit
+    and before the verdicts; exploratory because the data that motivated it
+    is the data it runs on; verdict-grade version needs a fresh
+    pre-registration on new data.
+  - Intro: "form" vs "prior" defined once (form = terms and the workload
+    quantities they multiply; prior = a constant asserted inside a term
+    before any fit); the three exceeded bands labeled two on-platform (T1
+    refit, T3 extrapolation) and one cross-device (T2) in the Intro, VII
+    opening, and X-C. Reason: one reviewer read all three as cross-card
+    transfer failure.
+  - Author block (Syed, Silaghi; FIT; msyed2011@my.fit.edu,
+    msilaghi@fit.edu); repository URL as a footnote at the Section V
+    artifacts sentence and in the Conclusion; Acknowledgment: Lambda Labs
+    only (no LLM-use disclosure by the director's decision); refs.bib:
+    cloud paper -> accepted at IEEE CloudCom 2026 (Paris, Oct 27-29; note
+    "To appear"), MLSP 2026 and ACM AI Summit '26 entries presented ("To
+    appear" removed; no DOI yet indexed as of this date, checked).
+  - README: paper citation, both campaigns' status and T0-T3 outcomes as
+    they fell, released-artifact map with real paths, series statuses.
+
+(7) Open for the camera-ready, in order: C3 (release years and transfer
+direction, Ada 2022 -> Ampere 2020, optionally the AD103 laptop fp32 /
+fp16-tensor peak ratio IF sourced from the NVIDIA spec), C6 (roofline's
+fitted power 378 W on a 150-175 W part: the coefficient is a scale absorbing
+peak-vs-achieved throughput, not a power; the 2026-08-17 pre-fit record's D7
+note that roofline's per-precision peaks encode the datapath structure M8
+lacks), C7 (Limitations cites the spot-cell weight-variant result), C8 (INT8
+/ INT4 as the third precision in the research program); then the banned-word
+scan, --no-titles figure regeneration per the 2026-08-20 entry, claim-check
+extension, local IEEEtran build and page check against Overleaf, release tag
+at the final commit. Follow-up for EXP-003 or the journal: read the eager
+kernel sequence from transformers 5.1.0 and 5.15.0 sources and register a
+numeric pass count; calibrate score_passes; re-test the standard-attention
+cells under a fresh pre-registration.
+
+Script used for (1), run from the repository root on copies of the committed
+files (4090 twins match by exact key with eager->flash; A100 twins match on
+model|phase|precision|s because keys carry seeds):
+  import json
+  rows=[json.loads(l) for l in open('experiments/exp_002_size_sweep/fit/per_point_predictions.jsonl')]
+  by={r['key']:r for r in rows}
+  for r in rows:
+      if '|eager|' in r['key']:
+          t=by[r['key'].replace('|eager|','|flash|')]
+          print(r['key'], 100*(r['yhat_r1_j']-r['y_j'])/r['y_j'], 100*(r['yhat_full_j']-r['y_j'])/r['y_j'],
+                r['y_j']/t['y_j'], (r['y_j']-t['y_j'])/(r['yhat_r1_j']-t['yhat_r1_j']))
+  # A100: same with yhat_t3_all84_fit_j / yhat_t1_train_fit_j and twin lookup on key.split('|')[:4] + [s].
