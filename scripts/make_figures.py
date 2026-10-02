@@ -98,6 +98,10 @@ def git_dirty() -> bool:
 
 def style() -> None:
     plt.rcParams.update({
+        # TrueType (Type 42) embedding: IEEE PDF eXpress rejects the
+        # matplotlib default of Type 3 fonts in figure PDFs.
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
         "font.size": 8,
         "axes.titlesize": 8,
         "axes.labelsize": 8,
@@ -306,7 +310,7 @@ def fig_f4(outdir, formats):
                color="0.35")
     ax.text(0.04, 0.95,
             f"model-implied ceiling {fd.MODEL_IMPLIED_RATIO_CEILING:g}\n"
-            r"(any $\beta \geq 0$ under the frozen priors)",
+            r"(any $\alpha \geq 0$ under the frozen priors)",
             transform=ax.transAxes, ha="left", va="top", fontsize=6.5,
             color="0.3")
     ax.set_xticks([1, 2])
