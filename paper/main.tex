@@ -1,7 +1,7 @@
-%% TOMLTransformers - IEEE UEMCON 2026 submission
-%% DOUBLE-BLIND: no author names, affiliations, funding, or repository URLs
-%% until the camera-ready version. Prior work in the TOML series is cited in
-%% the third person; never write "our previous work".
+%% TOMLTransformers - IEEE UEMCON 2026 camera-ready (accepted)
+%% De-anonymized: author block, repository URL and acknowledgments are in.
+%% Prior work in the TOML series is still cited in the third person by
+%% choice; do not rewrite citations as "our previous work".
 %%
 %% Figures are produced by scripts/make_figures.py, which refuses to emit
 %% anything unless its lineage gate reproduces the committed fit artifacts.
@@ -28,9 +28,15 @@
 
 \title{Transistor-Level Energy Modeling of Transformer\\Inference: Prefill/Decode Phase Separation and\\Cross-Architecture Transfer}
 
-\author{\IEEEauthorblockN{Anonymous Submission}
-\IEEEauthorblockA{\textit{Author names and affiliations omitted}\\
-\textit{for double-blind review}}}
+\author{\IEEEauthorblockN{Muntaser Syed}
+\IEEEauthorblockA{\textit{Florida Institute of Technology}\\
+Melbourne, FL, USA\\
+msyed2011@my.fit.edu}
+\and
+\IEEEauthorblockN{Marius Silaghi}
+\IEEEauthorblockA{\textit{Florida Institute of Technology}\\
+Melbourne, FL, USA\\
+msilaghi@fit.edu}}
 
 \maketitle
 \bstctlcite{BSTcontrol}
@@ -414,7 +420,9 @@ A model fitted, inspected and adjusted will describe any dataset. Because
 this paper reports successes and failures, the distinction was fixed before
 the results existed. Every analytical decision below was written into a
 dated document and committed before the corresponding numbers were
-computed; the committed artifacts record the commit at which each fit ran.
+computed; the committed artifacts record the commit at which each fit
+ran.\footnote{Pre-registration documents, measurement data, fit artifacts
+and the figure pipeline: \url{https://github.com/jemsbhai/TOMLTransformers}}
 
 \subsection{RTX 4090}
 
@@ -1002,7 +1010,12 @@ fp32/fp16 ratio is exceeded by every measured A100 pair (median 7.4)
 because precision selects the execution unit, and an operating-point
 dependence the frozen form does not represent. The pre-registration, data,
 fit artifacts and figure pipeline, which verifies every plotted number
-against the committed results before drawing, are released.
+against the committed results before drawing, are released at
+\url{https://github.com/jemsbhai/TOMLTransformers}.
+
+\section*{Acknowledgment}
+
+The A100 measurements were conducted on Lambda Labs cloud infrastructure.
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
