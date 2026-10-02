@@ -421,10 +421,13 @@ individual points. Achieved medians: 4.80\% (RTX 4090, $n=296$) and 0.60\%
 \end{figure}
 
 Hardware: an RTX 4090 Laptop GPU (Ada Lovelace, GDDR6, 16\,GB, 175\,W
-sustained) on an i9-14900HX under Windows 11, CUDA 12.4, and an
-A100-SXM4-40GB (Ampere, HBM2E-class, 400\,W) on a rented Linux instance,
-CUDA 13.0: two architectures, memory technologies, process nodes, power
-envelopes, host CPUs and operating systems.
+sustained) on an i9-14900HX under Windows 11, CUDA 12.4, PyTorch 2.6.0 and
+transformers 5.1.0, and an A100-SXM4-40GB (Ampere, HBM2E-class, 400\,W) on
+a rented Linux instance, CUDA 13.0, PyTorch 2.13.0 and transformers 5.15.0:
+two architectures, memory technologies, process nodes, power envelopes,
+host CPUs, operating systems and software stacks, with the transfer running
+from the newer consumer architecture (Ada, 2022) to the older datacenter
+one (Ampere, 2020).
 
 \section{Pre-Registration and Experimental Design}
 \label{sec:prereg}
@@ -570,9 +573,11 @@ reported as such.
 \centering
 \includegraphics[width=\textwidth]{f2_4090_measured_vs_predicted.pdf}
 \caption{Measured against predicted energy on the RTX 4090, $M_8$, all 296
-configurations. (a)~Absolute NNLS, the pre-registered primary: the fit is
-anchored by the largest configurations and over-predicts small ones.
-(b)~The relative estimator R1, pre-registered as a robustness report.}
+configurations. Left (a): absolute NNLS, the pre-registered primary,
+$R^2 = 0.975$ and MAPE $= 93.3\%$ over all 296 points; the fit is anchored
+by the largest configurations and over-predicts small ones. Right (b): the
+relative estimator R1, pre-registered as a robustness report, $R^2 = 0.924$
+and MAPE $= 18.2\%$.}
 \label{fig:f2}
 \end{figure*}
 
@@ -986,11 +991,19 @@ a five-coefficient analytic model on these splits, and roofline is slightly
 better on both platforms. This is consistent with Section~\ref{sec:mechanism}:
 what $M_8$ adds over $M_0$ is structure, and that structure is built on a
 precision prior that is wrong on the A100 and approximate on the 4090, so
-the additional terms carry error as well as information. The baselines have
-no precision prior to get wrong. The exploratory $M_{8p}$ results suggest
-correcting it changes the comparison; establishing that needs a fresh
-pre-registration. Table~\ref{tab:baselines} also reports each roofline
-fit's average power against the part's rated envelope.
+the additional terms carry error as well as information. $M_0$ has no
+precision prior to get wrong, and roofline has the opposite: its latency
+uses the vendor peak for each precision, 19.5 and 312\,TFLOP/s on the A100,
+so it carries the execution-unit routing that $M_8$'s single multiplier
+lacks, which the logbook recorded before the fits as the reason it might
+compete on A100 fp32 cells. Its fitted coefficient is not a power, however.
+Table~\ref{tab:baselines} reports each roofline fit's average power against
+the part's rated envelope: 378\,W on a part rated 150 to 175\,W, because
+roofline latency from vendor peaks is a lower bound on achieved latency and
+the coefficient absorbs the gap; on the A100 the fitted values, 413 and
+369\,W, sit at the 400\,W envelope. The exploratory $M_{8p}$ results suggest
+correcting the prior changes the comparison; establishing that needs a
+fresh pre-registration.
 
 \section{Discussion and Limitations}
 \label{sec:discussion}
@@ -1041,7 +1054,9 @@ turning the two-point device-property claims into tested scaling. Fifth,
 the standard-attention pass count: count the off-chip traversals of the
 full score matrix from the executed kernel sequence, or fit them, the one
 workload-level error the committed artifacts expose
-(Section~\ref{sec:eager}).
+(Section~\ref{sec:eager}). Sixth, INT8 and INT4, which route to further
+execution units and extend the per-precision calibration of the first item
+to the precisions that quantized serving uses.
 
 \subsection{On Reporting Against Frozen Bands}
 
@@ -1057,8 +1072,21 @@ four green cells and no Section~\ref{sec:mechanism}.
 Two GPUs, both NVIDIA; the device-property claim for the precision
 multiplier rests on two points. The A100 test splits are small (17 points
 for T1, 10 for T3) and the baseline comparisons there have low power.
-Random-initialized weights throughout, representative of operation shapes
-and data movement but not of any serving stack. The nonlinear term is
+Random-initialized weights throughout. The 4090 pre-registration carried a
+representativeness test, three cells at three initialization seeds with a
+band of 0.33 on the relative energy difference between the pretrained
+checkpoint and random initialization, and it failed as it fell, by 0.0003
+on one GPT-2 prefill cell at fp16, with decode at 0.003 to 0.011 and
+encode at 0.13 to 0.16. The post-verdict control loaded the pretrained
+values into the sweep's own instantiation, verified its logits against the
+checkpoint, and separated the two effects: the values move fp16 prefill
+energy by 6.5\% and fp32 by under 1\%, while the checkpoint as instantiated
+by the library costs 1.405x the ported model at identical values on the
+4090 and 1.12x on the A100, where the four spot cells put the value effect
+at $-1.3\%$ to $-3.5\%$ (Section~\ref{sec:transfer}). The weights are
+therefore representative of operation shapes and data movement to within
+about 6.5\%; the implementation path is not representative of any serving
+stack, and it moves energy by more than the weights do. The nonlinear term is
 untested by the confirmatory fits. The standard-attention cells are
 under-predicted roughly four-fold on both platforms under R1;
 Section~\ref{sec:eager} localizes this to the score-matrix pass count in

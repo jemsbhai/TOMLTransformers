@@ -1165,3 +1165,48 @@ model|phase|precision|s because keys carry seeds):
           print(r['key'], 100*(r['yhat_r1_j']-r['y_j'])/r['y_j'], 100*(r['yhat_full_j']-r['y_j'])/r['y_j'],
                 r['y_j']/t['y_j'], (r['y_j']-t['y_j'])/(r['yhat_r1_j']-t['yhat_r1_j']))
   # A100: same with yhat_t3_all84_fit_j / yhat_t1_train_fit_j and twin lookup on key.split('|')[:4] + [s].
+
+(8) Representativeness verdict omission corrected (same date). The frozen
+config (2026-05-29) registered a representativeness check, compare
+random_init_vs_pretrained, band 0.33 on |E_rand - E_pretrained| /
+E_pretrained, "Exceeding => FAIL ... sweep flagged; logged as a finding
+either way". Verdict fell FAIL (max ratio 0.3303, one GPT-2 prefill fp16
+cell; report generated 2026-08-10). The submitted paper did not mention the
+test or its verdict while stating "All pre-registered outcomes are reported
+as they fell against their frozen bands" (Intro); it used only the A100
+descriptive spot cells (VII-E) for representativeness. With the repository
+public that sentence is checkable against an omitted verdict. Camera-ready
+fix, Limitations: the test, its cells and band, the FAIL as it fell with
+the per-regime ratios (prefill 0.24-0.33, decode 0.003-0.011, encode
+0.13-0.16), and the post-verdict Follow-up B decomposition from
+representativeness_report.txt: pure value effect 0.0648 fp16, fp32
+0.002-0.007; implementation floor E_HF/E_ported = 1.405 at identical values
+(fp32 1.136, not stated in the paper); A100 analog from the spot cells
+pretrained/ported = 0.21401/0.19076 = 1.12x; A100 value effect ported vs
+random -1.3%, ported vs random_v -3.5% (the paper's existing "-1.3% to
+-3.5%" is the pure value effect and is unchanged; the +10.7% A100
+pretrained-vs-random figure is the implementation effect and is now stated
+as 1.12x). Paper now says: weights representative of op shapes and data
+movement to within about 6.5%; the implementation path is not
+representative of any serving stack and moves energy by more than the
+weights do. Reviewer 3's "synthetic weights / real serving pipelines"
+comment is answered by this measured decomposition rather than by scope.
+
+(9) Step-4 camera-ready edits applied (same date): C3 hardware paragraph
+now names the software stacks (PyTorch 2.6.0 / transformers 5.1.0 on the
+4090; PyTorch 2.13.0 / transformers 5.15.0 on the A100, from the committed
+environment snapshots) and the transfer direction, newer consumer Ada
+(2022) to older datacenter Ampere (2020), against a reviewer's "newer A100".
+C6 roofline paragraph in IX: roofline's per-precision vendor peaks (19.5 /
+312 TFLOP/s on the A100) carry the execution-unit routing M8's single
+multiplier lacks (pre-fit record D7 note, 2026-08-17); its fitted
+coefficient is not a power: 378 W on a 150-175 W part because vendor-peak
+roofline latency lower-bounds achieved latency and the coefficient absorbs
+the gap; A100 fitted values 413 / 369 W at the 400 W envelope. C7 as in
+(8). C8 research program sixth item: INT8 / INT4 route to further execution
+units; per-precision calibration extends to them. New prose numbers added
+this date (for the claim-check extension): 33%, 86%, 1.5x, 7.2x, +0.5% to
++17%, 57/72/83%, +50% to -60%, 8x, 16x, 31x to 39x, 2.6.0, 5.1.0, 2.13.0,
+5.15.0, 2022, 2020, 19.5, 312, 378, 150-175, 413, 369, 400, 0.33, 0.0003,
+0.003-0.011, 0.13-0.16, 6.5%, under 1%, 1.405x, 1.12x, -1.3% to -3.5%,
+-50% (T1 fp32 forward mean), 0.6%, 5.8%.
