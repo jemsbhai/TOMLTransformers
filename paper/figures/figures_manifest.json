@@ -1,7 +1,8 @@
 {
-  "generated_at": "2026-08-18T06:11:38-04:00",
-  "git_commit": "32b28215d6be6754a5d9d3cca0267bf747628309",
-  "git_dirty": true,
+  "generated_at": "2026-10-02T12:24:08-04:00",
+  "git_commit": "f66f9f226b51c27aa2b9ef0396ecc9b5ce1fcea1",
+  "git_dirty": false,
+  "titles_stripped": true,
   "lineage_gate_checks": 30,
   "lineage_gate_all_passed": true,
   "sources": {
