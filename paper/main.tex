@@ -113,6 +113,17 @@ empirically: separating prefill and decode features improved its accuracy by
 32\%. What has been missing is a physically grounded account of why the
 phases differ and by how much.
 
+Two terms are used in fixed senses throughout. The model's \emph{form} is
+the set of terms it carries and the workload quantities they multiply: the
+phase decomposition, the KV-cache traffic, the attention-kernel accounting
+and the dispatch count, all derived from the architecture's definition. A
+\emph{prior} is a constant asserted inside a term before any fit: the fp16
+arithmetic multiplier taken from bit-width scaling, and the per-word
+off-chip cost taken from the vendor figure for each memory technology. The
+form is a workload property; the priors are device properties. The transfer
+study of Section~\ref{sec:transfer} tests both, and they behave
+differently.
+
 Contributions:
 
 \begin{enumerate}
@@ -148,16 +159,18 @@ fit never saw.
 the other side of that boundary} (Section~\ref{sec:mechanism}). The model
 form bounds the fp32/fp16 energy ratio at 3.03 for any non-negative
 coefficients; the A100 measures a median of 7.4 with no pair below the
-bound, a pre-stated structural prediction falsified by measurement. The
-mechanism is precision-dependent execution-unit routing, and the effective
+bound, a structural prediction entailed by the frozen form and falsified
+by measurement. The mechanism is precision-dependent execution-unit routing, and the effective
 fp16 multiplier is fitted at 0.083 on Ampere and 0.130 on Ada against the
 asserted 0.33. Separately, residual error depends on the GPU operating
 point, isolated from the precision effect and quantified.
 \end{enumerate}
 
 All pre-registered outcomes are reported as they fell against their frozen
-bands. Three numerical bands on the frozen form were exceeded, and
-Sections~\ref{sec:mechanism} and \ref{sec:discussion} show that each
+bands. Three numerical bands on the frozen form were exceeded, two in tests
+fitted on the A100 itself (a held-out refit and an extrapolation to 7B
+scale) and one in the single test that carries coefficients across devices,
+and Sections~\ref{sec:mechanism} and \ref{sec:discussion} show that each
 exceedance localizes a named physical mechanism with a fitted value, which
 is what the tests were built to do: a band that can never be exceeded
 measures nothing. Section~\ref{sec:prereg} gives the protocol and
@@ -595,6 +608,7 @@ and dividing by 64 tokens, rises with context: for GPT-2 at fp16 from
 increase in context, with projections and feed-forward held constant.
 
 \subsection{Attention Kernel}
+\label{sec:kernel4090}
 
 At matched shape and precision, standard attention costs 1.9x the energy of
 the fused kernel at $s = 512$, rising to 12.0x at $s = 4096$ (eight pairs,
@@ -603,7 +617,9 @@ energy scales exactly as the score-matrix accounting of
 Section~\ref{sec:model} predicts: quadratically in $s$, with each doubling
 multiplying it by 4.0 to 4.9, and linearly in depth, with GPT-2's excess
 2.0x DistilGPT2's at every $s$, matching its layer count. The same pairs on
-the A100 give 3.7x to 6.9x with the same two scalings. The two kernels
+the A100 give 3.7x to 6.9x with the same two scalings. The scaling matches
+the accounting; the magnitude does not, and Section~\ref{sec:eager} takes
+this up. The two kernels
 perform identical arithmetic; FLOP counts assign them identical cost while
 measured energy differs by up to 12x.
 
@@ -624,7 +640,10 @@ calibrated on. The answer is sharp. Everything derived from the
 architecture's structure transfers, including the measurement methodology
 (0.6\%), the phase separation, and decode prediction at 7B scale (5.8\%).
 The device-level priors do not, and the four pre-registered tests locate
-exactly which ones and by how much. Table~\ref{tab:verdicts} records the
+exactly which ones and by how much. Only one of the four, T2, carries
+coefficients across devices; T1 and T3 fit the frozen form on A100 data, so
+an exceedance there is the asserted constants failing within one platform,
+not a transfer failure. Table~\ref{tab:verdicts} records the
 outcomes as they fell against their frozen bands, together with what each
 established.
 
@@ -739,13 +758,22 @@ exceedances into the study's second set of findings: it localizes them to
 two device-level priors, names the physical mechanism behind each, and fits
 both on both platforms. The first two subsections use only frozen data and
 the confirmatory fits. The third is exploratory, and is labeled as such.
+The fourth is a post-hoc reading of the committed residuals that localizes
+the one workload-level error the study exposes.
 
 \subsection{The Precision Prior}
 \label{sec:precision}
 
-Section~\ref{sec:ceiling} derived, before any A100 fit, that the frozen form
-cannot produce a matched-shape fp32/fp16 energy ratio above 3.03.
-Fig.~\ref{fig:f4} measures that ratio directly, pairing every fp32
+The bound of Section~\ref{sec:ceiling} is a property of the frozen form and
+was fixed when the form was, before any A100 data existed. It was written
+into the logbook after the A100 grid had been measured and the raw
+matched-pair ratios examined, and before any fit was computed. The same
+entry recorded, before the confirmatory fits ran, that T1 to T3 were at
+risk from the mismatch, with fp16 forward cells expected to be
+over-predicted and fp32 forward cells under-predicted by roughly half; the
+fits of Section~\ref{sec:transfer} returned those signs, and the fp32
+forward under-prediction on T1 came in at a mean of 50\%.
+Fig.~\ref{fig:f4} measures the ratio directly, pairing every fp32
 configuration with its fp16 twin at identical shape, kernel and phase, and
 taking the ratio of instrument-B energies. On the RTX 4090, 62 forward-phase
 pairs give a median of 3.24, range 2.04 to 4.11: the ceiling cuts through
@@ -815,16 +843,23 @@ eager rows are set by execution path.}
 At 1410\,MHz alone the $M_8$ residual spans $-71\%$ for the eager-attention
 cells to $+6\%$ for fp16 flash forward; that spread at one clock is the
 precision datapath above and, for the six eager cells, an under-prediction
-of the unfused attention path on Ampere that we flag and do not pursue.
+of the unfused attention path that is not an Ampere effect
+(Section~\ref{sec:eager}).
 
 \subsection{Exploratory: Fitting the Precision Multiplier}
 \label{sec:split}
 
-The pre-registration reserved one post-verdict analysis: split the MAC
-column into fp16 and fp32 columns with separate coefficients, and repeat T1
-through T3 with nothing else changed. Denote this $M_{8p}$. It is
-exploratory, has no verdict authority, and is reported because it tests the
-mechanism claim directly.
+A second dated amendment to the pre-registration, recorded after the A100
+grid had been measured and the raw matched-pair precision ratios examined,
+and before any fit was computed, reserved one post-verdict analysis: split
+the MAC column into fp16 and fp32 columns with separate coefficients, and
+repeat T1 through T3 with nothing else changed. Denote this $M_{8p}$. The
+analysis was specified before the verdicts and its status fixed with it:
+exploratory, with no verdict authority, because the data that motivated it
+is the data it is run on. It is reported because it tests the mechanism
+claim directly; a verdict-grade version needs a fresh pre-registration on
+new data (Section~\ref{sec:discussion}), and a pre-registration written
+after the result it covers is not one.
 
 Repeating T3 with $M_{8p}$ fitted on the 84 shared points, error on the ten
 7B configurations falls from 42.7\% to 11.0\%. Fig.~\ref{fig:f7} shows the
@@ -866,6 +901,38 @@ coefficient is $3.12/1.77 = 1.77$, which is the $+67\%$; the operating point
 is a secondary contributor, the roughly 35-point spread remaining among the
 fp16 forward rows after the split. The original attribution is in the
 committed logbook and the correction is recorded there and here.
+
+\subsection{Post-hoc: The Standard-Attention Accounting}
+\label{sec:eager}
+
+The eager-attention residual on the A100 is not a device effect. Read from
+the committed per-point predictions, the eight standard-attention cells on
+the RTX 4090 are under-predicted under R1 by 33\% at $s = 512$ rising to
+86\% at $s = 4096$, measured over predicted 1.5x to 7.2x for both DistilGPT2
+and GPT-2, while their fused twins sit within $+0.5\%$ to $+17\%$. The six
+A100 cells follow the same curve: 57\%, 72\% and 83\% at $s = 512$ to 2048.
+The shortfall was not isolated in the 4090 confirmatory report because the
+absolute estimator was primary there, under which the same cells sit
+between $+50\%$ and $-60\%$; under R1 each is one point in 296. It is a
+workload-level error, and like every workload-level quantity it transfers.
+
+Its location is the quadratic term. Against the fused twin at matched
+shape, the measured excess scales quadratically in $s$ as
+Section~\ref{sec:kernel4090} reports, but the predicted excess is smaller
+by 8x at $s = 512$ and 16x at $s = 4096$ on the 4090, and by 31x to 39x on
+the A100. The accounting charges the materialized score matrix as two
+off-chip passes, one write and one read, over the causal lower triangle,
+and charges softmax arithmetic to the nonlinear coefficient that every
+confirmatory fit sets to zero. The executed path materializes the full
+square matrix and traverses it in separate kernels for scaling, masking and
+softmax before the value product reads it, so the charged traffic is short
+by a factor of several before any device effect, the square-versus-triangle
+count alone contributing a factor of two. The pass count was declared a
+calibration target in the accounting and never calibrated. Counting the
+passes from the executed kernel sequence, or fitting them, is the
+correction, and it is a workload property that can be computed once and
+shipped. This diagnosis was made after all verdicts, from committed
+artifacts, and carries no verdict authority.
 
 \section{Comparison Against Baselines}
 \label{sec:baselines}
@@ -970,12 +1037,16 @@ explicitly enabled, where the routing mechanism predicts the measured ratio
 collapses from 7.4 toward the 2 to 3 range, converting the falsified prior
 into a validated device parameter. Third, an operating-point term in recorded clock or power, the one
 dependence that varies within a device. Fourth, a third GPU architecture,
-turning the two-point device-property claims into tested scaling.
+turning the two-point device-property claims into tested scaling. Fifth,
+the standard-attention pass count: count the off-chip traversals of the
+full score matrix from the executed kernel sequence, or fit them, the one
+workload-level error the committed artifacts expose
+(Section~\ref{sec:eager}).
 
 \subsection{On Reporting Against Frozen Bands}
 
-One band held and three were exceeded, and the paper reports all four as
-they fell. This is the protocol working as designed: a band that cannot be
+One band held and three were exceeded, two on-platform and one
+cross-device, and the paper reports all four as they fell. This is the protocol working as designed: a band that cannot be
 exceeded measures nothing, and each exceedance here came with a breakdown
 sharp enough to name its mechanism and fit its magnitude. The alternative,
 adjusting the form until the numbers pass, would have produced a paper with
@@ -988,8 +1059,11 @@ multiplier rests on two points. The A100 test splits are small (17 points
 for T1, 10 for T3) and the baseline comparisons there have low power.
 Random-initialized weights throughout, representative of operation shapes
 and data movement but not of any serving stack. The nonlinear term is
-untested by the confirmatory fits, and the six eager attention cells on
-Ampere are under-predicted roughly four-fold and left unexplained.
+untested by the confirmatory fits. The standard-attention cells are
+under-predicted roughly four-fold on both platforms under R1;
+Section~\ref{sec:eager} localizes this to the score-matrix pass count in
+the accounting, a workload-level correction that remains to be made and
+re-tested.
 
 \section{Conclusion}
 \label{sec:conclusion}
